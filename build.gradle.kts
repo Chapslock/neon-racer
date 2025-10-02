@@ -1,5 +1,10 @@
 plugins {
     id("java")
+    id("application")
+}
+
+application {
+    mainClass = "org.chapzlock.Main"
 }
 
 group = "org.chapzlock"
