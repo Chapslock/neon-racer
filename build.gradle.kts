@@ -125,6 +125,7 @@ tasks.register<Exec>("jPackageAppImage") {
         "app-image",
         "--dest",
         outputDir,
+        "--verbose",
     )
 
     application.applicationDefaultJvmArgs.forEach { arg ->
@@ -150,6 +151,7 @@ tasks.register<Exec>("jPackageInstaller") {
         installerType,
         "--dest",
         outputDir,
+        "--verbose",
     )
 
     application.applicationDefaultJvmArgs.forEach { arg ->
@@ -164,6 +166,13 @@ tasks.register<Exec>("jPackageInstaller") {
 // --- Zip App Image ---
 tasks.register<Zip>("jPackageArchiveAppImage") {
     dependsOn("jPackageAppImage")
+    val appImageDir =
+        if (os.isMacOsX) {
+            file("$outputDir/$appImageName.app")
+        } else {
+            file("$outputDir/$appImageName")
+        }
+
     from(appImageDir)
     archiveFileName.set("$appName-${project.version}-$osName-app-image.zip")
     destinationDirectory.set(file(outputDir))
