@@ -22,14 +22,14 @@ jobs:
         run: ./gradlew jPackageAll
 
       - name: Create GitHub Release (Linux)
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Linux Installers
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           files: |
@@ -54,7 +54,7 @@ jobs:
         run: ./gradlew jPackageAll
 
       - name: Upload Windows Installer
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           files: |
@@ -79,7 +79,7 @@ jobs:
         run: ./gradlew jPackageAll
 
       - name: Upload macOS Installer
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           files: |
