@@ -1,0 +1,18 @@
+version: 2
+updates:
+  # Keep Gradle dependencies up to date
+  - package-ecosystem: "gradle"
+    directory: "/" # root of your repo
+    schedule:
+      interval: "weekly" # daily / weekly / monthly
+    commit-message:
+      prefix: "deps"
+    open-pull-requests-limit: 10
+
+  # Keep GitHub Actions workflows up to date
+  - package-ecosystem: "github-actions"
+    directory: "/" # .github/workflows lives at root
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci"

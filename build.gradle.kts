@@ -1,5 +1,4 @@
 import org.gradle.internal.jvm.Jvm
-import java.util.Locale
 
 plugins {
     id("java")
@@ -20,11 +19,13 @@ repositories {
 }
 
 val lwjglVersion = "3.3.6"
-val osName = System.getProperty("os.name").lowercase(Locale.getDefault())
+val os =
+    org.gradle.internal.os.OperatingSystem
+        .current()
 val lwjglNatives =
     when {
-        osName.contains("win") -> "natives-windows"
-        osName.contains("mac") -> "natives-macos"
+        os.isWindows -> "natives-windows"
+        os.isMacOsX -> "natives-macos"
         else -> "natives-linux"
     }
 
@@ -62,58 +63,79 @@ tasks.test {
     useJUnitPlatform()
 }
 
-tasks.register<Exec>("jpackageApp") {
+val appName = "NeonRacer"
+val mainClass = "org.chapzlock.Main"
+val jarName = "neon-racer-$version-all.jar"
+val inputDir: String =
+    layout.buildDirectory
+        .dir("libs")
+        .get()
+        .asFile.absolutePath
+val outputDir: String =
+    layout.buildDirectory
+        .dir("jpackage")
+        .get()
+        .asFile.absolutePath
+
+val installerType =
+    when {
+        os.isWindows -> "exe"
+        os.isMacOsX -> "dmg"
+        os.isLinux -> "deb"
+        else -> "app-image"
+    }
+
+val appImageName = "$appName-${project.version}-${os.name}"
+val appImageDir = file("$outputDir/$appImageName")
+
+val jPackageExecutable: String =
+    Jvm
+        .current()
+        .javaHome
+        .resolve("bin")
+        .resolve("jpackage")
+        .absolutePath
+
+// --- App Image Task ---
+tasks.register<Exec>("jPackageAppImage") {
     dependsOn(tasks.shadowJar)
 
-    val jpackageExecutable =
-        Jvm
-            .current()
-            .javaHome
-            .resolve("bin")
-            .resolve("jpackage")
-            .absolutePath
-    val appName = "NeonRacer"
-    val mainClass = "org.chapzlock.Main"
-    val jarName = "neon-racer-$version-all.jar"
-    val inputDir =
-        layout.buildDirectory
-            .dir("libs")
-            .get()
-            .asFile.absolutePath
-    val outputDir =
-        layout.buildDirectory
-            .dir("jpackage")
-            .get()
-            .asFile.absolutePath
-    val appDir = file("$outputDir/$appName")
-
     doFirst {
-        if (appDir.exists()) {
-            appDir.deleteRecursively()
+        if (appImageDir.exists()) {
+            appImageDir.deleteRecursively()
         }
         mkdir(outputDir)
     }
 
-    var installerType = "app-image"
-    /*
-    val os =
-        org.gradle.internal.os.OperatingSystem
-            .current()
-    if (os.isWindows) {
-        installerType = "exe"
+    commandLine(
+        jPackageExecutable,
+        "--name",
+        appImageName,
+        "--input",
+        inputDir,
+        "--main-jar",
+        jarName,
+        "--main-class",
+        mainClass,
+        "--type",
+        "app-image",
+        "--dest",
+        outputDir,
+    )
+
+    application.applicationDefaultJvmArgs.forEach { arg ->
+        commandLine(commandLine + listOf("--java-options", arg))
     }
-    if (os.isMacOsX) {
-        installerType = "dmg"
-    }
-    if (os.isLinux) {
-        installerType = "deb"
-    }
-     */
+}
+
+// --- Installer Task ---
+tasks.register<Exec>("jPackageInstaller") {
+    dependsOn(tasks.shadowJar, "jPackageAppImage")
 
     commandLine(
-        jpackageExecutable,
+        jPackageExecutable,
         "--name",
-        appName,
+        appImageName,
         "--input",
         inputDir,
         "--main-jar",
@@ -125,13 +147,25 @@ tasks.register<Exec>("jpackageApp") {
         "--dest",
         outputDir,
     )
-    val jvmArgs = application.applicationDefaultJvmArgs
-    jvmArgs.forEach { arg ->
+
+    application.applicationDefaultJvmArgs.forEach { arg ->
         commandLine(commandLine + listOf("--java-options", arg))
     }
-    /*
+
     if (os.isWindows) {
         commandLine(commandLine + listOf("--win-shortcut", "--win-menu"))
     }
-     */
+}
+
+// --- Zip App Image ---
+tasks.register<Zip>("jpackageArchiveAppImage") {
+    dependsOn("jPackageImage")
+    from(appImageDir)
+    archiveFileName.set("$appName-${project.version}-${os.name}-app-image.zip")
+    destinationDirectory.set(file(outputDir))
+}
+
+// --- Convenience Task ---
+tasks.register("jPackageAll") {
+    dependsOn("jPackageAppImage", "jPackageInstaller", "jPackageArchiveAppImage")
 }
