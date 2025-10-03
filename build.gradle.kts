@@ -12,7 +12,7 @@ application {
 }
 
 group = "org.chapzlock"
-version = "1.0"
+version = "1.0" // This should be the same value git tags
 
 repositories {
     mavenCentral()
@@ -63,7 +63,7 @@ tasks.test {
     useJUnitPlatform()
 }
 
-val appName = "NeonRacer"
+val appName = "neon-racer"
 val mainClass = "org.chapzlock.Main"
 val jarName = "neon-racer-$version-all.jar"
 val inputDir: String =
@@ -81,11 +81,15 @@ val installerType =
     when {
         os.isWindows -> "exe"
         os.isMacOsX -> "dmg"
-        os.isLinux -> "deb"
-        else -> "app-image"
+        else -> "deb"
     }
-
-val appImageName = "$appName-${project.version}-${os.name}"
+val osName =
+    when {
+        os.isWindows -> "windows"
+        os.isMacOsX -> "mac"
+        else -> "linux"
+    }
+val appImageName = "$appName-${project.version}-$osName"
 val appImageDir = file("$outputDir/$appImageName")
 
 val jPackageExecutable: String =
@@ -161,7 +165,7 @@ tasks.register<Exec>("jPackageInstaller") {
 tasks.register<Zip>("jPackageArchiveAppImage") {
     dependsOn("jPackageAppImage")
     from(appImageDir)
-    archiveFileName.set("$appName-${project.version}-${os.name}-app-image.zip")
+    archiveFileName.set("$appName-${project.version}-$osName-app-image.zip")
     destinationDirectory.set(file(outputDir))
 }
 

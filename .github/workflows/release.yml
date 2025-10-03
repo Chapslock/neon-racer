@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build-linux:
-    name: Build Linux Installer
+    name: Build Linux(Debian) App Image & Installer
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -31,18 +31,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload Linux Installers
+      - name: Upload Linux Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           files: |
-            build/jpackage/NeonRacer-*.deb
-            build/jpackage/NeonRacer-*-app-image.zip
+            build/jpackage/neon-racer-*.deb
+            build/jpackage/neon-racer-*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-windows:
-    name: Build Windows Installer
+    name: Build Windows App & Installer
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v5
@@ -56,18 +56,18 @@ jobs:
       - name: Build Windows App and Installer
         run: ./gradlew jPackageAll
 
-      - name: Upload Windows Installer
+      - name: Upload Windows Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           files: |
-            build/jpackage/NeonRacer-*.exe
-            build/jpackage/NeonRacer-*-app-image.zip
+            build/jpackage/neon-racer-*.exe
+            build/jpackage/neon-racer-*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-macos:
-    name: Build macOS Installer
+    name: Build macOS App & Installer
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
@@ -81,12 +81,12 @@ jobs:
       - name: Build macOS App and Installer
         run: ./gradlew jPackageAll
 
-      - name: Upload macOS Installer
+      - name: Upload macOS Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           files: |
-            build/jpackage/NeonRacer-*.dmg
-            build/jpackage/NeonRacer-*-app-image.zip
+            build/jpackage/neon-racer-*.dmg
+            build/jpackage/neon-racer-*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
