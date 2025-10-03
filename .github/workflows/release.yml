@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*.*'  # Trigger on version tags like v1.0, v1.1, etc.
 
+permissions:
+  contents: write
+
 jobs:
   build-linux:
     name: Build Linux Installer
