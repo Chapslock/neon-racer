@@ -12,7 +12,7 @@ application {
 }
 
 group = "org.chapzlock"
-version = "0.1" // This should be the same value git tags
+version = "0.2" // This should be the same value as git tags
 
 repositories {
     mavenCentral()
