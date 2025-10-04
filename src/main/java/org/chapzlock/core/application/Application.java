@@ -1,6 +1,5 @@
 package org.chapzlock.core.application;
 
-import static org.lwjgl.glfw.GLFW.glfwDefaultWindowHints;
 import static org.lwjgl.glfw.GLFW.glfwGetTime;
 import static org.lwjgl.glfw.GLFW.glfwInit;
 import static org.lwjgl.glfw.GLFW.glfwPollEvents;
@@ -9,21 +8,26 @@ import static org.lwjgl.glfw.GLFW.glfwTerminate;
 import static org.lwjgl.opengl.GL11.glClearColor;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 import org.chapzlock.core.Layer;
 import org.chapzlock.core.window.Window;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class Application {
-    private static Application APPLICATION;
+    private static Application INSTANCE;
     private ApplicationSpecification appSpec;
     private Window window;
     private boolean isRunning = false;
     private ArrayList<Layer> layerStack = new ArrayList<>();
 
     public Application(ApplicationSpecification appSpec) {
-        APPLICATION = this;
+        INSTANCE = this;
         this.appSpec = appSpec;
 
         GLFWErrorCallback.createPrint(System.err).set();
@@ -31,8 +35,6 @@ public class Application {
         if (!glfwInit()) {
             throw new IllegalStateException("Unable to initialize GLFW");
         }
-
-        glfwDefaultWindowHints();
 
         if (appSpec.getWindowSpec().getTitle() == null) {
             appSpec.getWindowSpec().setTitle(appSpec.getName());
@@ -63,7 +65,7 @@ public class Application {
             lastTime = currentTime;
 
             this.layerStack.forEach(layer -> layer.onUpdate(timeStep));
-            this.layerStack.forEach(Layer::onRender);
+            this.layerStack.forEach(layer -> layer.onRender(timeStep));
 
             this.window.update();
         }
@@ -72,18 +74,19 @@ public class Application {
     public void stop() {
         this.isRunning = false;
         this.window.destroy();
-        APPLICATION = null;
+        INSTANCE = null;
 
         // Terminate GLFW and free the error callback
         glfwTerminate();
-        glfwSetErrorCallback(null).free();
+        Objects.requireNonNull(glfwSetErrorCallback(null)).free();
     }
 
-    public void pushLayer() {
+    public void pushLayer(Layer layer) {
+        this.layerStack.add(layer);
     }
 
     public static Application get() {
-        return APPLICATION;
+        return INSTANCE;
     }
 
     public static float getTime() {
