@@ -95,25 +95,33 @@ public class Shader {
      * Loads a shader from a file.
      *
      * @param type Type of the shader
-     * @param path File path of the shader
+     * @param resourcePath File path of the shader relative to the resource folder
      *
      * @return Compiled Shader from specified file
      */
-    public static Shader loadShader(int type, String path) {
+    public static Shader loadShader(int type, String resourcePath) {
         StringBuilder builder = new StringBuilder();
 
-        try (InputStream in = new FileInputStream(path);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                builder.append(line).append("\n");
+        try (
+            InputStream in = Thread.currentThread()
+                .getContextClassLoader()
+                .getResourceAsStream(resourcePath)
+        ) {
+            assert in != null;
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))
+            ) {
+
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    builder.append(line).append("\n");
+                }
             }
         } catch (IOException ex) {
             throw new RuntimeException("Failed to load a shader file!"
-                + System.lineSeparator() + ex.getMessage());
+                + System.lineSeparator() + ex.getMessage(), ex);
         }
-        CharSequence source = builder.toString();
 
+        CharSequence source = builder.toString();
         return createShader(type, source);
     }
 

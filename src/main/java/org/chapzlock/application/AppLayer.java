@@ -141,8 +141,6 @@ public class AppLayer implements Layer {
 
     @Override
     public void onRender(float deltaTime) {
-        glClear(GL_COLOR_BUFFER_BIT);
-
         vao.bind();
         program.use();
 
@@ -153,7 +151,8 @@ public class AppLayer implements Layer {
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }
 
-    public void onTransition() {
+    @Override
+    public void onDestroy() {
         vao.delete();
         vbo.delete();
         vertexShader.delete();

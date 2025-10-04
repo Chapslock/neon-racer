@@ -35,6 +35,7 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GLCapabilities;
 
 import lombok.Getter;
@@ -117,6 +118,7 @@ public class Window {
 
     public void update() {
         glfwSwapBuffers(id);
+        glClear(GL_COLOR_BUFFER_BIT);
     }
 
     public boolean shouldClose() {

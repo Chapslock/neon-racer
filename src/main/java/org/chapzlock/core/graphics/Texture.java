@@ -1,9 +1,19 @@
 package org.chapzlock.core.graphics;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import org.lwjgl.system.MemoryStack;
 
+import static java.nio.file.StandardOpenOption.READ;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.GL_CLAMP_TO_BORDER;
 import static org.lwjgl.stb.STBImage.*;
@@ -152,33 +162,72 @@ public class Texture {
     /**
      * Load texture from file.
      *
-     * @param path File path of the texture
+     * @param resourcePath File path of the texture relative from the resource folder
      *
      * @return Texture from specified file
      */
-    public static Texture loadTexture(String path) {
+    public static Texture loadTexture(String resourcePath) {
         ByteBuffer image;
         int width, height;
+
+        // Read resource file into a direct ByteBuffer
+        ByteBuffer resourceBuffer;
+        try {
+            resourceBuffer = ioResourceToByteBuffer(resourcePath, 8192);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read resource: " + resourcePath, e);
+        }
+
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            /* Prepare image buffers */
             IntBuffer w = stack.mallocInt(1);
             IntBuffer h = stack.mallocInt(1);
             IntBuffer comp = stack.mallocInt(1);
 
-            /* Load image */
             stbi_set_flip_vertically_on_load(true);
-            image = stbi_load(path, w, h, comp, 4);
+            image = stbi_load_from_memory(resourceBuffer, w, h, comp, 4);
             if (image == null) {
-                throw new RuntimeException("Failed to load a texture file!"
-                    + System.lineSeparator() + stbi_failure_reason());
+                throw new RuntimeException("Failed to load texture: " + stbi_failure_reason());
             }
 
-            /* Get width and height of image */
-            width = w.get();
-            height = h.get();
+            width = w.get(0);
+            height = h.get(0);
         }
 
         return createTexture(width, height, image);
+    }
+
+    public static ByteBuffer ioResourceToByteBuffer(String resource, int bufferSize) throws IOException {
+        ByteBuffer buffer;
+
+        Path path = Paths.get(resource);
+        if (Files.isReadable(path)) {
+            try (SeekableByteChannel fc = Files.newByteChannel(path, READ)) {
+                buffer = ByteBuffer.allocateDirect((int)fc.size() + 1);
+                while (fc.read(buffer) != -1);
+            }
+        } else {
+            try (
+                InputStream source = Thread.currentThread().getContextClassLoader().getResourceAsStream(resource);
+                ReadableByteChannel rbc = Channels.newChannel(source)
+            ) {
+                buffer = ByteBuffer.allocateDirect(bufferSize);
+
+                while (true) {
+                    int bytes = rbc.read(buffer);
+                    if (bytes == -1)
+                        break;
+                    if (buffer.remaining() == 0) {
+                        ByteBuffer newBuffer = ByteBuffer.allocateDirect(buffer.capacity() * 2);
+                        buffer.flip();
+                        newBuffer.put(buffer);
+                        buffer = newBuffer;
+                    }
+                }
+            }
+        }
+
+        buffer.flip();
+        return buffer;
     }
 
 }
