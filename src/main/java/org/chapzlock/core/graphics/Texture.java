@@ -7,7 +7,6 @@ import java.nio.IntBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -49,6 +48,10 @@ public class Texture {
      */
     public void bind() {
         glBindTexture(GL_TEXTURE_2D, id);
+    }
+
+    public void unbind() {
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     /**
@@ -162,7 +165,7 @@ public class Texture {
     /**
      * Load texture from file.
      *
-     * @param resourcePath File path of the texture relative from the resource folder
+     * @param resourcePath FileUtils path of the texture relative from the resource folder
      *
      * @return Texture from specified file
      */
@@ -200,8 +203,8 @@ public class Texture {
         ByteBuffer buffer;
 
         Path path = Paths.get(resource);
-        if (Files.isReadable(path)) {
-            try (SeekableByteChannel fc = Files.newByteChannel(path, READ)) {
+        if (java.nio.file.Files.isReadable(path)) {
+            try (SeekableByteChannel fc = java.nio.file.Files.newByteChannel(path, READ)) {
                 buffer = ByteBuffer.allocateDirect((int)fc.size() + 1);
                 while (fc.read(buffer) != -1);
             }

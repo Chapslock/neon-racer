@@ -48,7 +48,6 @@ public class Application {
     public void run() {
         this.isRunning = true;
         GL.createCapabilities();
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
         float lastTime = getTime();
 
