@@ -2,11 +2,14 @@ package org.chapzlock.core.math;
 
 import java.nio.FloatBuffer;
 
+import lombok.ToString;
+
 /**
  * This class represents a (x,y,z)-Vector. GLSL equivalent to vec3.
  *
  * @author Heiko Brumme
  */
+@ToString
 public class Vector3f {
 
     public float x;

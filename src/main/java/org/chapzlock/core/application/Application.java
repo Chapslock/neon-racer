@@ -16,11 +16,13 @@ import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
 
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class Application {
     private static Application INSTANCE;
+    @Getter
     private ApplicationSpecification appSpec;
     private Window window;
     private boolean isRunning = false;

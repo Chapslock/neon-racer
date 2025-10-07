@@ -2,20 +2,22 @@ package org.chapzlock.core.graphics;
 
 import static org.lwjgl.opengl.GL20.*;
 
+import org.chapzlock.core.graphics.shaders.StaticShader;
+
 /**
  * A generic material
  * Can accept just a static shader or a shader and a texture
  */
 public class Material {
-    private final ShaderProgram shader;
+    private final StaticShader shader;
     private final Texture texture; // nullable
 
-    public Material(ShaderProgram shader, Texture texture) {
+    public Material(StaticShader shader, Texture texture) {
         this.shader = shader;
         this.texture = texture;
     }
 
-    public Material(ShaderProgram shader) {
+    public Material(StaticShader shader) {
         this.shader = shader;
         this.texture = null;
     }
@@ -37,7 +39,7 @@ public class Material {
         shader.unbind();
     }
 
-    public ShaderProgram getShader() {
+    public StaticShader getShader() {
         return shader;
     }
 }

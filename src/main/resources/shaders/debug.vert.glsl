@@ -5,9 +5,12 @@ layout(location = 1) in vec2 inTextureCoords;
 
 out vec2 passTextureCoords;
 
+uniform mat4 transformationMatrix;
+uniform mat4 projectionMatrix;
+uniform mat4 viewMatrix;
+
 void main()
 {
-    // Pass vertex directly to clip space
-    gl_Position = vec4(position, 1.0);
+    gl_Position = projectionMatrix * viewMatrix * transformationMatrix * vec4(position, 1.0);
     passTextureCoords = inTextureCoords;
 }

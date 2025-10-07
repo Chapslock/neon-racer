@@ -4,6 +4,7 @@ import java.nio.FloatBuffer;
 
 import org.chapzlock.core.files.FileUtils;
 import org.chapzlock.core.math.Matrix4f;
+import org.chapzlock.core.math.Vector3f;
 import org.lwjgl.system.MemoryStack;
 import static org.lwjgl.opengl.GL20.*;
 
@@ -62,6 +63,20 @@ public abstract class ShaderProgram {
     public void setUniform(String name, float value) {
         int loc = glGetUniformLocation(programId, name);
         glUniform1f(loc, value);
+    }
+
+    public void setUniform(String name, Vector3f value) {
+        int location = glGetUniformLocation(programId, name);
+        glUniform3f(programId, value.x, value.y, value.z);
+    }
+
+    public void setUniform(String name, boolean value) {
+        int location = glGetUniformLocation(programId, name);
+        float valueToLoad = 0;
+        if (value) {
+            valueToLoad = 1;
+        }
+        glUniform1f(location, valueToLoad);
     }
 
     public void setUniform(String name, Matrix4f value) {
