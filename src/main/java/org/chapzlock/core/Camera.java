@@ -45,10 +45,10 @@ public class Camera {
             position.z+=camMoveSpeed;
         }
         if (Input.isKeyPressed(GLFW.GLFW_KEY_A)) {
-            position.x+=camMoveSpeed;
+            position.x-=camMoveSpeed;
         }
         if (Input.isKeyPressed(GLFW.GLFW_KEY_D)) {
-            position.x-=camMoveSpeed;
+            position.x+=camMoveSpeed;
         }
     }
 
