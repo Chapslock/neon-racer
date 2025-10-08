@@ -17,4 +17,8 @@ public class WindowSpecification {
     private boolean isResizable = true;
     @Builder.Default
     private boolean isVSyncEnabled = true;
+
+    public float getAspectRatio() {
+        return (float) width / (float) height;
+    }
 }

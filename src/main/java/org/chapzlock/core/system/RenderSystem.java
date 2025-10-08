@@ -1,15 +1,19 @@
 package org.chapzlock.core.system;
 
+import org.chapzlock.core.application.Application;
 import org.chapzlock.core.component.CameraComponent;
-import org.chapzlock.core.component.orchestration.ComponentRegistry;
-import org.chapzlock.core.entity.EntityView;
 import org.chapzlock.core.component.MaterialComponent;
 import org.chapzlock.core.component.MeshComponent;
 import org.chapzlock.core.component.TransformComponent;
+import org.chapzlock.core.component.orchestration.ComponentRegistry;
+import org.chapzlock.core.entity.EntityView;
 import org.chapzlock.core.math.MathUtil;
 import org.chapzlock.core.math.Matrix4f;
 
 public class RenderSystem implements System {
+    private static final float FIELD_OF_VIEW = 70f;
+    private static final float NEAR_PLANE = 0.1f;
+    private static final float FAR_PLANE = 1000f;
     private final ComponentRegistry registry;
 
     public RenderSystem(ComponentRegistry registry) {
@@ -32,10 +36,10 @@ public class RenderSystem implements System {
                 transform.getScale()
             ));
             materialComponent.material().getShader().loadProjectionMatrix(Matrix4f.perspective(
-                70f,
-                600f / 400f,
-                0.1f,
-                1000f
+                FIELD_OF_VIEW,
+                Application.get().getAppSpec().getWindowSpec().getAspectRatio(),
+                NEAR_PLANE,
+                FAR_PLANE
             ));
 
             materialComponent.material().getShader().loadViewMatrix(MathUtil.createViewMatrix(
@@ -49,4 +53,5 @@ public class RenderSystem implements System {
 
         }
     }
+
 }

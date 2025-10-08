@@ -11,60 +11,108 @@ import java.util.UUID;
 import org.chapzlock.core.component.Component;
 import org.chapzlock.core.entity.EntityView;
 
+/**
+ * Central registry for all the components and entities tied to them
+ * Mainly used in Systems to execute logic
+ */
 public class ComponentRegistry {
-    private Map<Class<? extends Component>, EntityComponentStore<? extends Component>> componentTypeToStoreMap = new HashMap<>();
+    private final Map<Class<? extends Component>, ComponentStore<? extends Component>> registry = new HashMap<>();
 
-    // Register a new type of component store if it doesn't exist
+    /**
+     * Tries to find a componentStore of a specific type.
+     * If not such store exists, then creates an entry for it in the registry
+     *
+     * @param type Type of component used for search
+     * @param <T>
+     * @return always returns the store for the specified type
+     */
     @SuppressWarnings("unchecked")
-    private <T extends Component> EntityComponentStore<T> getStore(Class<T> type) {
-        return (EntityComponentStore<T>) componentTypeToStoreMap.computeIfAbsent(type, t -> new EntityComponentStore<T>());
+    private <T extends Component> ComponentStore<T> getStoreOfTypeOrRegisterNew(Class<T> type) {
+        return (ComponentStore<T>) registry.computeIfAbsent(type, t -> new ComponentStore<T>());
     }
 
-    // Add a component to an entity
+    /**
+     * Add a component to an entity.
+     *
+     * @param entityId
+     * @param component
+     * @param <T>
+     */
+    @SuppressWarnings("unchecked")
     public <T extends Component> void addComponent(UUID entityId, T component) {
-        getStore((Class<T>) component.getClass()).add(entityId, component);
+        getStoreOfTypeOrRegisterNew((Class<T>) component.getClass()).addComponentToStore(entityId, component);
     }
 
-    // Get a component from an entity
+    /**
+     * Get a component from an entity
+     *
+     * @param entityId
+     * @param type     the type of component to search for
+     * @param <T>
+     * @return Component if it exists on an entity otherwise null
+     */
     public <T extends Component> T getComponent(UUID entityId, Class<T> type) {
-        return getStore(type).get(entityId);
+        return getStoreOfTypeOrRegisterNew(type).getComponentForEntity(entityId);
     }
 
-    // Remove a component from an entity
+    /**
+     * Remove a component from an entity
+     * @param entityId entity from which to remove the component
+     * @param type the component to remove
+     * @param <T>
+     */
     public <T extends Component> void removeComponent(UUID entityId, Class<T> type) {
-        getStore(type).remove(entityId);
+        getStoreOfTypeOrRegisterNew(type).remove(entityId);
     }
 
-    // Iterate all components of a given type
+    /**
+     * Finds all entries of a single type from the registry
+     * @param type
+     * @return
+     * @param <T>
+     */
     public <T extends Component> Collection<Entry<UUID, T>> allComponents(Class<T> type) {
-        return getStore(type).all();
+        return getStoreOfTypeOrRegisterNew(type).getAllEntries();
     }
 
-    // 🔑 New: Query entities that have all required components
-    public List<EntityView> view(Class<? extends Component>... required) {
+    /**
+     * Queries entities that have all the required components attached
+     *
+     * @param requiredComponents varargs list of required component classes
+     * @return List of entity views, which have all the required components. Returns an empty list if no matches are found
+     */
+    @SafeVarargs
+    public final List<EntityView> view(Class<? extends Component>... requiredComponents) {
         List<EntityView> results = new ArrayList<>();
 
-        // Start from the first store to reduce iteration cost
-        if (required.length == 0) return results;
+        if (requiredComponents.length == 0) {
+            return results;
+        }
 
-        EntityComponentStore<?> baseStore = componentTypeToStoreMap.get(required[0]);
-        if (baseStore == null) return results;
+        // Find the store linked to the first component
+        ComponentStore<?> baseStore = registry.get(requiredComponents[0]);
+        if (baseStore == null) {
+            System.out.println("Could not find any entities with component: " + requiredComponents[0]);
+            return results;
+        }
 
-        for (UUID id : baseStore.ids()) {
-            Map<Class<? extends Component>, Component> comps = new HashMap<>();
-            boolean valid = true;
+        //Loop through all the entities in the first store that was found
+        for (UUID entityId : baseStore.entityIds()) {
+            Map<Class<? extends Component>, Component> components = new HashMap<>();
+            boolean hasAllRequiredComponents = true;
 
-            for (Class<? extends Component> type : required) {
-                EntityComponentStore<?> store = componentTypeToStoreMap.get(type);
-                if (store == null || !store.has(id)) {
-                    valid = false;
+            //Make sure the entity has all other required components as well
+            for (Class<? extends Component> componentType : requiredComponents) {
+                ComponentStore<?> store = registry.get(componentType);
+                if (store == null || !store.hasComponent(entityId)) {
+                    hasAllRequiredComponents = false;
                     break;
                 }
-                comps.put(type, store.get(id));
+                components.put(componentType, store.getComponentForEntity(entityId));
             }
 
-            if (valid) {
-                results.add(new EntityView(id, comps));
+            if (hasAllRequiredComponents) {
+                results.add(EntityView.of(entityId, components));
             }
         }
         return results;

@@ -5,17 +5,26 @@ import java.util.UUID;
 
 import org.chapzlock.core.component.Component;
 
+import lombok.Getter;
+
+/**
+ * View of a single entity and all of its requested components
+ */
 public class EntityView {
+    @Getter
     private final UUID id;
     private final Map<Class<? extends Component>, Component> components;
 
-    public EntityView(UUID id, Map<Class<? extends Component>, Component> components) {
+    private EntityView(UUID id, Map<Class<? extends Component>, Component> components) {
         this.id = id;
         this.components = components;
     }
 
-    public UUID getId() {
-        return id;
+    public static EntityView of(
+        UUID id,
+        Map<Class<? extends Component>, Component> components
+    ) {
+        return new EntityView(id, components);
     }
 
     @SuppressWarnings("unchecked")
