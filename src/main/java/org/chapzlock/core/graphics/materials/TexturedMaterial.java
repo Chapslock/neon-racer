@@ -4,23 +4,23 @@ import static org.lwjgl.opengl.GL20.*;
 
 import org.chapzlock.core.graphics.Material;
 import org.chapzlock.core.graphics.Texture;
-import org.chapzlock.core.graphics.shaders.StaticShader;
+import org.chapzlock.core.graphics.shaders.TextureShader;
 
 /**
  * A generic material
  * Can accept just a static shader or a shader and a texture
  */
 public class TexturedMaterial implements Material {
-    private final StaticShader shader;
+    private final TextureShader shader;
     private final Texture texture; // nullable
 
     public TexturedMaterial(Texture texture) {
-        this.shader = new StaticShader();
+        this.shader = new TextureShader();
         this.texture = texture;
     }
 
     public TexturedMaterial() {
-        this.shader = new StaticShader();
+        this.shader = new TextureShader();
         this.texture = null;
     }
 
@@ -44,7 +44,7 @@ public class TexturedMaterial implements Material {
     }
 
     @Override
-    public StaticShader getShader() {
+    public TextureShader getShader() {
         return shader;
     }
 }

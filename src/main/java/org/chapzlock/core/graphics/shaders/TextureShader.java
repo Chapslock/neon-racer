@@ -3,16 +3,16 @@ package org.chapzlock.core.graphics.shaders;
 import org.chapzlock.core.graphics.ShaderProgram;
 import org.chapzlock.core.math.Matrix4f;
 
-public class StaticShader extends ShaderProgram {
+public class TextureShader extends ShaderProgram {
 
-    private static final String VERTEX_FILE = "shaders/debug.vert.glsl";
-    private static final String FRAGMENT_FILE = "shaders/debug.frag.glsl";
+    private static final String VERTEX_FILE = "shaders/textured.vertex.glsl";
+    private static final String FRAGMENT_FILE = "shaders/textured.fragment.glsl";
 
     private static final String UNIFORM_TRANSFORMATION_MATRIX = "transformationMatrix";
     private static final String UNIFORM_PROJECTION_MATRIX = "projectionMatrix";
     private static final String UNIFORM_VIEW_MATRIX = "viewMatrix";
 
-    public StaticShader() {
+    public TextureShader() {
         super(VERTEX_FILE, FRAGMENT_FILE);
     }
 
