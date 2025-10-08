@@ -21,6 +21,7 @@ import static org.lwjgl.opengl.GL30.glVertexAttribPointer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
+import org.chapzlock.core.geometry.MeshData;
 import org.lwjgl.system.MemoryUtil;
 
 /**
@@ -31,9 +32,13 @@ public class Mesh {
     private final int vaoId;
     private final int vertexCount;
 
-    private final int posVboId;
-    private final int texVboId;
-    private final int idxVboId;
+    private final int positionsVboId;
+    private final int textureCoordinatesVboId;
+    private final int indicesVboId;
+
+    public Mesh(MeshData meshData) {
+        this(meshData.positions(), meshData.texCoords(), meshData.indices());
+    }
 
     public Mesh(float[] positions, float[] texCoords, int[] indices) {
         vertexCount = indices.length;
@@ -43,37 +48,37 @@ public class Mesh {
         glBindVertexArray(vaoId);
 
         // ==== Positions VBO ====
-        posVboId = glGenBuffers();
+        positionsVboId = glGenBuffers();
         FloatBuffer posBuffer = MemoryUtil.memAllocFloat(positions.length);
         posBuffer.put(positions).flip();
 
-        glBindBuffer(GL_ARRAY_BUFFER, posVboId);
+        glBindBuffer(GL_ARRAY_BUFFER, positionsVboId);
         glBufferData(GL_ARRAY_BUFFER, posBuffer, GL_STATIC_DRAW);
         // location = 0 in shader (vec3 aPos or vec2 aPos for 2D)
-        glVertexAttribPointer(Graphics.SHADER_POSITION_ATTRIBUTE_INDEX, 3, GL_FLOAT, false, 0, 0);
-        glEnableVertexAttribArray(Graphics.SHADER_POSITION_ATTRIBUTE_INDEX);
+        glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+        glEnableVertexAttribArray(0);
 
         MemoryUtil.memFree(posBuffer);
 
         // ==== Texture Coordinates VBO ====
-        texVboId = glGenBuffers();
+        textureCoordinatesVboId = glGenBuffers();
         FloatBuffer texBuffer = MemoryUtil.memAllocFloat(texCoords.length);
         texBuffer.put(texCoords).flip();
 
-        glBindBuffer(GL_ARRAY_BUFFER, texVboId);
+        glBindBuffer(GL_ARRAY_BUFFER, textureCoordinatesVboId);
         glBufferData(GL_ARRAY_BUFFER, texBuffer, GL_STATIC_DRAW);
         // location = 1 in shader (vec2 aTexCoord)
-        glVertexAttribPointer(Graphics.SHADER_TEXTURE_COORDINATES_ATTRIBUTE_INDEX, 2, GL_FLOAT, false, 0, 0);
-        glEnableVertexAttribArray(Graphics.SHADER_TEXTURE_COORDINATES_ATTRIBUTE_INDEX);
+        glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
+        glEnableVertexAttribArray(1);
 
         MemoryUtil.memFree(texBuffer);
 
         // ==== Indices (EBO) ====
-        idxVboId = glGenBuffers();
+        indicesVboId = glGenBuffers();
         IntBuffer idxBuffer = MemoryUtil.memAllocInt(indices.length);
         idxBuffer.put(indices).flip();
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idxVboId);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indicesVboId);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, idxBuffer, GL_STATIC_DRAW);
 
         MemoryUtil.memFree(idxBuffer);
@@ -86,13 +91,13 @@ public class Mesh {
 
     public void render() {
         glBindVertexArray(vaoId);
-        glEnableVertexAttribArray(Graphics.SHADER_POSITION_ATTRIBUTE_INDEX); // positions
-        glEnableVertexAttribArray(Graphics.SHADER_TEXTURE_COORDINATES_ATTRIBUTE_INDEX); // texCoords
+        glEnableVertexAttribArray(0); // positions
+        glEnableVertexAttribArray(1); // texCoords
 
         glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, 0);
 
-        glDisableVertexAttribArray(Graphics.SHADER_POSITION_ATTRIBUTE_INDEX);
-        glDisableVertexAttribArray(Graphics.SHADER_TEXTURE_COORDINATES_ATTRIBUTE_INDEX);
+        glDisableVertexAttribArray(0);
+        glDisableVertexAttribArray(1);
         glBindVertexArray(0);
     }
 
@@ -102,11 +107,11 @@ public class Mesh {
 
         // Delete buffers
         glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glDeleteBuffers(posVboId);
-        glDeleteBuffers(texVboId);
+        glDeleteBuffers(positionsVboId);
+        glDeleteBuffers(textureCoordinatesVboId);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        glDeleteBuffers(idxVboId);
+        glDeleteBuffers(indicesVboId);
 
         // Delete VAO
         glBindVertexArray(0);

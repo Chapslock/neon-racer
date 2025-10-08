@@ -8,14 +8,14 @@ import org.chapzlock.core.math.Vector3f;
 import org.lwjgl.system.MemoryStack;
 import static org.lwjgl.opengl.GL20.*;
 
-public abstract class ShaderProgram {
+public abstract class ShaderProgram implements Shader {
     private final int programId;
 
     public ShaderProgram(String pathToVertexShaderFile, String pathToFragmentShaderFile) {
         String vertexShaderFile = FileUtils.loadFileAsString(pathToVertexShaderFile);
         String fragmentShaderFile = FileUtils.loadFileAsString(pathToFragmentShaderFile);
-        int vertexShaderId = createShader(vertexShaderFile, GL_VERTEX_SHADER);
-        int fragmentShaderId = createShader(fragmentShaderFile, GL_FRAGMENT_SHADER);
+        int vertexShaderId = compileShader(vertexShaderFile, GL_VERTEX_SHADER);
+        int fragmentShaderId = compileShader(fragmentShaderFile, GL_FRAGMENT_SHADER);
 
         programId = glCreateProgram();
         glAttachShader(programId, vertexShaderId);
@@ -30,7 +30,7 @@ public abstract class ShaderProgram {
         glDeleteShader(fragmentShaderId);
     }
 
-    private int createShader(String code, int type) {
+    private int compileShader(String code, int type) {
         int shaderId = glCreateShader(type);
         glShaderSource(shaderId, code);
         glCompileShader(shaderId);
@@ -49,7 +49,7 @@ public abstract class ShaderProgram {
         glUseProgram(0);
     }
 
-    public void cleanup() {
+    public void onDestroy() {
         unbind();
         glDeleteProgram(programId);
     }

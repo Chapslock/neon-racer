@@ -77,6 +77,8 @@ public class Application {
         this.window.destroy();
         INSTANCE = null;
 
+        this.layerStack.forEach(Layer::onDestroy);
+
         // Terminate GLFW and free the error callback
         glfwTerminate();
         Objects.requireNonNull(glfwSetErrorCallback(null)).free();
