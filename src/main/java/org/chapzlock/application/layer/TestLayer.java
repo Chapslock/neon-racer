@@ -24,7 +24,7 @@ import org.chapzlock.core.system.System;
 
 public class TestLayer implements Layer {
 
-    private ComponentRegistry registry = new ComponentRegistry();
+    private final ComponentRegistry registry = new ComponentRegistry();
 
     private List<System> systems = List.of(
         new RenderSystem(registry),

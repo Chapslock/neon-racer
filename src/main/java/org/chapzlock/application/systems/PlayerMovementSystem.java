@@ -18,19 +18,18 @@ public class PlayerMovementSystem implements System {
         for (EntityView e : registry.view(PlayerTag.class, TransformComponent.class, InputComponent.class)) {
             var input = e.get(InputComponent.class);
             var transform = e.get(TransformComponent.class);
-            float playerSpeed = deltaTime;
 
             if (input.isMovingForward()) {
-                transform.getPosition().y += playerSpeed;
+                transform.getPosition().y += deltaTime;
             }
             if (input.isMovingBackwards()) {
-                transform.getPosition().y -= playerSpeed;
+                transform.getPosition().y -= deltaTime;
             }
             if (input.isMovingLeft()) {
-                transform.getPosition().x -= playerSpeed;
+                transform.getPosition().x -= deltaTime;
             }
             if (input.isMovingRight()) {
-                transform.getPosition().x += playerSpeed;
+                transform.getPosition().x += deltaTime;
             }
         }
     }

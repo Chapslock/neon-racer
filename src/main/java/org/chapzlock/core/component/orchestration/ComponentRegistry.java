@@ -1,11 +1,9 @@
 package org.chapzlock.core.component.orchestration;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.UUID;
 
 import org.chapzlock.core.component.Component;
@@ -23,7 +21,7 @@ public class ComponentRegistry {
      * If not such store exists, then creates an entry for it in the registry
      *
      * @param type Type of component used for search
-     * @param <T>
+     * @param <T> implements Component
      * @return always returns the store for the specified type
      */
     @SuppressWarnings("unchecked")
@@ -34,9 +32,9 @@ public class ComponentRegistry {
     /**
      * Add a component to an entity.
      *
-     * @param entityId
-     * @param component
-     * @param <T>
+     * @param entityId id of the entity
+     * @param component The component to add
+     * @param <T> implements Component
      */
     @SuppressWarnings("unchecked")
     public <T extends Component> void addComponent(UUID entityId, T component) {
@@ -46,9 +44,9 @@ public class ComponentRegistry {
     /**
      * Get a component from an entity
      *
-     * @param entityId
+     * @param entityId id of the entity
      * @param type     the type of component to search for
-     * @param <T>
+     * @param <T> implements Component
      * @return Component if it exists on an entity otherwise null
      */
     public <T extends Component> T getComponent(UUID entityId, Class<T> type) {
@@ -59,20 +57,20 @@ public class ComponentRegistry {
      * Remove a component from an entity
      * @param entityId entity from which to remove the component
      * @param type the component to remove
-     * @param <T>
+     * @param <T> implements Component
      */
     public <T extends Component> void removeComponent(UUID entityId, Class<T> type) {
         getStoreOfTypeOrRegisterNew(type).remove(entityId);
     }
 
     /**
-     * Finds all entries of a single type from the registry
-     * @param type
-     * @return
-     * @param <T>
+     * Finds all entities that have the component attached
+     * @param type Type of the component to search for
+     * @return Map of entity Ids and components
+     * @param <T> implements Component
      */
-    public <T extends Component> Collection<Entry<UUID, T>> allComponents(Class<T> type) {
-        return getStoreOfTypeOrRegisterNew(type).getAllEntries();
+    public <T extends Component> Map<UUID, T> getStoreForType(Class<T> type) {
+        return getStoreOfTypeOrRegisterNew(type).getStore();
     }
 
     /**
