@@ -26,7 +26,7 @@ public class TestLayer implements Layer {
 
     private final ComponentRegistry registry = new ComponentRegistry();
 
-    private List<System> systems = List.of(
+    private final List<System> systems = List.of(
         new RenderSystem(registry),
         new PlayerMovementSystem(registry),
         new PlayerInputSystem(registry)
