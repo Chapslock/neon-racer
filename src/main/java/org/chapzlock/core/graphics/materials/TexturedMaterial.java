@@ -1,6 +1,7 @@
 package org.chapzlock.core.graphics.materials;
 
-import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL20.GL_TEXTURE0;
+import static org.lwjgl.opengl.GL20.glActiveTexture;
 
 import org.chapzlock.core.graphics.Material;
 import org.chapzlock.core.graphics.Texture;
@@ -31,7 +32,7 @@ public class TexturedMaterial implements Material {
         if (texture != null) {
             glActiveTexture(GL_TEXTURE0);
             texture.bind();
-            shader.setUniform("uTexture", 0); // tells shader to use texture unit 0
+            shader.setUniform("textureSampler", 0); // tells shader to use texture unit 0
         }
     }
 

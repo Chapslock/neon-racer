@@ -1,5 +1,6 @@
 package org.chapzlock.core.graphics;
 
+import org.chapzlock.core.component.LightComponent;
 import org.chapzlock.core.math.Matrix4f;
 
 public interface Shader {
@@ -9,5 +10,10 @@ public interface Shader {
     default void loadTransformationMatrix(Matrix4f matrix4f) {};
     default void loadProjectionMatrix(Matrix4f matrix4f) {};
     default void loadViewMatrix(Matrix4f matrix4f) {};
+
+    default void loadLight(LightComponent light) {
+    }
+
+    ;
 
 }

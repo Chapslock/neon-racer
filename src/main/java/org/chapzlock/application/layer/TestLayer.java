@@ -6,15 +6,19 @@ import java.util.UUID;
 import org.chapzlock.application.component.InputComponent;
 import org.chapzlock.application.systems.PlayerInputSystem;
 import org.chapzlock.application.systems.PlayerMovementSystem;
+import org.chapzlock.application.systems.PlayerRotateSystem;
 import org.chapzlock.application.tags.PlayerTag;
 import org.chapzlock.core.Layer;
 import org.chapzlock.core.component.CameraComponent;
+import org.chapzlock.core.component.LightComponent;
 import org.chapzlock.core.component.MaterialComponent;
 import org.chapzlock.core.component.MeshComponent;
 import org.chapzlock.core.component.TransformComponent;
 import org.chapzlock.core.component.orchestration.ComponentRegistry;
 import org.chapzlock.core.entity.Entity;
-import org.chapzlock.core.geometry.MeshFactory;
+import org.chapzlock.core.files.FileUtils;
+import org.chapzlock.core.geometry.MeshData;
+import org.chapzlock.core.graphics.Color;
 import org.chapzlock.core.graphics.Mesh;
 import org.chapzlock.core.graphics.Texture;
 import org.chapzlock.core.graphics.materials.TexturedMaterial;
@@ -29,21 +33,28 @@ public class TestLayer implements Layer {
     private final List<System> systems = List.of(
         new RenderSystem(registry),
         new PlayerMovementSystem(registry),
-        new PlayerInputSystem(registry)
+        new PlayerInputSystem(registry),
+        new PlayerRotateSystem(registry)
     );
 
     public TestLayer() {
-        UUID boxEntity = Entity.create();
-        Mesh boxMesh = new Mesh(MeshFactory.createCube(1));
-        TexturedMaterial boxMaterial = new TexturedMaterial(Texture.loadTexture("textures/rubics.png"));
+        UUID player = Entity.create();
+        MeshData meshData = FileUtils.loadWavefrontFileToMesh("wavefront/funcar.obj");
+        Mesh playerMesh = new Mesh(meshData);
+        TexturedMaterial playerMat = new TexturedMaterial(Texture.loadTexture("textures/funcar.png"));
 
-        registry.addComponent(boxEntity, new TransformComponent(new Vector3f(0, 0, -5)));
-        registry.addComponent(boxEntity, new CameraComponent());
-        registry.addComponent(boxEntity, new MeshComponent(boxMesh));
-        registry.addComponent(boxEntity, new MaterialComponent(boxMaterial));
-        registry.addComponent(boxEntity, new PlayerTag());
-        registry.addComponent(boxEntity, new InputComponent());
+        registry.addComponent(player, new TransformComponent(new Vector3f(0, 0, -5), new Vector3f(90, 0, 180)));
+        registry.addComponent(player, new MeshComponent(playerMesh));
+        registry.addComponent(player, new MaterialComponent(playerMat));
+        registry.addComponent(player, new PlayerTag());
+        registry.addComponent(player, new InputComponent());
 
+
+        UUID light = Entity.create();
+        registry.addComponent(light, new LightComponent(new Vector3f(0, 0, 10), Color.WHITE));
+
+        UUID camera = Entity.create();
+        registry.addComponent(camera, new CameraComponent());
     }
 
     @Override
