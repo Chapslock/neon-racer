@@ -15,8 +15,6 @@ void main()
     vec3 unitLight = normalize(toLightVector);
     float dotProduct = dot(unitNormal, unitLight);
     float brightness = max(dotProduct, 0.0);
-    //vec3 diffuse = brightness * lightColor;
-    //TODO: Charl LightColor is not reaching here for some reason
-    vec3 diffuse = brightness * vec3(1, 1, 1);
+    vec3 diffuse = brightness * lightColor;
     fragmentColor = vec4(diffuse, 1.0) * texture(textureSampler, passTextureCoords);
 }
