@@ -22,10 +22,10 @@ import org.chapzlock.core.graphics.Color;
 import org.chapzlock.core.graphics.Mesh;
 import org.chapzlock.core.graphics.Texture;
 import org.chapzlock.core.graphics.materials.TexturedMaterial;
-import org.chapzlock.core.math.Vector3f;
 import org.chapzlock.core.system.CameraFreeRoamSystem;
 import org.chapzlock.core.system.RenderSystem;
 import org.chapzlock.core.system.System;
+import org.joml.Vector3f;
 
 public class TestLayer implements Layer {
 

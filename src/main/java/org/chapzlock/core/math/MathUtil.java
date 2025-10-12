@@ -1,5 +1,8 @@
 package org.chapzlock.core.math;
 
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -16,22 +19,22 @@ public class MathUtil {
         Matrix4f matrix = new Matrix4f(); // identity by default
 
         // Apply translation
-        Matrix4f translationMatrix = Matrix4f.translate(translation.x, translation.y, translation.z);
+        Matrix4f translationMatrix = new Matrix4f().translate(translation.x, translation.y, translation.z);
 
         // Apply rotations (order: X, Y, Z for example)
-        Matrix4f rotX = Matrix4f.rotate(rotation.x, 1, 0, 0);
-        Matrix4f rotY = Matrix4f.rotate(rotation.y, 0, 1, 0);
-        Matrix4f rotZ = Matrix4f.rotate(rotation.z, 0, 0, 1);
+        Matrix4f rotX = new Matrix4f().rotate(rotation.x, 1, 0, 0);
+        Matrix4f rotY = new Matrix4f().rotate(rotation.y, 0, 1, 0);
+        Matrix4f rotZ = new Matrix4f().rotate(rotation.z, 0, 0, 1);
 
         // Apply scale
-        Matrix4f scaleMatrix = Matrix4f.scale(scale, scale, scale);
+        Matrix4f scaleMatrix = new Matrix4f().scale(scale, scale, scale);
 
         // Combine them: T * Rz * Ry * Rx * S
         matrix = translationMatrix
-            .multiply(rotZ)
-            .multiply(rotY)
-            .multiply(rotX)
-            .multiply(scaleMatrix);
+            .mul(rotZ)
+            .mul(rotY)
+            .mul(rotX)
+            .mul(scaleMatrix);
 
         return matrix;
     }
@@ -46,21 +49,18 @@ public class MathUtil {
     public static Matrix4f createViewMatrix(Vector3f position, Vector3f rotation) {
         Matrix4f view = new Matrix4f();
 
-        // Start with identity
-        view.setIdentity();
-
         // Apply rotations (note: order matters!)
-        Matrix4f pitch = Matrix4f.rotate(rotation.x, 1, 0, 0);
-        Matrix4f yaw   = Matrix4f.rotate(rotation.y, 0, 1, 0);
-        Matrix4f roll  = Matrix4f.rotate(rotation.z, 0, 0, 1);
+        Matrix4f pitch = new Matrix4f().rotate(rotation.x, 1, 0, 0);
+        Matrix4f yaw = new Matrix4f().rotate(rotation.y, 0, 1, 0);
+        Matrix4f roll = new Matrix4f().rotate(rotation.z, 0, 0, 1);
 
         // Apply in order: roll * pitch * yaw
-        view = roll.multiply(pitch).multiply(yaw);
+        view = roll.mul(pitch).mul(yaw);
 
         // Apply translation (inverse of camera position)
-        Matrix4f translation = Matrix4f.translate(-position.x, -position.y, -position.z);
+        Matrix4f translation = new Matrix4f().translate(-position.x, -position.y, -position.z);
 
-        view = view.multiply(translation);
+        view = view.mul(translation);
 
         return view;
     }

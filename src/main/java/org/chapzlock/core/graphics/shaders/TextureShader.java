@@ -2,7 +2,7 @@ package org.chapzlock.core.graphics.shaders;
 
 import org.chapzlock.core.component.LightComponent;
 import org.chapzlock.core.graphics.ShaderProgram;
-import org.chapzlock.core.math.Matrix4f;
+import org.joml.Matrix4f;
 
 public class TextureShader extends ShaderProgram {
 

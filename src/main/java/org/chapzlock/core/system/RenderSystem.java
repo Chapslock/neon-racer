@@ -15,7 +15,7 @@ import org.chapzlock.core.component.orchestration.ComponentRegistry;
 import org.chapzlock.core.entity.EntityView;
 import org.chapzlock.core.logging.Log;
 import org.chapzlock.core.math.MathUtil;
-import org.chapzlock.core.math.Matrix4f;
+import org.joml.Matrix4f;
 
 public class RenderSystem implements System {
     private static final float FIELD_OF_VIEW = 70f;
@@ -39,7 +39,7 @@ public class RenderSystem implements System {
         }
 
         // --- Projection & View (calculated once per frame)
-        Matrix4f projectionMatrix = Matrix4f.perspective(
+        Matrix4f projectionMatrix = new Matrix4f().perspective(
             FIELD_OF_VIEW,
             Application.get().getAppSpec().getWindowSpec().getAspectRatio(),
             NEAR_PLANE,

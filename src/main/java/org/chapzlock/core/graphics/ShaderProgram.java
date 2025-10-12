@@ -27,8 +27,8 @@ import static org.lwjgl.opengl.GL20.glUseProgram;
 import java.nio.FloatBuffer;
 
 import org.chapzlock.core.files.FileUtils;
-import org.chapzlock.core.math.Matrix4f;
-import org.chapzlock.core.math.Vector3f;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.lwjgl.system.MemoryStack;
 
 public abstract class ShaderProgram implements Shader {
@@ -105,7 +105,7 @@ public abstract class ShaderProgram implements Shader {
     public void setUniform(String name, Matrix4f value) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             FloatBuffer fb = stack.mallocFloat(16);
-            value.toBuffer(fb);
+            value.get(fb);
             int loc = glGetUniformLocation(programId, name);
             glUniformMatrix4fv(loc, false, fb);
         }

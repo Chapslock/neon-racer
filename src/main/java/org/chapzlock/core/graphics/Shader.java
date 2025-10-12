@@ -1,7 +1,7 @@
 package org.chapzlock.core.graphics;
 
 import org.chapzlock.core.component.LightComponent;
-import org.chapzlock.core.math.Matrix4f;
+import org.joml.Matrix4f;
 
 public interface Shader {
     void bind();

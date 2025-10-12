@@ -1,7 +1,7 @@
 package org.chapzlock.core.graphics;
 
-import org.chapzlock.core.math.Vector3f;
-import org.chapzlock.core.math.Vector4f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 public final class Color {
 
