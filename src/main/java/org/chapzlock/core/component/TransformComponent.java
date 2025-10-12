@@ -10,6 +10,9 @@ import lombok.Setter;
 @Setter
 public class TransformComponent implements Component{
     private Vector3f position = new Vector3f(0, 0,0);
+    /**
+     * Rotation in degrees
+     */
     private Vector3f rotation = new Vector3f(0, 0, 0);
     private float scale = 1;
 

@@ -17,7 +17,7 @@ public class PlayerRotateSystem implements System {
         for (EntityView e : registry.view(PlayerTag.class, TransformComponent.class)) {
             var transform = e.get(TransformComponent.class);
 
-            float speed = 3 * deltaTime;
+            float speed = 10 * deltaTime;
             transform.getRotation().x += speed;
             transform.getRotation().y += speed;
             transform.getRotation().z += speed;

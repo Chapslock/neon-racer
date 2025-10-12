@@ -15,26 +15,24 @@ public class MathUtil {
      * @param scale
      * @return
      */
-    public static Matrix4f createTransformationMatrix(Vector3f translation, Vector3f rotation, float scale) {
-        Matrix4f matrix = new Matrix4f(); // identity by default
+    public static Matrix4f createTransformationMatrix(Vector3f translation, Vector3f rotationDegrees, float scale) {
+        Matrix4f matrix = new Matrix4f(); // identity
+
+        // Convert rotation from degrees to radians
+        float rotX = (float) Math.toRadians(rotationDegrees.x);
+        float rotY = (float) Math.toRadians(rotationDegrees.y);
+        float rotZ = (float) Math.toRadians(rotationDegrees.z);
 
         // Apply translation
-        Matrix4f translationMatrix = new Matrix4f().translate(translation.x, translation.y, translation.z);
+        matrix.translate(translation);
 
-        // Apply rotations (order: X, Y, Z for example)
-        Matrix4f rotX = new Matrix4f().rotate(rotation.x, 1, 0, 0);
-        Matrix4f rotY = new Matrix4f().rotate(rotation.y, 0, 1, 0);
-        Matrix4f rotZ = new Matrix4f().rotate(rotation.z, 0, 0, 1);
+        // Apply rotations (order: X → Y → Z, can adjust if needed)
+        matrix.rotate(rotX, 1, 0, 0)
+            .rotate(rotY, 0, 1, 0)
+            .rotate(rotZ, 0, 0, 1);
 
-        // Apply scale
-        Matrix4f scaleMatrix = new Matrix4f().scale(scale, scale, scale);
-
-        // Combine them: T * Rz * Ry * Rx * S
-        matrix = translationMatrix
-            .mul(rotZ)
-            .mul(rotY)
-            .mul(rotX)
-            .mul(scaleMatrix);
+        // Apply uniform scale
+        matrix.scale(scale);
 
         return matrix;
     }
@@ -46,21 +44,21 @@ public class MathUtil {
      * @param rotation Camera rotation in degrees (x = pitch, y = yaw, z = roll)
      * @return View matrix
      */
-    public static Matrix4f createViewMatrix(Vector3f position, Vector3f rotation) {
+    public static Matrix4f createViewMatrix(Vector3f position, Vector3f rotationDegrees) {
         Matrix4f view = new Matrix4f();
 
-        // Apply rotations (note: order matters!)
-        Matrix4f pitch = new Matrix4f().rotate(rotation.x, 1, 0, 0);
-        Matrix4f yaw = new Matrix4f().rotate(rotation.y, 0, 1, 0);
-        Matrix4f roll = new Matrix4f().rotate(rotation.z, 0, 0, 1);
+        // Convert to radians
+        float pitch = (float) Math.toRadians(rotationDegrees.x);
+        float yaw = (float) Math.toRadians(rotationDegrees.y);
+        float roll = (float) Math.toRadians(rotationDegrees.z);
 
-        // Apply in order: roll * pitch * yaw
-        view = roll.mul(pitch).mul(yaw);
+        // Apply rotations: yaw first, then pitch, then roll
+        view.rotate(-pitch, 1, 0, 0);
+        view.rotate(-yaw, 0, 1, 0);
+        view.rotate(-roll, 0, 0, 1);
 
-        // Apply translation (inverse of camera position)
-        Matrix4f translation = new Matrix4f().translate(-position.x, -position.y, -position.z);
-
-        view = view.mul(translation);
+        // Apply translation (inverse of position)
+        view.translate(-position.x, -position.y, -position.z);
 
         return view;
     }

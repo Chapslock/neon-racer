@@ -51,15 +51,13 @@ public class CameraComponent implements Component {
      * Returns the normalized right vector of the camera.
      */
     public Vector3f getRightVector() {
-        return getForwardVector().cross(WORLD_UP).normalize();
+        return new Vector3f(WORLD_UP.cross(getForwardVector(), new Vector3f()).normalize());
     }
 
     /**
      * Returns the normalized up vector of the camera.
      */
     public Vector3f getUpVector() {
-        return getRightVector()
-            .cross(getForwardVector())
-            .normalize();
+        return new Vector3f(getForwardVector()).cross(getRightVector(), new Vector3f()).normalize();
     }
 }
