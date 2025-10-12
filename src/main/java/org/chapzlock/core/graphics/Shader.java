@@ -7,13 +7,17 @@ public interface Shader {
     void bind();
     void unbind();
     void onDestroy();
-    default void loadTransformationMatrix(Matrix4f matrix4f) {};
-    default void loadProjectionMatrix(Matrix4f matrix4f) {};
-    default void loadViewMatrix(Matrix4f matrix4f) {};
+
+    default void loadTransformationMatrix(Matrix4f matrix4f) {
+    }
+
+    default void loadProjectionMatrix(Matrix4f matrix4f) {
+    }
+
+    default void loadViewMatrix(Matrix4f matrix4f) {
+    }
 
     default void loadLight(LightComponent light) {
     }
-
-    ;
 
 }

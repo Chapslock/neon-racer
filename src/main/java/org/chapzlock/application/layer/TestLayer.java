@@ -1,11 +1,11 @@
 package org.chapzlock.application.layer;
 
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 import org.chapzlock.application.component.InputComponent;
 import org.chapzlock.application.systems.PlayerInputSystem;
-import org.chapzlock.application.systems.PlayerMovementSystem;
 import org.chapzlock.application.systems.PlayerRotateSystem;
 import org.chapzlock.application.tags.PlayerTag;
 import org.chapzlock.core.Layer;
@@ -23,6 +23,7 @@ import org.chapzlock.core.graphics.Mesh;
 import org.chapzlock.core.graphics.Texture;
 import org.chapzlock.core.graphics.materials.TexturedMaterial;
 import org.chapzlock.core.math.Vector3f;
+import org.chapzlock.core.system.CameraFreeRoamSystem;
 import org.chapzlock.core.system.RenderSystem;
 import org.chapzlock.core.system.System;
 
@@ -32,9 +33,9 @@ public class TestLayer implements Layer {
 
     private final List<System> systems = List.of(
         new RenderSystem(registry),
-        new PlayerMovementSystem(registry),
         new PlayerInputSystem(registry),
-        new PlayerRotateSystem(registry)
+        new PlayerRotateSystem(registry),
+        new CameraFreeRoamSystem(registry)
     );
 
     public TestLayer() {
@@ -49,12 +50,33 @@ public class TestLayer implements Layer {
         registry.addComponent(player, new PlayerTag());
         registry.addComponent(player, new InputComponent());
 
+        generateCars(playerMesh, playerMat);
+
 
         UUID light = Entity.create();
-        registry.addComponent(light, new LightComponent(new Vector3f(0, 0, 10), Color.WHITE));
+        registry.addComponent(light, new LightComponent(new Vector3f(-5, 0, -10), Color.WHITE));
 
         UUID camera = Entity.create();
         registry.addComponent(camera, new CameraComponent());
+    }
+
+    private void generateCars(Mesh playerMesh, TexturedMaterial playerMat) {
+        Random rand = new Random();
+        for (int i = 0; i < 10000; i++) {
+            UUID id = Entity.create();
+            float x = rand.nextFloat(0, 200);
+            float y = rand.nextFloat(0, 200);
+            float z = rand.nextFloat(0, 200);
+            registry.addComponent(id, new TransformComponent(new Vector3f(x, y, -z), new Vector3f(x, y, z)));
+            registry.addComponent(id, new MeshComponent(playerMesh));
+            registry.addComponent(id, new MaterialComponent(playerMat));
+            registry.addComponent(id, new PlayerTag());
+        }
+    }
+
+    @Override
+    public void onInit() {
+        systems.forEach(System::onInit);
     }
 
     @Override

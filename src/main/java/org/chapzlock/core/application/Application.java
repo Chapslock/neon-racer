@@ -5,7 +5,6 @@ import static org.lwjgl.glfw.GLFW.glfwInit;
 import static org.lwjgl.glfw.GLFW.glfwPollEvents;
 import static org.lwjgl.glfw.GLFW.glfwSetErrorCallback;
 import static org.lwjgl.glfw.GLFW.glfwTerminate;
-import static org.lwjgl.opengl.GL11.glClearColor;
 
 import java.util.ArrayList;
 import java.util.Objects;
@@ -52,6 +51,8 @@ public class Application {
         GL.createCapabilities();
 
         float lastTime = getTime();
+
+        this.layerStack.forEach(Layer::onInit);
 
         while (this.isRunning) {
             glfwPollEvents();
