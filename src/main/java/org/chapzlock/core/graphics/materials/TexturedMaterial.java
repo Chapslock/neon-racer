@@ -3,6 +3,7 @@ package org.chapzlock.core.graphics.materials;
 import static org.lwjgl.opengl.GL20.GL_TEXTURE0;
 import static org.lwjgl.opengl.GL20.glActiveTexture;
 
+import org.chapzlock.core.component.ReflectionComponent;
 import org.chapzlock.core.graphics.Material;
 import org.chapzlock.core.graphics.Texture;
 import org.chapzlock.core.graphics.shaders.TextureShader;
@@ -14,6 +15,10 @@ import org.chapzlock.core.graphics.shaders.TextureShader;
 public class TexturedMaterial implements Material {
     private final TextureShader shader;
     private final Texture texture; // nullable
+    private final ReflectionComponent reflectionComponent = ReflectionComponent.builder()
+        .reflectivity(1)
+        .shineDamper(10)
+        .build();
 
     public TexturedMaterial(Texture texture) {
         this.shader = new TextureShader();
@@ -47,5 +52,10 @@ public class TexturedMaterial implements Material {
     @Override
     public TextureShader getShader() {
         return shader;
+    }
+
+    @Override
+    public ReflectionComponent getReflection() {
+        return this.reflectionComponent;
     }
 }

@@ -14,6 +14,8 @@ public class TextureShader extends ShaderProgram {
     private static final String UNIFORM_VIEW_MATRIX = "viewMatrix";
     private static final String UNIFORM_LIGHT_POSITION = "lightPosition";
     private static final String UNIFORM_LIGHT_COLOR = "lightColor";
+    private static final String UNIFORM_SHINER_DAMPER = "shineDamper";
+    private static final String UNIFORM_REFLECTIVITY = "reflectivity";
 
     public TextureShader() {
         super(VERTEX_FILE, FRAGMENT_FILE);
@@ -34,5 +36,10 @@ public class TextureShader extends ShaderProgram {
     public void loadLight(LightComponent light) {
         setUniform(UNIFORM_LIGHT_POSITION, light.position());
         setUniform(UNIFORM_LIGHT_COLOR, light.color().toVector3f());
+    }
+
+    public void loadShine(float shineDamper, float reflectivity) {
+        setUniform(UNIFORM_SHINER_DAMPER, shineDamper);
+        setUniform(UNIFORM_REFLECTIVITY, reflectivity);
     }
 }

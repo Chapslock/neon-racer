@@ -20,4 +20,7 @@ public interface Shader {
     default void loadLight(LightComponent light) {
     }
 
+    default void loadShine(float shineDamper, float reflectivity) {
+    }
+
 }

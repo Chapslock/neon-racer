@@ -76,6 +76,7 @@ public class RenderSystem implements System {
             if (light != null) {
                 shader.loadLight(light);
             }
+            shader.loadShine(material.material().getReflection().getShineDamper(), material.material().getReflection().getReflectivity());
 
             // Draw each entity in this batch
             for (EntityView entity : entry.getValue()) {
