@@ -1,8 +1,9 @@
 package org.chapzlock.core.system;
 
+import static org.joml.Math.clamp;
+
 import org.chapzlock.core.component.CameraComponent;
 import org.chapzlock.core.component.orchestration.ComponentRegistry;
-import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
 import lombok.RequiredArgsConstructor;
@@ -12,8 +13,8 @@ public class CameraFreeRoamSystem implements System {
 
     private final ComponentRegistry registry;
 
-    private float mouseSensitivity = .01f;
-    private float movementSpeed = 3f;
+    private static final float CAMERA_MOUSE_SENSITIVITY = .01f;
+    private static final float CAMERA_MOVEMENT_SPEED = 3f;
 
     private double lastMouseX, lastMouseY;
     private boolean firstMouse = true;
@@ -51,54 +52,44 @@ public class CameraFreeRoamSystem implements System {
         }
 
         double xOffset = mouseX - lastMouseX;
-        double yOffset = lastMouseY - mouseY; // invert Y
+        double yOffset = lastMouseY - mouseY;
         lastMouseX = mouseX;
         lastMouseY = mouseY;
 
-        float yaw = camera.getYaw() - (float) (xOffset * mouseSensitivity);
-        float pitch = camera.getPitch() + (float) (yOffset * mouseSensitivity);
+        float yaw = camera.getYaw() + (float) (xOffset * CAMERA_MOUSE_SENSITIVITY);
+        float pitch = camera.getPitch() + (float) (yOffset * CAMERA_MOUSE_SENSITIVITY);
 
-        // Clamp pitch to avoid flipping
-        pitch = Math.max(-89.9f, Math.min(89.9f, pitch));
+        pitch = clamp(-89f, 89f, pitch);
 
         camera.setYaw(yaw);
         camera.setPitch(pitch);
     }
 
     private void handleKeyboardInput(long window, CameraComponent camera, float deltaTime) {
-        float velocity = movementSpeed * deltaTime;
-
-        // Flatten forward and right vectors for XZ movement
-        Vector3f forward = new Vector3f(camera.getForwardVector());
-        forward.y = 0;
-        forward.normalize();
-
-        Vector3f right = new Vector3f(camera.getRightVector());
-        right.y = 0;
-        right.normalize();
+        float velocity = CAMERA_MOVEMENT_SPEED * deltaTime;
 
         // Move forward/back
         if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_W) == GLFW.GLFW_PRESS) {
-            camera.getPosition().add(new Vector3f(forward).mul(velocity));
+            camera.getPosition().add(camera.getCameraFront().mul(velocity));
         }
         if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_S) == GLFW.GLFW_PRESS) {
-            camera.getPosition().sub(new Vector3f(forward).mul(velocity));
+            camera.getPosition().sub(camera.getCameraFront().mul(velocity));
         }
 
         // Strafe left/right
         if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_A) == GLFW.GLFW_PRESS) {
-            camera.getPosition().sub(new Vector3f(right).mul(velocity));
+            camera.getPosition().sub(camera.getCameraRight().mul(velocity));
         }
         if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_D) == GLFW.GLFW_PRESS) {
-            camera.getPosition().add(new Vector3f(right).mul(velocity));
+            camera.getPosition().add(camera.getCameraRight().mul(velocity));
         }
 
         // Move up/down (vertical movement)
         if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_SPACE) == GLFW.GLFW_PRESS) {
-            camera.getPosition().add(new Vector3f(0, 1, 0).mul(velocity));
+            camera.getPosition().add(camera.getCameraUp().mul(velocity));
         }
         if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_LEFT_SHIFT) == GLFW.GLFW_PRESS) {
-            camera.getPosition().sub(new Vector3f(0, 1, 0).mul(velocity));
+            camera.getPosition().sub(camera.getCameraUp().mul(velocity));
         }
     }
 }

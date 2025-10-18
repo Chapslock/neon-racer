@@ -1,6 +1,11 @@
 package org.chapzlock.core.component;
 
 
+import static org.joml.Math.cos;
+import static org.joml.Math.sin;
+import static org.joml.Math.toRadians;
+
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import lombok.Getter;
@@ -15,7 +20,27 @@ public class CameraComponent implements Component {
      */
     private Vector3f rotation = new Vector3f(0, -90, 0);
 
-    private static final Vector3f WORLD_UP = new Vector3f(0, 1, 0);
+    /**
+     * Returns the normalized forward (front) vector of the camera.
+     */
+    public Vector3f getCameraFront() {
+        float yawRad = toRadians(getYaw());
+        float pitchRad = toRadians(getPitch());
+
+        Vector3f front = new Vector3f();
+        front.x = cos(yawRad) * cos(pitchRad);
+        front.y = sin(pitchRad);
+        front.z = sin(yawRad) * cos(pitchRad);
+        return front.normalize();
+    }
+
+    public Vector3f getCameraUp() {
+        return new Vector3f(0, 1, 0);
+    }
+
+    public Vector3f getCameraRight() {
+        return new Vector3f(getCameraFront()).cross(getCameraUp()).normalize();
+    }
 
     public float getYaw() {
         return rotation.y;
@@ -33,31 +58,7 @@ public class CameraComponent implements Component {
         rotation.x = value;
     }
 
-    /**
-     * Returns the normalized forward (front) vector of the camera.
-     */
-    public Vector3f getForwardVector() {
-        float yawRad = (float) Math.toRadians(getYaw());
-        float pitchRad = (float) Math.toRadians(getPitch());
-
-        Vector3f front = new Vector3f();
-        front.x = (float) (Math.cos(yawRad) * Math.cos(pitchRad));
-        front.y = (float) (Math.sin(pitchRad));
-        front.z = (float) (Math.sin(yawRad) * Math.cos(pitchRad));
-        return front.normalize();
-    }
-
-    /**
-     * Returns the normalized right vector of the camera.
-     */
-    public Vector3f getRightVector() {
-        return new Vector3f(WORLD_UP.cross(getForwardVector(), new Vector3f()).normalize());
-    }
-
-    /**
-     * Returns the normalized up vector of the camera.
-     */
-    public Vector3f getUpVector() {
-        return new Vector3f(getForwardVector()).cross(getRightVector(), new Vector3f()).normalize();
+    public Matrix4f getViewMatrix() {
+        return new Matrix4f().lookAt(getPosition(), getPosition().add(getCameraFront(), new Vector3f()), getCameraUp());
     }
 }

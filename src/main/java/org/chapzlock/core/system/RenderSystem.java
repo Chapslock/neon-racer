@@ -46,10 +46,7 @@ public class RenderSystem implements System {
             FAR_PLANE
         );
 
-        Matrix4f viewMatrix = MathUtil.createViewMatrix(
-            camera.getPosition(),
-            camera.getRotation()
-        );
+        Matrix4f viewMatrix = camera.getViewMatrix();
 
         LightComponent light = registry.view(LightComponent.class)
             .getFirst()
