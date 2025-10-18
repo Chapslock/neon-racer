@@ -1,19 +1,17 @@
 package org.chapzlock.core.entity;
 
-import java.util.UUID;
-
 public class Entity {
-    private final UUID id;
+    private final int id;
 
     private Entity() {
-        id = UUID.randomUUID();
+        id = EntityIdGenerator.nextId();
     }
 
-    private UUID getId() {
+    private int getId() {
         return id;
     }
 
-    public static UUID create() {
+    public static int create() {
         return new Entity().getId();
     }
 }

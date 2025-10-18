@@ -1,13 +1,18 @@
 package org.chapzlock.core.component.orchestration;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import org.chapzlock.core.component.Component;
 import org.chapzlock.core.entity.EntityView;
+
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 
 /**
  * Central registry for all the components and entities tied to them
@@ -37,7 +42,7 @@ public class ComponentRegistry {
      * @param <T> implements Component
      */
     @SuppressWarnings("unchecked")
-    public <T extends Component> void addComponent(UUID entityId, T component) {
+    public <T extends Component> void addComponent(int entityId, T component) {
         getStoreOfTypeOrRegisterNew((Class<T>) component.getClass()).addComponentToStore(entityId, component);
     }
 
@@ -49,7 +54,7 @@ public class ComponentRegistry {
      * @param <T> implements Component
      * @return Component if it exists on an entity otherwise null
      */
-    public <T extends Component> T getComponent(UUID entityId, Class<T> type) {
+    public <T extends Component> T getComponent(int entityId, Class<T> type) {
         return getStoreOfTypeOrRegisterNew(type).getComponentForEntity(entityId);
     }
 
@@ -59,7 +64,7 @@ public class ComponentRegistry {
      * @param type the component to remove
      * @param <T> implements Component
      */
-    public <T extends Component> void removeComponent(UUID entityId, Class<T> type) {
+    public <T extends Component> void removeComponent(int entityId, Class<T> type) {
         getStoreOfTypeOrRegisterNew(type).remove(entityId);
     }
 
@@ -69,7 +74,7 @@ public class ComponentRegistry {
      * @return Map of entity Ids and components
      * @param <T> implements Component
      */
-    public <T extends Component> Map<UUID, T> getStoreForType(Class<T> type) {
+    public <T extends Component> Int2ObjectMap<T> getStoreForType(Class<T> type) {
         return getStoreOfTypeOrRegisterNew(type).getStore();
     }
 
@@ -81,37 +86,40 @@ public class ComponentRegistry {
      */
     @SafeVarargs
     public final List<EntityView> view(Class<? extends Component>... requiredComponents) {
-        List<EntityView> results = new ArrayList<>();
-
         if (requiredComponents.length == 0) {
-            return results;
+            return Collections.emptyList();
         }
 
-        // Find the store linked to the first component
-        ComponentStore<?> baseStore = registry.get(requiredComponents[0]);
-        if (baseStore == null) {
-            System.out.println("Could not find any entities with component: " + requiredComponents[0]);
-            return results;
+        List<IntSet> entitySets = new ArrayList<>(requiredComponents.length);
+
+        for (Class<? extends Component> comp : requiredComponents) {
+            ComponentStore<?> store = registry.get(comp);
+            if (store == null) {
+                return Collections.emptyList(); // no entities have this component
+            }
+            entitySets.add(store.entityIds());
         }
 
-        //Loop through all the entities in the first store that was found
-        for (UUID entityId : baseStore.entityIds()) {
-            Map<Class<? extends Component>, Component> components = new HashMap<>();
-            boolean hasAllRequiredComponents = true;
+        // Sort stores by size: smallest first for faster intersection
+        entitySets.sort(Comparator.comparingInt(IntSet::size));
 
-            //Make sure the entity has all other required components as well
-            for (Class<? extends Component> componentType : requiredComponents) {
-                ComponentStore<?> store = registry.get(componentType);
-                if (store == null || !store.hasComponent(entityId)) {
-                    hasAllRequiredComponents = false;
-                    break;
-                }
-                components.put(componentType, store.getComponentForEntity(entityId));
+        // Intersect all entity sets
+        IntSet intersection = new IntOpenHashSet(entitySets.get(0));
+        for (int i = 1; i < entitySets.size(); i++) {
+            intersection.retainAll(entitySets.get(i));
+            if (intersection.isEmpty()) {
+                return Collections.emptyList();
             }
+        }
 
-            if (hasAllRequiredComponents) {
-                results.add(EntityView.of(entityId, components));
+        // Build entity views
+        List<EntityView> results = new ArrayList<>(intersection.size());
+        for (int entityId : intersection) {
+            Map<Class<? extends Component>, Component> comps = new HashMap<>(requiredComponents.length);
+            for (Class<? extends Component> compType : requiredComponents) {
+                comps.put(compType, registry.get(compType).getComponentForEntity(entityId));
             }
+            results.add(EntityView.of(entityId, comps));
         }
         return results;
     }

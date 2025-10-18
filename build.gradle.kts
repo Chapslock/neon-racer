@@ -32,6 +32,7 @@ val lwjglNatives =
 dependencies {
     implementation("org.projectlombok:lombok:1.18.42")
     annotationProcessor("org.projectlombok:lombok:1.18.42")
+    implementation("fastutil:fastutil:5.0.9")
 
     implementation(platform("org.lwjgl:lwjgl-bom:$lwjglVersion"))
 

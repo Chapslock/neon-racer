@@ -2,7 +2,6 @@ package org.chapzlock.application.layer;
 
 import java.util.List;
 import java.util.Random;
-import java.util.UUID;
 
 import org.chapzlock.application.component.InputComponent;
 import org.chapzlock.application.systems.PlayerInputSystem;
@@ -39,7 +38,7 @@ public class TestLayer implements Layer {
     );
 
     public TestLayer() {
-        UUID player = Entity.create();
+        int player = Entity.create();
         MeshData meshData = FileUtils.loadWavefrontFileToMesh("wavefront/funcar.obj");
         Mesh playerMesh = new Mesh(meshData);
         TexturedMaterial playerMat = new TexturedMaterial(Texture.loadTexture("textures/funcar.png"));
@@ -53,17 +52,17 @@ public class TestLayer implements Layer {
         generateCars(playerMesh, playerMat);
 
 
-        UUID light = Entity.create();
+        int light = Entity.create();
         registry.addComponent(light, new LightComponent(new Vector3f(-5, 0, -10), Color.WHITE));
 
-        UUID camera = Entity.create();
+        int camera = Entity.create();
         registry.addComponent(camera, new CameraComponent());
     }
 
     private void generateCars(Mesh playerMesh, TexturedMaterial playerMat) {
         Random rand = new Random();
-        for (int i = 0; i < 10000; i++) {
-            UUID id = Entity.create();
+        for (int i = 0; i < 100_000; i++) {
+            int id = Entity.create();
             float x = rand.nextFloat(0, 200);
             float y = rand.nextFloat(0, 200);
             float z = rand.nextFloat(0, 200);

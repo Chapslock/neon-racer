@@ -1,11 +1,10 @@
 package org.chapzlock.core.component.orchestration;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
 import org.chapzlock.core.component.Component;
+
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntSet;
 
 /**
  * Component store keeps track of entity -> component relations for one Type of component
@@ -13,29 +12,29 @@ import org.chapzlock.core.component.Component;
  * @param <T> The component Type this store is meant for
  */
 class ComponentStore<T extends Component> {
-    private final Map<UUID, T> componentStore = new HashMap<>();
+    private final Int2ObjectOpenHashMap<T> componentStore = new Int2ObjectOpenHashMap<>();
 
-    void addComponentToStore(UUID entityId, T component) {
+    void addComponentToStore(int entityId, T component) {
         componentStore.put(entityId, component);
     }
 
-    T getComponentForEntity(UUID entityId) {
+    T getComponentForEntity(int entityId) {
         return componentStore.get(entityId);
     }
 
-    void remove(UUID entityId) {
+    void remove(int entityId) {
         componentStore.remove(entityId);
     }
 
-    Map<UUID, T> getStore() {
+    Int2ObjectMap<T> getStore() {
         return componentStore;
     }
 
-    boolean hasComponent(UUID entityId) {
+    boolean hasComponent(int entityId) {
         return componentStore.containsKey(entityId);
     }
 
-    Set<UUID> entityIds() {
+    IntSet entityIds() {
         return componentStore.keySet();
     }
 }
