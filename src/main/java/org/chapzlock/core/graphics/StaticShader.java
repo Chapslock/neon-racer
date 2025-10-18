@@ -3,7 +3,7 @@ package org.chapzlock.core.graphics;
 import org.chapzlock.core.component.Component;
 import org.joml.Matrix4f;
 
-public class StaticShader extends Shader implements Component {
+public final class StaticShader extends Shader implements Component {
 
     private static final String VERTEX_FILE = "shaders/textured.vertex.glsl";
     private static final String FRAGMENT_FILE = "shaders/textured.fragment.glsl";
