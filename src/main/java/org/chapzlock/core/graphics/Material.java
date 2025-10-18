@@ -9,26 +9,32 @@ import lombok.Getter;
 
 /**
  * A generic material
- * Can accept just a static shader or a shader and a texture
+ * Can accept just a shared shader or a shader and a texture
  */
 public class Material implements Component {
+
     @Getter
     private final StaticShader shader;
     private final Texture texture; // nullable
-    @Getter
-    private final Reflection reflection = Reflection.builder()
-        .reflectivity(1)
-        .shineDamper(10)
-        .build();
 
-    public Material(Texture texture) {
-        this.shader = new StaticShader();
-        this.texture = texture;
+    @Getter
+    private final Reflection reflection;
+
+    public Material(StaticShader shader, Texture texture) {
+        this(shader, texture, null);
     }
 
-    public Material() {
-        this.shader = new StaticShader();
-        this.texture = null;
+    public Material(StaticShader shader, Texture texture, Reflection reflection) {
+        this.shader = shader;
+        this.texture = texture;
+        this.reflection = reflection != null ? reflection : Reflection.builder()
+            .reflectivity(1f)
+            .shineDamper(10f)
+            .build();
+    }
+
+    public Material(StaticShader shader) {
+        this(shader, null, null);
     }
 
     public void bind() {
@@ -37,10 +43,11 @@ public class Material implements Component {
         if (texture != null) {
             glActiveTexture(GL_TEXTURE0);
             texture.bind();
-            shader.loadTexture();
         }
-    }
 
+        // Load reflection uniforms if needed
+        shader.loadShine(reflection.getShineDamper(), reflection.getReflectivity());
+    }
 
     public void unbind() {
         if (texture != null) {

@@ -17,6 +17,7 @@ import org.chapzlock.core.graphics.Color;
 import org.chapzlock.core.graphics.Material;
 import org.chapzlock.core.graphics.Mesh;
 import org.chapzlock.core.graphics.PointLight;
+import org.chapzlock.core.graphics.StaticShader;
 import org.chapzlock.core.graphics.Texture;
 import org.chapzlock.core.registry.ComponentRegistry;
 import org.chapzlock.core.system.CameraFreeRoamSystem;
@@ -39,7 +40,7 @@ public class TestLayer implements Layer {
         int player = Entity.create();
         MeshData meshData = FileUtils.loadWavefrontFileToMesh("wavefront/funcar.obj");
         Mesh playerMesh = new Mesh(meshData);
-        Material playerMat = new Material(Texture.loadTexture("textures/funcar.png"));
+        Material playerMat = new Material(new StaticShader(), Texture.loadTexture("textures/funcar.png"));
 
         registry.addComponent(player, new Transform(new Vector3f(0, 0, -5), new Vector3f(90, 0, 180)));
         registry.addComponent(player, playerMesh);
