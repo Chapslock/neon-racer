@@ -37,7 +37,7 @@ public class Material implements Component {
         if (texture != null) {
             glActiveTexture(GL_TEXTURE0);
             texture.bind();
-            shader.setUniform("textureSampler", 0); // tells shader to use texture unit 0
+            shader.loadTexture();
         }
     }
 

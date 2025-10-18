@@ -25,6 +25,8 @@ import static org.lwjgl.opengl.GL20.glUniformMatrix4fv;
 import static org.lwjgl.opengl.GL20.glUseProgram;
 
 import java.nio.FloatBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.chapzlock.core.files.FileUtils;
 import org.joml.Matrix4f;
@@ -36,6 +38,8 @@ import org.lwjgl.system.MemoryStack;
  */
 public abstract class Shader {
     private final int programId;
+    private static int currentProgram = 0;
+    private final Map<String, Integer> uniformLocations = new HashMap<>();
 
     protected Shader(String pathToVertexShaderFile, String pathToFragmentShaderFile) {
         String vertexShaderFile = FileUtils.loadFileAsString(pathToVertexShaderFile);
@@ -68,7 +72,10 @@ public abstract class Shader {
     }
 
     public void bind() {
-        glUseProgram(programId);
+        if (currentProgram != programId) {
+            glUseProgram(programId);
+            currentProgram = programId;
+        }
     }
 
     public void onDestroy() {
@@ -77,39 +84,45 @@ public abstract class Shader {
     }
 
     public void unbind() {
-        glUseProgram(0);
+        if (currentProgram != 0) {
+            glUseProgram(0);
+            currentProgram = 0;
+        }
+    }
+
+    protected void createUniform(String name) {
+        int location = glGetUniformLocation(programId, name);
+        if (location < 0) {
+            throw new RuntimeException("Uniform not found: " + name);
+        }
+        uniformLocations.put(name, location);
     }
 
     protected void setUniform(String name, int value) {
-        int loc = glGetUniformLocation(programId, name);
-        glUniform1i(loc, value);
+        glUniform1i(getUniformLocation(name), value);
+    }
+
+    protected int getUniformLocation(String name) {
+        return uniformLocations.get(name);
     }
 
     protected void setUniform(String name, float value) {
-        int loc = glGetUniformLocation(programId, name);
-        glUniform1f(loc, value);
+        glUniform1f(getUniformLocation(name), value);
     }
 
     protected void setUniform(String name, Vector3f value) {
-        int location = glGetUniformLocation(programId, name);
-        glUniform3f(location, value.x, value.y, value.z);
+        glUniform3f(getUniformLocation(name), value.x, value.y, value.z);
     }
 
     protected void setUniform(String name, boolean value) {
-        int location = glGetUniformLocation(programId, name);
-        float valueToLoad = 0;
-        if (value) {
-            valueToLoad = 1;
-        }
-        glUniform1f(location, valueToLoad);
+        glUniform1f(getUniformLocation(name), value ? 1f : 0f);
     }
 
     protected void setUniform(String name, Matrix4f value) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             FloatBuffer fb = stack.mallocFloat(16);
             value.get(fb);
-            int loc = glGetUniformLocation(programId, name);
-            glUniformMatrix4fv(loc, false, fb);
+            glUniformMatrix4fv(getUniformLocation(name), false, fb);
         }
     }
 }
