@@ -36,30 +36,4 @@ public class MathUtil {
 
         return matrix;
     }
-
-    /**
-     * Creates a view matrix (camera transform).
-     *
-     * @param position Camera position in world space
-     * @param rotation Camera rotation in degrees (x = pitch, y = yaw, z = roll)
-     * @return View matrix
-     */
-    public static Matrix4f createViewMatrix(Vector3f position, Vector3f rotationDegrees) {
-        Matrix4f view = new Matrix4f();
-
-        // Convert to radians
-        float pitch = (float) Math.toRadians(rotationDegrees.x);
-        float yaw = (float) Math.toRadians(rotationDegrees.y);
-        float roll = (float) Math.toRadians(rotationDegrees.z);
-
-        // Apply rotations: yaw first, then pitch, then roll
-        view.rotate(-pitch, 1, 0, 0);
-        view.rotate(-yaw, 0, 1, 0);
-        view.rotate(-roll, 0, 0, 1);
-
-        // Apply translation (inverse of position)
-        view.translate(-position.x, -position.y, -position.z);
-
-        return view;
-    }
 }
