@@ -2,7 +2,6 @@ package org.chapzlock.core.application;
 
 import static org.lwjgl.glfw.GLFW.glfwGetTime;
 import static org.lwjgl.glfw.GLFW.glfwInit;
-import static org.lwjgl.glfw.GLFW.glfwPollEvents;
 import static org.lwjgl.glfw.GLFW.glfwSetErrorCallback;
 import static org.lwjgl.glfw.GLFW.glfwTerminate;
 
@@ -12,7 +11,6 @@ import java.util.Objects;
 import org.chapzlock.core.Layer;
 import org.chapzlock.core.window.Window;
 import org.lwjgl.glfw.GLFWErrorCallback;
-import org.lwjgl.opengl.GL;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -48,14 +46,12 @@ public class Application {
 
     public void run() {
         this.isRunning = true;
-        GL.createCapabilities();
 
         float lastTime = getTime();
 
         this.layerStack.forEach(Layer::onInit);
 
         while (this.isRunning) {
-            glfwPollEvents();
 
             if (this.window.shouldClose()) {
                 stop();

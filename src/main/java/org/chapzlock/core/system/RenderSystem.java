@@ -16,15 +16,21 @@ import org.chapzlock.core.entity.EntityView;
 import org.chapzlock.core.logging.Log;
 import org.chapzlock.core.math.MathUtil;
 import org.joml.Matrix4f;
+import org.lwjgl.opengl.GL11;
 
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
 public class RenderSystem implements System {
     private static final float FIELD_OF_VIEW = 70f;
     private static final float NEAR_PLANE = 0.1f;
     private static final float FAR_PLANE = 1000f;
     private final ComponentRegistry registry;
 
-    public RenderSystem(ComponentRegistry registry) {
-        this.registry = registry;
+    @Override
+    public void onInit() {
+        GL11.glEnable(GL11.GL_CULL_FACE);
+        GL11.glCullFace(GL11.GL_BACK);
     }
 
     @Override
