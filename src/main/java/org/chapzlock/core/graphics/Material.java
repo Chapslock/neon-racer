@@ -45,7 +45,6 @@ public class Material implements Component {
             texture.bind();
         }
 
-        // Load reflection uniforms if needed
         shader.loadShine(reflection.getShineDamper(), reflection.getReflectivity());
     }
 

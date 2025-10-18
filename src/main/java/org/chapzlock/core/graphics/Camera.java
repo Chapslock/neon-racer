@@ -5,6 +5,7 @@ import static org.joml.Math.cos;
 import static org.joml.Math.sin;
 import static org.joml.Math.toRadians;
 
+import org.chapzlock.core.application.Application;
 import org.chapzlock.core.component.Component;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -23,10 +24,19 @@ public class Camera implements Component {
     @Setter
     private Vector3f rotation = new Vector3f(0, -90, 0);
 
+    private static final float FIELD_OF_VIEW = 70f;
+    private static final float NEAR_PLANE = 0.1f;
+    private static final float FAR_PLANE = 1000f;
+
     /**
      * Cache for camera view matrix to avoid constant memory reallocations
      */
     private Matrix4f cameraViewMatrix = new Matrix4f();
+
+    /**
+     * Cache for projection matrix to avoid constant memory reallocations
+     */
+    private Matrix4f projectionMatrix = new Matrix4f();
 
 
     /**
@@ -70,5 +80,15 @@ public class Camera implements Component {
     public Matrix4f getViewMatrix() {
         this.cameraViewMatrix.identity();
         return this.cameraViewMatrix.lookAt(getPosition(), getPosition().add(getCameraFront(), new Vector3f()), getCameraUp());
+    }
+
+    public Matrix4f getProjectionMatrix() {
+        this.projectionMatrix.identity();
+        return this.projectionMatrix.perspective(
+            FIELD_OF_VIEW,
+            Application.get().getAppSpec().getWindowSpec().getAspectRatio(),
+            NEAR_PLANE,
+            FAR_PLANE
+        );
     }
 }

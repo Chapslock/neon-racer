@@ -3,7 +3,6 @@ package org.chapzlock.core.registry;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -13,13 +12,14 @@ import org.chapzlock.core.component.Component;
 import org.chapzlock.core.entity.EntityView;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 /**
  * Central registry for all the components and entities tied to them
  * Mainly used in Systems to execute logic
  */
 public class ComponentRegistry {
-    private final Map<Class<? extends Component>, Integer> typeToId = new HashMap<>();
+    private final Map<Class<? extends Component>, Integer> typeToId = new Object2IntOpenHashMap<>();
     private final List<ComponentStore<?>> stores = new ArrayList<>();
     private final AtomicInteger nextTypeId = new AtomicInteger();
 
