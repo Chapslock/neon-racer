@@ -21,13 +21,14 @@ import static org.lwjgl.opengl.GL30.glVertexAttribPointer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
+import org.chapzlock.core.component.Component;
 import org.chapzlock.core.geometry.MeshData;
 import org.lwjgl.system.MemoryUtil;
 
 /**
  * Generic class for representing a mesh that OpenGL can draw
  */
-public class Mesh {
+public class Mesh implements Component {
 
     private final int vaoId;
     private final int vertexCount;
@@ -75,16 +76,15 @@ public class Mesh {
     }
 
     private int bindIndicesBuffer(int[] indices) {
-        final int indicesVboId;
-        indicesVboId = glGenBuffers();
+        final int vboId = glGenBuffers();
         IntBuffer idxBuffer = MemoryUtil.memAllocInt(indices.length);
         idxBuffer.put(indices).flip();
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indicesVboId);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboId);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, idxBuffer, GL_STATIC_DRAW);
 
         MemoryUtil.memFree(idxBuffer);
-        return indicesVboId;
+        return vboId;
     }
 
     public void render() {

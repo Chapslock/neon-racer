@@ -1,4 +1,4 @@
-package org.chapzlock.core.component.orchestration;
+package org.chapzlock.core.registry;
 
 import org.chapzlock.core.component.Component;
 

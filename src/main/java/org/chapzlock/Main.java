@@ -12,7 +12,7 @@ public class Main {
             .windowSpec(WindowSpecification.builder()
                 .build())
             .build();
-        Application application = new Application(appSpec);
+        Application application = Application.create(appSpec);
         application.pushLayer(new TestLayer());
         application.run();
     }

@@ -1,4 +1,4 @@
-package org.chapzlock.core.component.orchestration;
+package org.chapzlock.core.registry;
 
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -44,6 +44,7 @@ public class ComponentRegistry {
     /**
      * Adds a component to an entity.
      */
+    @SuppressWarnings("unchecked")
     public <T extends Component> void addComponent(int entityId, T component) {
         int typeId = getOrRegisterTypeId(component.getClass());
         ComponentStore<T> store = (ComponentStore<T>) stores.get(typeId);
@@ -56,6 +57,7 @@ public class ComponentRegistry {
     /**
      * Retrieves a component from an entity.
      */
+    @SuppressWarnings("unchecked")
     public <T extends Component> T getComponent(int entityId, Class<T> type) {
         Integer typeId = typeToId.get(type);
         if (typeId == null) {
@@ -68,7 +70,7 @@ public class ComponentRegistry {
     /**
      * Removes a component from an entity.
      */
-
+    @SuppressWarnings("unchecked")
     public <T extends Component> void removeComponent(int entityId, Class<T> type) {
         Integer typeId = typeToId.get(type);
         if (typeId == null) {
@@ -87,7 +89,7 @@ public class ComponentRegistry {
     }
 
     /**
-     * Queries all entities that have ALL required components.
+     * Queries entities that have ALL required components.
      */
     @SafeVarargs
     public final List<EntityView> view(Class<? extends Component>... requiredComponents) {

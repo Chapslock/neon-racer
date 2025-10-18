@@ -8,7 +8,6 @@ import static org.lwjgl.glfw.GLFW.glfwTerminate;
 import java.util.ArrayList;
 import java.util.Objects;
 
-import org.chapzlock.core.Layer;
 import org.chapzlock.core.window.Window;
 import org.lwjgl.glfw.GLFWErrorCallback;
 
@@ -23,10 +22,9 @@ public class Application {
     private ApplicationSpecification appSpec;
     private Window window;
     private boolean isRunning = false;
-    private ArrayList<Layer> layerStack = new ArrayList<>();
+    private final ArrayList<Layer> layerStack = new ArrayList<>();
 
-    public Application(ApplicationSpecification appSpec) {
-        INSTANCE = this;
+    private Application(ApplicationSpecification appSpec) {
         this.appSpec = appSpec;
 
         GLFWErrorCallback.createPrint(System.err).set();
@@ -86,6 +84,14 @@ public class Application {
     }
 
     public static Application get() {
+        if (INSTANCE == null) {
+            throw new IllegalStateException("Application instance referenced outside of application!");
+        }
+        return INSTANCE;
+    }
+
+    public static Application create(ApplicationSpecification appSpec) {
+        INSTANCE = new Application(appSpec);
         return INSTANCE;
     }
 

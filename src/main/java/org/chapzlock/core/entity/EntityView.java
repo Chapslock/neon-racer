@@ -5,7 +5,7 @@ import org.chapzlock.core.component.Component;
 import lombok.Getter;
 
 /**
- * Lightweight view of an entity and its requested components
+ * Lightweight view of an entity and its components
  */
 public class EntityView {
     @Getter

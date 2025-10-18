@@ -30,14 +30,14 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.chapzlock.core.component.Component;
 import org.lwjgl.system.MemoryStack;
 
 /**
- * This class represents a texture.
+ * This class represents an OpenGL texture.
  *
- * @author Heiko Brumme
  */
-public class Texture {
+public class Texture implements Component {
 
     /**
      * Stores the handle of the texture.
@@ -186,7 +186,8 @@ public class Texture {
      */
     public static Texture loadTexture(String resourcePath) {
         ByteBuffer image;
-        int width, height;
+        int width;
+        int height;
 
         // Read resource file into a direct ByteBuffer
         ByteBuffer resourceBuffer;

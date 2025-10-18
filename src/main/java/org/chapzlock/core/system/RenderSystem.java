@@ -6,26 +6,30 @@ import java.util.List;
 import java.util.Map;
 
 import org.chapzlock.core.application.Application;
-import org.chapzlock.core.component.CameraComponent;
-import org.chapzlock.core.component.LightComponent;
-import org.chapzlock.core.component.MaterialComponent;
-import org.chapzlock.core.component.MeshComponent;
-import org.chapzlock.core.component.TransformComponent;
-import org.chapzlock.core.component.orchestration.ComponentRegistry;
+import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.entity.EntityView;
+import org.chapzlock.core.graphics.Camera;
+import org.chapzlock.core.graphics.Material;
+import org.chapzlock.core.graphics.Mesh;
+import org.chapzlock.core.graphics.PointLight;
 import org.chapzlock.core.logging.Log;
-import org.chapzlock.core.math.MathUtil;
+import org.chapzlock.core.registry.ComponentRegistry;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * The core render system
+ */
 @RequiredArgsConstructor
 public class RenderSystem implements System {
     private static final float FIELD_OF_VIEW = 70f;
     private static final float NEAR_PLANE = 0.1f;
     private static final float FAR_PLANE = 1000f;
     private final ComponentRegistry registry;
+
+    private Matrix4f projectionMatrix = new Matrix4f();
 
     @Override
     public void onInit() {
@@ -35,9 +39,9 @@ public class RenderSystem implements System {
 
     @Override
     public void onRender(float deltaTime) {
-        CameraComponent camera = registry.view(CameraComponent.class)
+        Camera camera = registry.view(Camera.class)
             .getFirst()
-            .get(CameraComponent.class);
+            .get(Camera.class);
 
         if (camera == null) {
             Log.error("No Camera found! Skipping rendering");
@@ -45,7 +49,8 @@ public class RenderSystem implements System {
         }
 
         // --- Projection & View (calculated once per frame)
-        Matrix4f projectionMatrix = new Matrix4f().perspective(
+        this.projectionMatrix.identity();
+        Matrix4f projectionMatrix = this.projectionMatrix.perspective(
             FIELD_OF_VIEW,
             Application.get().getAppSpec().getWindowSpec().getAspectRatio(),
             NEAR_PLANE,
@@ -54,24 +59,24 @@ public class RenderSystem implements System {
 
         Matrix4f viewMatrix = camera.getViewMatrix();
 
-        LightComponent light = registry.view(LightComponent.class)
+        PointLight light = registry.view(PointLight.class)
             .getFirst()
-            .get(LightComponent.class);
+            .get(PointLight.class);
 
         // --- Group entities by material (or at least by shader)
-        Map<MaterialComponent, List<EntityView>> materialBatches = new HashMap<>();
-        for (EntityView entity : registry.view(MeshComponent.class, MaterialComponent.class, TransformComponent.class)) {
-            MaterialComponent material = entity.get(MaterialComponent.class);
+        Map<Material, List<EntityView>> materialBatches = new HashMap<>();
+        for (EntityView entity : registry.view(Mesh.class, Material.class, Transform.class)) {
+            Material material = entity.get(Material.class);
             materialBatches.computeIfAbsent(material, m -> new ArrayList<>()).add(entity);
         }
 
         // --- Render batches
-        for (Map.Entry<MaterialComponent, List<EntityView>> entry : materialBatches.entrySet()) {
-            MaterialComponent material = entry.getKey();
-            var shader = material.material().getShader();
+        for (Map.Entry<Material, List<EntityView>> entry : materialBatches.entrySet()) {
+            Material material = entry.getKey();
+            var shader = material.getShader();
 
             // Bind material & shader once
-            material.material().bind();
+            material.bind();
 
             // Load global (per-frame) uniforms once per shader
             shader.loadProjectionMatrix(projectionMatrix);
@@ -79,27 +84,23 @@ public class RenderSystem implements System {
             if (light != null) {
                 shader.loadLight(light);
             }
-            shader.loadShine(material.material().getReflection().getShineDamper(), material.material().getReflection().getReflectivity());
+            shader.loadShine(material.getReflection().getShineDamper(), material.getReflection().getReflectivity());
 
             // Draw each entity in this batch
             for (EntityView entity : entry.getValue()) {
-                MeshComponent mesh = entity.get(MeshComponent.class);
-                TransformComponent transform = entity.get(TransformComponent.class);
+                Mesh mesh = entity.get(Mesh.class);
+                Transform transform = entity.get(Transform.class);
 
                 // Per-entity model matrix
                 shader.loadTransformationMatrix(
-                    MathUtil.createTransformationMatrix(
-                        transform.getPosition(),
-                        transform.getRotation(),
-                        transform.getScale()
-                    )
+                    transform.calculateTransformationMatrix()
                 );
 
-                mesh.mesh().render();
+                mesh.render();
             }
 
             // Unbind once per batch
-            material.material().unbind();
+            material.unbind();
         }
     }
 

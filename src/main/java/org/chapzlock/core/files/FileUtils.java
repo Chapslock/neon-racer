@@ -11,7 +11,11 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.chapzlock.core.geometry.MeshData;
+import org.chapzlock.core.logging.Log;
 
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
 public class FileUtils {
 
     /**
@@ -111,7 +115,7 @@ public class FileUtils {
                 }
             }
         } catch (Exception e) {
-            System.out.println("Error while reading wavefront file! error: " + e.getMessage());
+            Log.error("Error while reading wavefront file! error: " + e.getMessage());
             throw new RuntimeException("Failed to read file! File name: " + resourcePath
                 + System.lineSeparator() + e.getMessage(), e);
         }

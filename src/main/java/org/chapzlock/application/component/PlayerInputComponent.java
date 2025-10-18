@@ -9,6 +9,9 @@ import lombok.Setter;
 @Getter
 @Setter
 @RequiredArgsConstructor
-public class InputComponent implements Component {
-    boolean isMovingLeft, isMovingRight, isMovingForward, isMovingBackwards;
+public class PlayerInputComponent implements Component {
+    boolean isMovingLeft;
+    boolean isMovingRight;
+    boolean isMovingForward;
+    boolean isMovingBackwards;
 }

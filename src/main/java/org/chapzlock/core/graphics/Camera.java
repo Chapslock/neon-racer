@@ -1,24 +1,33 @@
-package org.chapzlock.core.component;
+package org.chapzlock.core.graphics;
 
 
 import static org.joml.Math.cos;
 import static org.joml.Math.sin;
 import static org.joml.Math.toRadians;
 
+import org.chapzlock.core.component.Component;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter
-@Setter
-public class CameraComponent implements Component {
+public class Camera implements Component {
+    @Getter
+    @Setter
     private Vector3f position = new Vector3f(0,0,0);
     /**
      * Camera rotation in degrees (x = pitch, y = yaw, z = roll)
      */
+    @Getter
+    @Setter
     private Vector3f rotation = new Vector3f(0, -90, 0);
+
+    /**
+     * Cache for camera view matrix to avoid constant memory reallocations
+     */
+    private Matrix4f cameraViewMatrix = new Matrix4f();
+
 
     /**
      * Returns the normalized forward (front) vector of the camera.
@@ -59,6 +68,7 @@ public class CameraComponent implements Component {
     }
 
     public Matrix4f getViewMatrix() {
-        return new Matrix4f().lookAt(getPosition(), getPosition().add(getCameraFront(), new Vector3f()), getCameraUp());
+        this.cameraViewMatrix.identity();
+        return this.cameraViewMatrix.lookAt(getPosition(), getPosition().add(getCameraFront(), new Vector3f()), getCameraUp());
     }
 }

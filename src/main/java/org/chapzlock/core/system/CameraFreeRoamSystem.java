@@ -2,12 +2,15 @@ package org.chapzlock.core.system;
 
 import static org.joml.Math.clamp;
 
-import org.chapzlock.core.component.CameraComponent;
-import org.chapzlock.core.component.orchestration.ComponentRegistry;
+import org.chapzlock.core.graphics.Camera;
+import org.chapzlock.core.registry.ComponentRegistry;
 import org.lwjgl.glfw.GLFW;
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Provides a spectator like camera free roam system implementation
+ */
 @RequiredArgsConstructor
 public class CameraFreeRoamSystem implements System {
 
@@ -16,7 +19,8 @@ public class CameraFreeRoamSystem implements System {
     private static final float CAMERA_MOUSE_SENSITIVITY = .01f;
     private static final float CAMERA_MOVEMENT_SPEED = 3f;
 
-    private double lastMouseX, lastMouseY;
+    private double lastMouseX;
+    private double lastMouseY;
     private boolean firstMouse = true;
 
     @Override
@@ -27,16 +31,17 @@ public class CameraFreeRoamSystem implements System {
 
     @Override
     public void onUpdate(float deltaTime) {
-        CameraComponent camera = registry.view(CameraComponent.class)
-            .getFirst().get(CameraComponent.class);
+        Camera camera = registry.view(Camera.class)
+            .getFirst().get(Camera.class);
         long window = GLFW.glfwGetCurrentContext();
 
         handleMouseInput(window, camera);
         handleKeyboardInput(window, camera, deltaTime);
     }
 
-    private void handleMouseInput(long window, CameraComponent camera) {
-        double mouseX, mouseY;
+    private void handleMouseInput(long window, Camera camera) {
+        double mouseX;
+        double mouseY;
         try (var stack = org.lwjgl.system.MemoryStack.stackPush()) {
             var xPos = stack.mallocDouble(1);
             var yPos = stack.mallocDouble(1);
@@ -65,7 +70,7 @@ public class CameraFreeRoamSystem implements System {
         camera.setPitch(pitch);
     }
 
-    private void handleKeyboardInput(long window, CameraComponent camera, float deltaTime) {
+    private void handleKeyboardInput(long window, Camera camera, float deltaTime) {
         float velocity = CAMERA_MOVEMENT_SPEED * deltaTime;
 
         // Move forward/back

@@ -1,9 +1,9 @@
 package org.chapzlock.application.systems;
 
 import org.chapzlock.application.tags.PlayerTag;
-import org.chapzlock.core.component.TransformComponent;
-import org.chapzlock.core.component.orchestration.ComponentRegistry;
+import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.entity.EntityView;
+import org.chapzlock.core.registry.ComponentRegistry;
 import org.chapzlock.core.system.System;
 
 import lombok.RequiredArgsConstructor;
@@ -14,8 +14,8 @@ public class PlayerRotateSystem implements System {
 
     @Override
     public void onUpdate(float deltaTime) {
-        for (EntityView e : registry.view(PlayerTag.class, TransformComponent.class)) {
-            var transform = e.get(TransformComponent.class);
+        for (EntityView e : registry.view(PlayerTag.class, Transform.class)) {
+            var transform = e.get(Transform.class);
 
             float speed = 10 * deltaTime;
             transform.getRotation().x += speed;

@@ -1,10 +1,9 @@
-package org.chapzlock.core.graphics.shaders;
+package org.chapzlock.core.graphics;
 
-import org.chapzlock.core.component.LightComponent;
-import org.chapzlock.core.graphics.ShaderProgram;
+import org.chapzlock.core.component.Component;
 import org.joml.Matrix4f;
 
-public class TextureShader extends ShaderProgram {
+public class StaticShader extends Shader implements Component {
 
     private static final String VERTEX_FILE = "shaders/textured.vertex.glsl";
     private static final String FRAGMENT_FILE = "shaders/textured.fragment.glsl";
@@ -17,7 +16,7 @@ public class TextureShader extends ShaderProgram {
     private static final String UNIFORM_SHINER_DAMPER = "shineDamper";
     private static final String UNIFORM_REFLECTIVITY = "reflectivity";
 
-    public TextureShader() {
+    public StaticShader() {
         super(VERTEX_FILE, FRAGMENT_FILE);
     }
 
@@ -33,7 +32,7 @@ public class TextureShader extends ShaderProgram {
         setUniform(UNIFORM_VIEW_MATRIX, matrix4f);
     }
 
-    public void loadLight(LightComponent light) {
+    public void loadLight(PointLight light) {
         setUniform(UNIFORM_LIGHT_POSITION, light.position());
         setUniform(UNIFORM_LIGHT_COLOR, light.color().toVector3f());
     }
