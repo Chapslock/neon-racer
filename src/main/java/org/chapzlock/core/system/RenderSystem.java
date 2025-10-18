@@ -35,8 +35,6 @@ public class RenderSystem implements System {
 
     @Override
     public void onRender(float deltaTime) {
-        clearRenderQueue();
-
         Camera camera = registry.view(Camera.class)
             .getFirst()
             .get(Camera.class);
@@ -90,6 +88,7 @@ public class RenderSystem implements System {
 
             material.unbind();
         }
+        clearRenderQueue();
     }
 
 }
