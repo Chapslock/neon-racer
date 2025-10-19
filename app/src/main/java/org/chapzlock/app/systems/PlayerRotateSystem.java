@@ -1,6 +1,6 @@
-package org.chapzlock.application.systems;
+package org.chapzlock.app.systems;
 
-import org.chapzlock.application.tags.PlayerTag;
+import org.chapzlock.app.tags.PlayerTag;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.entity.EntityView;
 import org.chapzlock.core.registry.ComponentRegistry;

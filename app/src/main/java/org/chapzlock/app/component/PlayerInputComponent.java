@@ -1,4 +1,4 @@
-package org.chapzlock.application.component;
+package org.chapzlock.app.component;
 
 import org.chapzlock.core.component.Component;
 

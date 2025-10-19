@@ -1,4 +1,4 @@
-package org.chapzlock.application.tags;
+package org.chapzlock.app.tags;
 
 import org.chapzlock.core.tag.Tag;
 

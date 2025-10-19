@@ -1,12 +1,12 @@
-package org.chapzlock.application.layer;
+package org.chapzlock.app.layer;
 
 import java.util.List;
 import java.util.Random;
 
-import org.chapzlock.application.component.PlayerInputComponent;
-import org.chapzlock.application.systems.PlayerInputSystem;
-import org.chapzlock.application.systems.PlayerRotateSystem;
-import org.chapzlock.application.tags.PlayerTag;
+import org.chapzlock.app.component.PlayerInputComponent;
+import org.chapzlock.app.systems.PlayerInputSystem;
+import org.chapzlock.app.systems.PlayerRotateSystem;
+import org.chapzlock.app.tags.PlayerTag;
 import org.chapzlock.core.application.Layer;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.entity.Entity;

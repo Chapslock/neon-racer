@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  build-linux:
+  build-linux-debian:
     name: Build Linux(Debian) App Image & Installer
     runs-on: ubuntu-latest
     steps:
@@ -36,8 +36,31 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           files: |
-            build/jpackage/neon-racer-*.deb
-            build/jpackage/neon-racer-*.zip
+            app/build/jpackage/neon-racer-*.deb
+            app/build/jpackage/neon-racer-*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-linux-fedora:
+    name: Build Linux (Fedora) Installer
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - name: Install dependencies
+        run: |
+          dnf install -y java-24-openjdk-devel rpm-build git
+      - uses: actions/checkout@v5
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
+      - name: Build Fedora Installer
+        run: ./gradlew jPackageAll
+      - name: Upload Fedora Artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
+            app/build/jpackage/neon-racer-*.rpm
+            app/build/jpackage/neon-racer-*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -62,8 +85,8 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           files: |
-            build/jpackage/neon-racer-*.exe
-            build/jpackage/neon-racer-*.zip
+            app/build/jpackage/neon-racer-*.exe
+            app/build/jpackage/neon-racer-*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -88,7 +111,7 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           files: |
-            build/jpackage/neon-racer-*.dmg
-            build/jpackage/neon-racer-*.zip
+            app/build/jpackage/neon-racer-*.dmg
+            app/build/jpackage/neon-racer-*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
