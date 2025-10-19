@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  build-linux-debian:
+  build-linux:
     name: Build Linux(Debian) App Image & Installer
     runs-on: ubuntu-latest
     steps:
@@ -45,6 +45,7 @@ jobs:
     name: Build Linux (Fedora) Installer
     runs-on: ubuntu-latest
     container: fedora:latest
+    needs: build-linux
     steps:
       - name: Install dependencies
         run: |
