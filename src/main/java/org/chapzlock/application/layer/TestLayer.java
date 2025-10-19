@@ -60,7 +60,7 @@ public class TestLayer implements Layer {
 
     private void generateCars(Mesh playerMesh, Material playerMat) {
         Random rand = new Random();
-        for (int i = 0; i < 100_000; i++) {
+        for (int i = 0; i < 10_000; i++) {
             int id = Entity.create();
             float x = rand.nextFloat(0, 200);
             float y = rand.nextFloat(0, 200);
