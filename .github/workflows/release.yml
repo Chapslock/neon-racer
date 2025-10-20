@@ -50,18 +50,22 @@ jobs:
       - name: Install dependencies
         run: |
           dnf install -y java-24-openjdk-devel rpm-build git
+          export JAVA_HOME=/usr/lib/jvm/java-24-openjdk
+          export PATH=$JAVA_HOME/bin:$PATH
       - uses: actions/checkout@v5
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v3
       - name: Build Fedora Installer
-        run: ./gradlew jPackageAll
+        run: |
+          export JAVA_HOME=/usr/lib/jvm/java-24-openjdk
+          export PATH=$JAVA_HOME/bin:$PATH
+          ./gradlew jPackageAll
       - name: Upload Fedora Artifacts
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           files: |
             app/build/jpackage/neon-racer-*.rpm
-            app/build/jpackage/neon-racer-*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
