@@ -5,6 +5,11 @@ on:
     tags:
       - 'v*.*'  # Trigger on version tags like v1.0, v1.1, etc.
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Select the tag to deploy"
+        required: true
+        type: string
 
 permissions:
   contents: write
