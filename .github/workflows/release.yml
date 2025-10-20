@@ -34,7 +34,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ needs.dettermine-tag.outputs.tag }}
+          ref: ${{ needs.determine-tag.outputs.tag }}
           fetch-depth: 0
 
       - name: Set up JDK 24
@@ -76,7 +76,7 @@ jobs:
           export PATH=$JAVA_HOME/bin:$PATH
       - uses: actions/checkout@v5
         with:
-          ref: ${{ needs.dettermine-tag.outputs.tag }}
+          ref: ${{ needs.determine-tag.outputs.tag }}
           fetch-depth: 0
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v3
@@ -101,7 +101,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ needs.dettermine-tag.outputs.tag }}
+          ref: ${{ needs.determine-tag.outputs.tag }}
           fetch-depth: 0
 
       - name: Set up JDK 24
@@ -130,7 +130,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ needs.dettermine-tag.outputs.tag }}
+          ref: ${{ needs.determine-tag.outputs.tag }}
           fetch-depth: 0
 
       - name: Set up JDK 24
