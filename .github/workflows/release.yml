@@ -74,7 +74,7 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          dnf install -y java-24-openjdk-devel rpm-build git
+          dnf install -y java-24-openjdk-devel java-24-openjdk-jmods rpm-build git
           export JAVA_HOME=/usr/lib/jvm/java-24-openjdk
           export PATH=$JAVA_HOME/bin:$PATH
 
