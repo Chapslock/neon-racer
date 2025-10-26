@@ -1,40 +1,38 @@
-package org.chapzlock.core.graphics;
+package org.chapzlock.core.graphics.material;
 
 import static org.lwjgl.opengl.GL20.GL_TEXTURE0;
 import static org.lwjgl.opengl.GL20.glActiveTexture;
 
 import org.chapzlock.core.component.Component;
+import org.chapzlock.core.graphics.Reflection;
+import org.chapzlock.core.graphics.Texture;
+import org.chapzlock.core.graphics.shader.TerrainStaticShader;
 
 import lombok.Getter;
 
 /**
- * A generic material
- * Can accept just a shared shader or a shader and a texture
+ * A generic Terrain material
  */
-public class Material implements Component {
+public class TerrainMaterial implements Component {
 
     @Getter
-    private final StaticShader shader;
+    private final TerrainStaticShader shader;
     private final Texture texture; // nullable
 
     @Getter
     private final Reflection reflection;
 
-    public Material(StaticShader shader, Texture texture) {
-        this(shader, texture, null);
+    public TerrainMaterial(Texture texture) {
+        this(texture, null);
     }
 
-    public Material(StaticShader shader, Texture texture, Reflection reflection) {
-        this.shader = shader;
+    public TerrainMaterial(Texture texture, Reflection reflection) {
+        this.shader = new TerrainStaticShader();
         this.texture = texture;
         this.reflection = reflection != null ? reflection : Reflection.builder()
-            .reflectivity(1f)
-            .shineDamper(10f)
+            .reflectivity(.1f)
+            .shineDamper(1f)
             .build();
-    }
-
-    public Material(StaticShader shader) {
-        this(shader, null, null);
     }
 
     public void bind() {

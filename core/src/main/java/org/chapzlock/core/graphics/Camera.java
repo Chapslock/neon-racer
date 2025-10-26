@@ -38,6 +38,10 @@ public class Camera implements Component {
      */
     private Matrix4f projectionMatrix = new Matrix4f();
 
+    public Camera(Vector3f vector3f) {
+        this.position = vector3f;
+    }
+
 
     /**
      * Returns the normalized forward (front) vector of the camera.

@@ -17,13 +17,19 @@ val lwjglNatives =
         else -> "natives-linux"
     }
 
+val lombokVersion = "1.18.42"
+val fastUtilVersion = "5.0.9"
+val jBulletVersion = "20101010-1"
+val jomlVersion = "1.10.8"
 dependencies {
-    implementation("org.projectlombok:lombok:1.18.42")
-    annotationProcessor("org.projectlombok:lombok:1.18.42")
-    api("fastutil:fastutil:5.0.9")
+    annotationProcessor("org.projectlombok:lombok:$lombokVersion")
 
+    implementation("org.projectlombok:lombok:$lombokVersion")
+    implementation("cz.advel.jbullet:jbullet:$jBulletVersion")
+
+    api("fastutil:fastutil:$fastUtilVersion")
+    api("org.joml:joml:$jomlVersion")
     api(platform("org.lwjgl:lwjgl-bom:$lwjglVersion"))
-
     api("org.lwjgl", "lwjgl")
     api("org.lwjgl", "lwjgl-assimp")
     api("org.lwjgl", "lwjgl-bgfx")
@@ -45,8 +51,6 @@ dependencies {
     api("org.lwjgl", "lwjgl-opengl", classifier = lwjglNatives)
     api("org.lwjgl", "lwjgl-par", classifier = lwjglNatives)
     api("org.lwjgl", "lwjgl-stb", classifier = lwjglNatives)
-
-    api("org.joml:joml:1.10.8")
 
     testImplementation(platform("org.junit:junit-bom:6.0.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")

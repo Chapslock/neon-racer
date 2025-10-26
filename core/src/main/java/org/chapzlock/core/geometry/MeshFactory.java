@@ -173,4 +173,62 @@ public class MeshFactory {
         }
         return new MeshData(positions, texCoords, indices);
     }
+
+    /**
+     * Generates a flat Terrain mesh with the parameters
+     *
+     * @param vertexCount
+     * @param size
+     * @return
+     */
+    public static MeshData generateFlatTerrain(int vertexCount, float size) {
+        int count = vertexCount * vertexCount;
+        float[] vertices = new float[count * 3];
+        float[] normals = new float[count * 3];
+        float[] textureCoords = new float[count * 2];
+        int[] indices = new int[6 * (vertexCount - 1) * (vertexCount - 1)];
+
+        int vertexPointer = 0;
+        for (int i = 0; i < vertexCount; i++) {
+            for (int j = 0; j < vertexCount; j++) {
+                // Vertex position
+                vertices[vertexPointer * 3] = (float) j / ((float) vertexCount - 1) * size; // X
+                vertices[vertexPointer * 3 + 1] = 0; // Y (heightmap later)
+                vertices[vertexPointer * 3 + 2] = (float) i / ((float) vertexCount - 1) * size; // Z
+
+                // Normal (flat up for now)
+                normals[vertexPointer * 3] = 0;
+                normals[vertexPointer * 3 + 1] = 1;
+                normals[vertexPointer * 3 + 2] = 0;
+
+                // Texture coordinates
+                textureCoords[vertexPointer * 2] = (float) j / ((float) vertexCount - 1);
+                textureCoords[vertexPointer * 2 + 1] = (float) i / ((float) vertexCount - 1);
+
+                vertexPointer++;
+            }
+        }
+
+        // Build indices for triangle rendering
+        int pointer = 0;
+        for (int gz = 0; gz < vertexCount - 1; gz++) {
+            for (int gx = 0; gx < vertexCount - 1; gx++) {
+                int topLeft = (gz * vertexCount) + gx;
+                int topRight = topLeft + 1;
+                int bottomLeft = ((gz + 1) * vertexCount) + gx;
+                int bottomRight = bottomLeft + 1;
+
+                // First triangle
+                indices[pointer++] = topLeft;
+                indices[pointer++] = bottomLeft;
+                indices[pointer++] = topRight;
+
+                // Second triangle
+                indices[pointer++] = topRight;
+                indices[pointer++] = bottomLeft;
+                indices[pointer++] = bottomRight;
+            }
+        }
+        return new MeshData(vertices, textureCoords, indices, normals);
+    }
 }

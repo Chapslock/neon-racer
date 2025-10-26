@@ -1,12 +1,14 @@
-package org.chapzlock.core.graphics;
+package org.chapzlock.core.graphics.shader;
 
 import org.chapzlock.core.component.Component;
+import org.chapzlock.core.graphics.PointLight;
+import org.chapzlock.core.graphics.Shader;
 import org.joml.Matrix4f;
 
-public final class StaticShader extends Shader implements Component {
+public final class EntityStaticShader extends Shader implements Component {
 
-    private static final String VERTEX_FILE = "shaders/textured.vertex.glsl";
-    private static final String FRAGMENT_FILE = "shaders/textured.fragment.glsl";
+    private static final String VERTEX_FILE = "shaders/EntityVertex.glsl";
+    private static final String FRAGMENT_FILE = "shaders/EntityFragment.glsl";
 
     private static final String UNIFORM_TRANSFORMATION_MATRIX = "transformationMatrix";
     private static final String UNIFORM_PROJECTION_MATRIX = "projectionMatrix";
@@ -17,7 +19,7 @@ public final class StaticShader extends Shader implements Component {
     private static final String UNIFORM_REFLECTIVITY = "reflectivity";
     private static final String UNIFORM_TEXTURE_SAMPLER = "textureSampler";
 
-    public StaticShader() {
+    public EntityStaticShader() {
         super(VERTEX_FILE, FRAGMENT_FILE);
         createUniform(UNIFORM_TRANSFORMATION_MATRIX);
         createUniform(UNIFORM_PROJECTION_MATRIX);

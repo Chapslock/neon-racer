@@ -1,10 +1,8 @@
 package org.chapzlock.app.layer;
 
 import java.util.List;
-import java.util.Random;
 
 import org.chapzlock.app.component.PlayerInputComponent;
-import org.chapzlock.app.systems.PlayerInputSystem;
 import org.chapzlock.app.systems.PlayerRotateSystem;
 import org.chapzlock.app.tags.PlayerTag;
 import org.chapzlock.core.application.Layer;
@@ -12,17 +10,21 @@ import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.entity.Entity;
 import org.chapzlock.core.files.FileUtils;
 import org.chapzlock.core.geometry.MeshData;
+import org.chapzlock.core.geometry.MeshFactory;
 import org.chapzlock.core.graphics.Camera;
 import org.chapzlock.core.graphics.Color;
-import org.chapzlock.core.graphics.Material;
 import org.chapzlock.core.graphics.Mesh;
 import org.chapzlock.core.graphics.PointLight;
-import org.chapzlock.core.graphics.StaticShader;
+import org.chapzlock.core.graphics.Terrain;
 import org.chapzlock.core.graphics.Texture;
+import org.chapzlock.core.graphics.material.EntityMaterial;
+import org.chapzlock.core.graphics.material.TerrainMaterial;
+import org.chapzlock.core.graphics.shader.EntityStaticShader;
 import org.chapzlock.core.registry.ComponentRegistry;
 import org.chapzlock.core.system.CameraFreeRoamSystem;
-import org.chapzlock.core.system.RenderSystem;
+import org.chapzlock.core.system.EntityRenderSystem;
 import org.chapzlock.core.system.System;
+import org.chapzlock.core.system.TerrainRenderSystem;
 import org.joml.Vector3f;
 
 public class TestLayer implements Layer {
@@ -30,17 +32,23 @@ public class TestLayer implements Layer {
     private final ComponentRegistry registry = new ComponentRegistry();
 
     private final List<System> systems = List.of(
-        new RenderSystem(registry),
-        new PlayerInputSystem(registry),
+        new EntityRenderSystem(registry),
+        new TerrainRenderSystem(registry),
         new PlayerRotateSystem(registry),
         new CameraFreeRoamSystem(registry)
     );
 
-    public TestLayer() {
+    @Override
+    public void onInit() {
+        createEntities();
+        systems.forEach(System::onInit);
+    }
+
+    private void createEntities() {
         int player = Entity.create();
         MeshData meshData = FileUtils.loadWavefrontFileToMesh("wavefront/funcar.obj");
         Mesh playerMesh = new Mesh(meshData);
-        Material playerMat = new Material(new StaticShader(), Texture.loadTexture("textures/funcar.png"));
+        EntityMaterial playerMat = new EntityMaterial(new EntityStaticShader(), Texture.loadTexture("textures/funcar.png"));
 
         registry.addComponent(player, new Transform(new Vector3f(0, 0, -5), new Vector3f(90, 0, 180)));
         registry.addComponent(player, playerMesh);
@@ -48,33 +56,19 @@ public class TestLayer implements Layer {
         registry.addComponent(player, new PlayerTag());
         registry.addComponent(player, new PlayerInputComponent());
 
-        generateCars(playerMesh, playerMat);
-
-
         int light = Entity.create();
-        registry.addComponent(light, new PointLight(new Vector3f(-5, 0, -10), Color.WHITE));
+        registry.addComponent(light, new PointLight(new Vector3f(-5, 10, -10), Color.WHITE));
 
         int camera = Entity.create();
-        registry.addComponent(camera, new Camera());
-    }
+        registry.addComponent(camera, new Camera(new Vector3f(0, 3, 0)));
 
-    private void generateCars(Mesh playerMesh, Material playerMat) {
-        Random rand = new Random();
-        for (int i = 0; i < 10_000; i++) {
-            int id = Entity.create();
-            float x = rand.nextFloat(0, 200);
-            float y = rand.nextFloat(0, 200);
-            float z = rand.nextFloat(0, 200);
-            registry.addComponent(id, new Transform(new Vector3f(x, y, -z), new Vector3f(x, y, z)));
-            registry.addComponent(id, playerMesh);
-            registry.addComponent(id, playerMat);
-            registry.addComponent(id, new PlayerTag());
-        }
-    }
 
-    @Override
-    public void onInit() {
-        systems.forEach(System::onInit);
+        int terrain = Entity.create();
+        Terrain terrainProps = new Terrain(20);
+        registry.addComponent(terrain, new Transform(new Vector3f(-10, 0, -10)));
+        registry.addComponent(terrain, new TerrainMaterial(Texture.loadTexture("textures/terrain.png")));
+        registry.addComponent(terrain, new Mesh(MeshFactory.generateFlatTerrain(terrainProps.getVertexCount(), terrainProps.getSize())));
+        registry.addComponent(terrain, terrainProps);
     }
 
     @Override
