@@ -41,8 +41,8 @@ public class Camera implements Component {
     @Setter
     private float farPlane = 1000f;
 
-    public Camera(Vector3f vector3f) {
-        this.position = vector3f;
+    public Camera(Vector3f position) {
+        this.position = position;
     }
 
 

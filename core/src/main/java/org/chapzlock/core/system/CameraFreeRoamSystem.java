@@ -6,15 +6,10 @@ import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.registry.ComponentRegistry;
 import org.lwjgl.glfw.GLFW;
 
-import lombok.RequiredArgsConstructor;
 
-/**
- * Provides a spectator like camera free roam system implementation
- */
-@RequiredArgsConstructor
 public class CameraFreeRoamSystem implements System {
 
-    private final ComponentRegistry registry;
+    private final ComponentRegistry registry = ComponentRegistry.instance();
 
     private static final float CAMERA_MOUSE_SENSITIVITY = .01f;
     private static final float CAMERA_MOVEMENT_SPEED = 3f;

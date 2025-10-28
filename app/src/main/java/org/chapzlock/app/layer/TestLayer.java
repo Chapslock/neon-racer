@@ -30,14 +30,14 @@ import org.joml.Vector3f;
 
 public class TestLayer implements Layer {
 
-    private final ComponentRegistry registry = new ComponentRegistry();
+    private final ComponentRegistry registry = ComponentRegistry.instance();
     private final MeshSystem meshSystem = MeshSystem.instance();
 
     private final List<System> systems = List.of(
-        new EntityRenderSystem(registry),
-        new TerrainRenderSystem(registry),
-        new PlayerRotateSystem(registry),
-        new CameraFreeRoamSystem(registry)
+        new EntityRenderSystem(),
+        new TerrainRenderSystem(),
+        new PlayerRotateSystem(),
+        new CameraFreeRoamSystem()
     );
 
     @Override
@@ -48,8 +48,8 @@ public class TestLayer implements Layer {
 
     private void createEntities() {
         int player = Entity.create();
-        RawMeshData rawMeshData = FileUtils.loadWavefrontFileToMesh("wavefront/funcar.obj");
-        Mesh playerMesh = meshSystem.uploadRawMesh(rawMeshData);
+        RawMeshData rawMeshData = FileUtils.loadMeshData("wavefront/funcar.obj");
+        Mesh playerMesh = meshSystem.bind(rawMeshData);
         EntityMaterial playerMat = new EntityMaterial(new EntityStaticShader(), Texture.loadTexture("textures/funcar.png"));
 
         registry.addComponent(player, new Transform(new Vector3f(0, 0, -5), new Vector3f(90, 0, 180)));
@@ -69,7 +69,7 @@ public class TestLayer implements Layer {
         Terrain terrainProps = new Terrain(20);
         registry.addComponent(terrain, new Transform(new Vector3f(-10, 0, -10)));
         registry.addComponent(terrain, new TerrainMaterial(Texture.loadTexture("textures/terrain.png")));
-        registry.addComponent(terrain, meshSystem.uploadRawMesh(
+        registry.addComponent(terrain, meshSystem.bind(
             RawMeshDataFactory.generateFlatTerrain(terrainProps.getVertexCount(), terrainProps.getSize())));
         registry.addComponent(terrain, terrainProps);
     }

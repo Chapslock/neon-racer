@@ -11,7 +11,8 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 /**
- * Caches and handles OpenGL calls on Meshes
+ * Caches and handles OpenGL calls on Meshes.
+ * Implemented as a singleton to optimize GPU resource usage
  */
 public class MeshSystem {
     private static MeshSystem instance;
@@ -27,14 +28,14 @@ public class MeshSystem {
      * Loads mesh data from an .obj file and uploads it to GPU
      *
      * @param resourcePath file path to the .obj file
-     * @return uploaded mesh
+     * @return uploaded mesh component
      */
-    public Mesh uploadMeshFromFile(String resourcePath) {
+    public Mesh bind(String resourcePath) {
         Integer existingId = resourcePathToIdMap.get(resourcePath);
         if (existingId != null) {
             return meshPool.get(existingId);
         }
-        RawMeshData rawMeshData = FileUtils.loadWavefrontFileToMesh(resourcePath);
+        RawMeshData rawMeshData = FileUtils.loadMeshData(resourcePath);
         Mesh mesh = MeshUtil.bindMeshDataToGpu(rawMeshData);
         meshPool.put(mesh.getId(), mesh);
         rawMeshDataToIdMap.put(rawMeshData, mesh.getId());
@@ -46,9 +47,9 @@ public class MeshSystem {
      * uploads raw mesh data to the GPU
      *
      * @param rawMeshData
-     * @return uploaded mesh
+     * @return uploaded mesh component
      */
-    public Mesh uploadRawMesh(RawMeshData rawMeshData) {
+    public Mesh bind(RawMeshData rawMeshData) {
         Integer existingId = rawMeshDataToIdMap.get(rawMeshData);
         if (existingId != null) {
             return meshPool.get(existingId);

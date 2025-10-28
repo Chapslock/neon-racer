@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
  * An internal representation of an OpenGL mesh
  */
 @Getter
-@Builder(toBuilder = true)
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Mesh implements Component {

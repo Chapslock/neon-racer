@@ -55,7 +55,7 @@ public class FileUtils {
      * @param resourcePath path of the file relative to the resource directory
      * @return RawMeshData for the given wavefront file
      */
-    public static RawMeshData loadWavefrontFileToMesh(String resourcePath) {
+    public static RawMeshData loadMeshData(String resourcePath) {
         try (BufferedReader br = openResource(resourcePath)) {
             return parseObjFile(br);
         } catch (Exception e) {

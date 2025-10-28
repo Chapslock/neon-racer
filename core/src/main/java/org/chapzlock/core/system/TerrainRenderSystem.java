@@ -15,15 +15,13 @@ import org.chapzlock.core.registry.ComponentRegistry;
 import org.lwjgl.opengl.GL11;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
-import lombok.RequiredArgsConstructor;
 
 /**
- * The core render system
+ * Terrain rendering system
  */
-@RequiredArgsConstructor
 public class TerrainRenderSystem implements System {
 
-    private final ComponentRegistry registry;
+    private final ComponentRegistry registry = ComponentRegistry.instance();
     private final MeshSystem meshSystem = MeshSystem.instance();
 
     private final Map<TerrainMaterial, List<EntityView>> renderQueue = new Object2ObjectArrayMap<>();

@@ -15,15 +15,12 @@ import org.chapzlock.core.logging.Log;
 import org.chapzlock.core.registry.ComponentRegistry;
 import org.lwjgl.opengl.GL11;
 
-import lombok.RequiredArgsConstructor;
-
 /**
  * The core render system
  */
-@RequiredArgsConstructor
 public class EntityRenderSystem implements System {
 
-    private final ComponentRegistry registry;
+    private final ComponentRegistry registry = ComponentRegistry.instance();
     private final MeshSystem meshSystem = MeshSystem.instance();
 
     private final Map<EntityMaterial, List<EntityView>> renderQueue = new HashMap<>();

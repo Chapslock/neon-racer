@@ -17,14 +17,28 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 /**
  * Central registry for all the components and entities tied to them
  * Mainly used in Systems to execute logic
+ * Implemented as a singleton because it carries the global state of entities
  */
 public class ComponentRegistry {
+    private static ComponentRegistry instance;
+
     private final Map<Class<? extends Component>, Integer> typeToId = new Object2IntOpenHashMap<>();
     private final List<ComponentStore<?>> stores = new ArrayList<>();
     private final AtomicInteger nextTypeId = new AtomicInteger();
-
-    // Track which components each entity has (bitset per entity)
+    /**
+     * Tracks which components each entity has (bitset per entity)
+     */
     private final Int2ObjectOpenHashMap<BitSet> entityComponentMasks = new Int2ObjectOpenHashMap<>();
+
+    private ComponentRegistry() {
+    }
+
+    public static ComponentRegistry instance() {
+        if (instance == null) {
+            instance = new ComponentRegistry();
+        }
+        return instance;
+    }
 
     /**
      * Assigns or retrieves an integer ID for a component type.
