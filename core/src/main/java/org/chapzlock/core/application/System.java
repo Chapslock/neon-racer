@@ -1,4 +1,4 @@
-package org.chapzlock.core.system;
+package org.chapzlock.core.application;
 
 /**
  * System that needs to be a part of the application lifecycle

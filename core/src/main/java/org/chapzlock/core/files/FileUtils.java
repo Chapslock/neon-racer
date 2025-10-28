@@ -24,7 +24,7 @@ public class FileUtils {
      * @param resourcePath path of the file relative to the resources directory
      * @return file content as string
      */
-    public static String loadFileAsString(String resourcePath) {
+    public static String loadAsString(String resourcePath) {
         StringBuilder builder = new StringBuilder();
 
         try (

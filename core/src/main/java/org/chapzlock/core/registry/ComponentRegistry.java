@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.chapzlock.core.component.Component;
+import org.chapzlock.core.application.Component;
 import org.chapzlock.core.entity.EntityView;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;

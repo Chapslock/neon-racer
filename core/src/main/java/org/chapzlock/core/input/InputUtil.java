@@ -12,7 +12,7 @@ import lombok.experimental.UtilityClass;
  * Utility class for input handling
  */
 @UtilityClass
-public class Input {
+public class InputUtil {
 
 
     /**

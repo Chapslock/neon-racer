@@ -1,6 +1,6 @@
 package org.chapzlock.core.entity;
 
-import org.chapzlock.core.component.Component;
+import org.chapzlock.core.application.Component;
 
 import lombok.Getter;
 

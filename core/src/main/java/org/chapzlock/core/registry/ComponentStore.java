@@ -1,6 +1,6 @@
 package org.chapzlock.core.registry;
 
-import org.chapzlock.core.component.Component;
+import org.chapzlock.core.application.Component;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 

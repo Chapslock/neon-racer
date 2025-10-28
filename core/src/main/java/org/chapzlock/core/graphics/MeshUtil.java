@@ -1,4 +1,4 @@
-package org.chapzlock.core.graphics.mesh;
+package org.chapzlock.core.graphics;
 
 import static org.lwjgl.opengl.GL11.GL_FLOAT;
 import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
@@ -23,7 +23,6 @@ import java.nio.IntBuffer;
 
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.geometry.RawMeshData;
-import org.chapzlock.core.graphics.ResourceIdGenerator;
 import org.lwjgl.system.MemoryUtil;
 
 import lombok.experimental.UtilityClass;

@@ -5,7 +5,7 @@ import java.util.Map;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.files.FileUtils;
 import org.chapzlock.core.geometry.RawMeshData;
-import org.chapzlock.core.graphics.mesh.MeshUtil;
+import org.chapzlock.core.graphics.MeshUtil;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;

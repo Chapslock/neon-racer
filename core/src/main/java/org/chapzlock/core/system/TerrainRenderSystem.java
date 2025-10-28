@@ -1,15 +1,22 @@
 package org.chapzlock.core.system;
 
+import static org.chapzlock.core.graphics.shader.TerrainShaderProps.UNIFORM_LIGHT_COLOR;
+import static org.chapzlock.core.graphics.shader.TerrainShaderProps.UNIFORM_LIGHT_POSITION;
+import static org.chapzlock.core.graphics.shader.TerrainShaderProps.UNIFORM_PROJECTION_MATRIX;
+import static org.chapzlock.core.graphics.shader.TerrainShaderProps.UNIFORM_TRANSFORMATION_MATRIX;
+import static org.chapzlock.core.graphics.shader.TerrainShaderProps.UNIFORM_VIEW_MATRIX;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.chapzlock.core.application.System;
 import org.chapzlock.core.component.Camera;
+import org.chapzlock.core.component.Material;
 import org.chapzlock.core.component.Mesh;
+import org.chapzlock.core.component.PointLight;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.entity.EntityView;
-import org.chapzlock.core.graphics.PointLight;
-import org.chapzlock.core.graphics.material.TerrainMaterial;
 import org.chapzlock.core.logging.Log;
 import org.chapzlock.core.registry.ComponentRegistry;
 import org.lwjgl.opengl.GL11;
@@ -17,14 +24,20 @@ import org.lwjgl.opengl.GL11;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 
 /**
- * Terrain rendering system
+ * Terrain rendering system.
+ * Renders all entities with the terrain component attached
  */
 public class TerrainRenderSystem implements System {
 
     private final ComponentRegistry registry = ComponentRegistry.instance();
     private final MeshSystem meshSystem = MeshSystem.instance();
+    private final ShaderSystem shaderSystem = new ShaderSystem();
+    private final TerrainMaterialSystem materialSystem = new TerrainMaterialSystem(
+        shaderSystem,
+        new TextureSystem()
+    );
 
-    private final Map<TerrainMaterial, List<EntityView>> renderQueue = new Object2ObjectArrayMap<>();
+    private final Map<Material, List<EntityView>> renderQueue = new Object2ObjectArrayMap<>();
 
     @Override
     public void onRender(float deltaTime) {
@@ -38,7 +51,7 @@ public class TerrainRenderSystem implements System {
 
         PointLight light = getPointLight();
 
-        registry.view(Mesh.class, TerrainMaterial.class, Transform.class)
+        registry.view(Mesh.class, Material.class, Transform.class)
             .forEach(this::submitToRenderQueue);
         renderEntitiesFromQueue(camera, light);
         clearRenderQueue();
@@ -57,31 +70,32 @@ public class TerrainRenderSystem implements System {
     }
 
     private void submitToRenderQueue(EntityView entity) {
-        this.renderQueue.computeIfAbsent(entity.get(TerrainMaterial.class), m -> new ArrayList<>()).add(entity);
+        this.renderQueue.computeIfAbsent(entity.get(Material.class), m -> new ArrayList<>()).add(entity);
     }
 
     private void renderEntitiesFromQueue(Camera camera, PointLight light) {
         for (var batch : renderQueue.entrySet()) {
-            TerrainMaterial entityMaterial = batch.getKey();
+            Material entityMaterial = batch.getKey();
             List<EntityView> renderables = batch.getValue();
             var shader = entityMaterial.getShader();
 
             // Bind entityMaterial/shader once
-            entityMaterial.bind();
+            materialSystem.applyMaterial(entityMaterial);
 
             // Load global uniforms once per batch
-            shader.loadViewMatrix(camera.getViewMatrix());
-            shader.loadProjectionMatrix(camera.getProjectionMatrix());
+            shaderSystem.setUniform(shader, UNIFORM_PROJECTION_MATRIX, camera.getProjectionMatrix());
+            shaderSystem.setUniform(shader, UNIFORM_VIEW_MATRIX, camera.getViewMatrix());
             if (light != null) {
-                shader.loadLight(light);
+                shaderSystem.setUniform(shader, UNIFORM_LIGHT_POSITION, light.position());
+                shaderSystem.setUniform(shader, UNIFORM_LIGHT_COLOR, light.color().toVector3f());
             }
 
             for (EntityView entity : renderables) {
-                shader.loadTransformationMatrix(entity.get(Transform.class).calculateTransformationMatrix());
+                shaderSystem.setUniform(shader, UNIFORM_TRANSFORMATION_MATRIX, entity.get(Transform.class).calculateTransformationMatrix());
                 meshSystem.render(entity.get(Mesh.class));
             }
 
-            entityMaterial.unbind();
+            materialSystem.unapplyMaterial(entityMaterial);
         }
     }
 

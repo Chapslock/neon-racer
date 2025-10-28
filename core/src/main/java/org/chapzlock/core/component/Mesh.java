@@ -1,5 +1,7 @@
 package org.chapzlock.core.component;
 
+import org.chapzlock.core.application.Component;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

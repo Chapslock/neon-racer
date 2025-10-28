@@ -1,9 +1,10 @@
-package org.chapzlock.core.graphics;
+package org.chapzlock.core.component;
 
+import org.chapzlock.core.application.Component;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
-public final class Color {
+public final class Color implements Component {
 
     public static final Color WHITE = new Color(1f, 1f, 1f);
     public static final Color BLACK = new Color(0f, 0f, 0f);

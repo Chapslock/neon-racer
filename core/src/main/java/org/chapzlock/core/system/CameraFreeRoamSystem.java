@@ -2,6 +2,7 @@ package org.chapzlock.core.system;
 
 import static org.joml.Math.clamp;
 
+import org.chapzlock.core.application.System;
 import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.registry.ComponentRegistry;
 import org.lwjgl.glfw.GLFW;

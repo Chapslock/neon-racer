@@ -1,13 +1,11 @@
 package org.chapzlock.core.system;
 
+import org.chapzlock.core.application.System;
 import org.chapzlock.core.registry.ComponentRegistry;
 
-import lombok.RequiredArgsConstructor;
-
-@RequiredArgsConstructor
 public class PhysicsSystem implements System {
 
-    private final ComponentRegistry registry;
+    private final ComponentRegistry registry = ComponentRegistry.instance();
 
     @Override
     public void onUpdate(float deltaTime) {
