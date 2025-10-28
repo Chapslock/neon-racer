@@ -1,20 +1,21 @@
 package org.chapzlock.core.system;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.chapzlock.core.asset.ResourceManager;
+import org.chapzlock.core.component.Camera;
+import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.entity.EntityView;
-import org.chapzlock.core.graphics.Camera;
-import org.chapzlock.core.graphics.Mesh;
 import org.chapzlock.core.graphics.PointLight;
 import org.chapzlock.core.graphics.material.TerrainMaterial;
 import org.chapzlock.core.logging.Log;
 import org.chapzlock.core.registry.ComponentRegistry;
 import org.lwjgl.opengl.GL11;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -24,8 +25,9 @@ import lombok.RequiredArgsConstructor;
 public class TerrainRenderSystem implements System {
 
     private final ComponentRegistry registry;
+    private final ResourceManager resourceManager = ResourceManager.instance();
 
-    private final Map<TerrainMaterial, List<EntityView>> renderQueue = new HashMap<>();
+    private final Map<TerrainMaterial, List<EntityView>> renderQueue = new Object2ObjectArrayMap<>();
 
     @Override
     public void onRender(float deltaTime) {
@@ -79,7 +81,7 @@ public class TerrainRenderSystem implements System {
 
             for (EntityView entity : renderables) {
                 shader.loadTransformationMatrix(entity.get(Transform.class).calculateTransformationMatrix());
-                entity.get(Mesh.class).render();
+                resourceManager.renderMesh(entity.get(Mesh.class).getMeshHandle());
             }
 
             entityMaterial.unbind();

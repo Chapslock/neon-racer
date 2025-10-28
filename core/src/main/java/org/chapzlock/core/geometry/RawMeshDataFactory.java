@@ -9,7 +9,7 @@ import lombok.experimental.UtilityClass;
  * Utility class for generating simple Meshes
  */
 @UtilityClass
-public class MeshFactory {
+public class RawMeshDataFactory {
     /**
      * 2D Quad (centered at origin)
      *
@@ -17,7 +17,7 @@ public class MeshFactory {
      * @param height
      * @return
      */
-    public static MeshData createQuad(float width, float height) {
+    public static RawMeshData createQuad(float width, float height) {
         float hw = width / 2.0f;
         float hh = height / 2.0f;
 
@@ -40,7 +40,7 @@ public class MeshFactory {
             2, 3, 0
         };
 
-        return new MeshData(positions, texCoords, indices);
+        return new RawMeshData(positions, texCoords, indices);
     }
 
 
@@ -50,7 +50,7 @@ public class MeshFactory {
      * @param size
      * @return
      */
-    public static MeshData createTriangle(float size) {
+    public static RawMeshData createTriangle(float size) {
         float h = (float) (Math.sqrt(3) / 2 * size);
 
         float[] positions = {
@@ -67,7 +67,7 @@ public class MeshFactory {
 
         int[] indices = {0, 1, 2};
 
-        return new MeshData(positions, texCoords, indices);
+        return new RawMeshData(positions, texCoords, indices);
     }
 
 
@@ -77,7 +77,7 @@ public class MeshFactory {
      * @param size
      * @return
      */
-    public static MeshData createCube(float size) {
+    public static RawMeshData createCube(float size) {
         float h = size / 2.0f;
         float[] positions = {
             // Front face
@@ -113,14 +113,14 @@ public class MeshFactory {
             20, 21, 22, 22, 23, 20 // Bottom
         };
 
-        return new MeshData(positions, texCoords, indices);
+        return new RawMeshData(positions, texCoords, indices);
     }
 
 
     /**
      * 3D Sphere (low-poly UV sphere)
      */
-    public static MeshData createSphere(float radius, int sectors, int stacks) {
+    public static RawMeshData createSphere(float radius, int sectors, int stacks) {
         List<Float> posList = new ArrayList<>();
         List<Float> texList = new ArrayList<>();
         List<Integer> idxList = new ArrayList<>();
@@ -171,7 +171,7 @@ public class MeshFactory {
         for (int i = 0; i < idxList.size(); i++) {
             indices[i] = idxList.get(i);
         }
-        return new MeshData(positions, texCoords, indices);
+        return new RawMeshData(positions, texCoords, indices);
     }
 
     /**
@@ -181,7 +181,7 @@ public class MeshFactory {
      * @param size
      * @return
      */
-    public static MeshData generateFlatTerrain(int vertexCount, float size) {
+    public static RawMeshData generateFlatTerrain(int vertexCount, float size) {
         int count = vertexCount * vertexCount;
         float[] vertices = new float[count * 3];
         float[] normals = new float[count * 3];
@@ -192,9 +192,9 @@ public class MeshFactory {
         for (int i = 0; i < vertexCount; i++) {
             for (int j = 0; j < vertexCount; j++) {
                 // Vertex position
-                vertices[vertexPointer * 3] = (float) j / ((float) vertexCount - 1) * size; // X
+                vertices[vertexPointer * 3] = j / ((float) vertexCount - 1) * size; // X
                 vertices[vertexPointer * 3 + 1] = 0; // Y (heightmap later)
-                vertices[vertexPointer * 3 + 2] = (float) i / ((float) vertexCount - 1) * size; // Z
+                vertices[vertexPointer * 3 + 2] = i / ((float) vertexCount - 1) * size; // Z
 
                 // Normal (flat up for now)
                 normals[vertexPointer * 3] = 0;
@@ -202,8 +202,8 @@ public class MeshFactory {
                 normals[vertexPointer * 3 + 2] = 0;
 
                 // Texture coordinates
-                textureCoords[vertexPointer * 2] = (float) j / ((float) vertexCount - 1);
-                textureCoords[vertexPointer * 2 + 1] = (float) i / ((float) vertexCount - 1);
+                textureCoords[vertexPointer * 2] = j / ((float) vertexCount - 1);
+                textureCoords[vertexPointer * 2 + 1] = i / ((float) vertexCount - 1);
 
                 vertexPointer++;
             }
@@ -229,6 +229,6 @@ public class MeshFactory {
                 indices[pointer++] = bottomRight;
             }
         }
-        return new MeshData(vertices, textureCoords, indices, normals);
+        return new RawMeshData(vertices, textureCoords, indices, normals);
     }
 }

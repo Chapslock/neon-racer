@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 @AllArgsConstructor
-public class MeshData {
+public class RawMeshData {
     private final float[] positions;
     private final float[] texCoords;
     private final int[] indices;

@@ -6,14 +6,14 @@ import org.chapzlock.app.component.PlayerInputComponent;
 import org.chapzlock.app.systems.PlayerRotateSystem;
 import org.chapzlock.app.tags.PlayerTag;
 import org.chapzlock.core.application.Layer;
+import org.chapzlock.core.component.Camera;
+import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.entity.Entity;
 import org.chapzlock.core.files.FileUtils;
-import org.chapzlock.core.geometry.MeshData;
-import org.chapzlock.core.geometry.MeshFactory;
-import org.chapzlock.core.graphics.Camera;
+import org.chapzlock.core.geometry.RawMeshData;
+import org.chapzlock.core.geometry.RawMeshDataFactory;
 import org.chapzlock.core.graphics.Color;
-import org.chapzlock.core.graphics.Mesh;
 import org.chapzlock.core.graphics.PointLight;
 import org.chapzlock.core.graphics.Terrain;
 import org.chapzlock.core.graphics.Texture;
@@ -46,8 +46,8 @@ public class TestLayer implements Layer {
 
     private void createEntities() {
         int player = Entity.create();
-        MeshData meshData = FileUtils.loadWavefrontFileToMesh("wavefront/funcar.obj");
-        Mesh playerMesh = new Mesh(meshData);
+        RawMeshData rawMeshData = FileUtils.loadWavefrontFileToMesh("wavefront/funcar.obj");
+        Mesh playerMesh = new Mesh(rawMeshData);
         EntityMaterial playerMat = new EntityMaterial(new EntityStaticShader(), Texture.loadTexture("textures/funcar.png"));
 
         registry.addComponent(player, new Transform(new Vector3f(0, 0, -5), new Vector3f(90, 0, 180)));
@@ -67,7 +67,8 @@ public class TestLayer implements Layer {
         Terrain terrainProps = new Terrain(20);
         registry.addComponent(terrain, new Transform(new Vector3f(-10, 0, -10)));
         registry.addComponent(terrain, new TerrainMaterial(Texture.loadTexture("textures/terrain.png")));
-        registry.addComponent(terrain, new Mesh(MeshFactory.generateFlatTerrain(terrainProps.getVertexCount(), terrainProps.getSize())));
+        registry.addComponent(terrain, new Mesh(
+            RawMeshDataFactory.generateFlatTerrain(terrainProps.getVertexCount(), terrainProps.getSize())));
         registry.addComponent(terrain, terrainProps);
     }
 
