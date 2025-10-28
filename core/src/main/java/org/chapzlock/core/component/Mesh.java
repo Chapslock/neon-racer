@@ -1,21 +1,26 @@
 package org.chapzlock.core.component;
 
-import org.chapzlock.core.asset.ResourceManager;
-import org.chapzlock.core.geometry.RawMeshData;
-
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 
-@RequiredArgsConstructor
+/**
+ * An internal representation of an OpenGL mesh
+ */
 @Getter
+@Builder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
 public class Mesh implements Component {
-    private final int meshHandle;
-
-    public Mesh(RawMeshData rawMeshData) {
-        this.meshHandle = ResourceManager.instance().uploadRawMesh(rawMeshData);
-    }
-
-    public Mesh(String filePath) {
-        this.meshHandle = ResourceManager.instance().uploadMeshFromFile(filePath);
-    }
+    /**
+     * Internal ID of the mesh
+     */
+    private int id;
+    private int vaoId;
+    private int positionsVboId;
+    private int textureCoordinatesVboId;
+    private int indicesVboId;
+    private Integer normalsVboId;
+    private int vertexCount;
 }

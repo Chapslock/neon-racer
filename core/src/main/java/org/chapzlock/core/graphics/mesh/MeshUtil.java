@@ -1,4 +1,4 @@
-package org.chapzlock.core.asset;
+package org.chapzlock.core.graphics.mesh;
 
 import static org.lwjgl.opengl.GL11.GL_FLOAT;
 import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
@@ -21,37 +21,51 @@ import static org.lwjgl.opengl.GL30.glGenVertexArrays;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
+import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.geometry.RawMeshData;
+import org.chapzlock.core.graphics.ResourceIdGenerator;
 import org.lwjgl.system.MemoryUtil;
 
 import lombok.experimental.UtilityClass;
 
+/**
+ * Handles OpenGL calls related mesh resources
+ */
 @UtilityClass
-class RawMeshManager {
+public class MeshUtil {
 
-    public static RawMesh bindMeshDataToGpu(RawMeshData rawMeshData) {
+    /**
+     * Binds the mesh data to GPU
+     *
+     * @param rawMeshData
+     * @return builder for the mesh
+     */
+    public static Mesh bindMeshDataToGpu(RawMeshData rawMeshData) {
         float[] positions = rawMeshData.getPositions();
         float[] texCoords = rawMeshData.getTexCoords();
         int[] indices = rawMeshData.getIndices();
         float[] normals = rawMeshData.getNormals();
 
-        RawMesh mesh = new RawMesh();
-        mesh.vertexCount = indices.length;
+        var mesh = Mesh.builder();
+        mesh.vertexCount(indices.length);
 
-        mesh.vaoId = glGenVertexArrays();
-        glBindVertexArray(mesh.vaoId);
+        int vaoId = glGenVertexArrays();
+        mesh.vaoId(vaoId);
+        glBindVertexArray(vaoId);
 
-        mesh.positionsVboId = bindFloatData(0, 3, positions);
-        mesh.textureCoordinatesVboId = bindFloatData(1, 2, texCoords);
+        mesh.positionsVboId(bindFloatData(0, 3, positions));
+        mesh.textureCoordinatesVboId(bindFloatData(1, 2, texCoords));
         if (normals != null && normals.length > 0) {
-            mesh.normalsVboId = bindFloatData(2, 3, normals);
+            mesh.normalsVboId(bindFloatData(2, 3, normals));
         }
 
-        mesh.indicesVboId = bindIndexData(indices);
+        mesh.indicesVboId(bindIndexData(indices));
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
-        return mesh;
+
+        mesh.id(ResourceIdGenerator.nextId());
+        return mesh.build();
     }
 
     private static int bindFloatData(int attrib, int size, float[] data) {
@@ -85,19 +99,19 @@ class RawMeshManager {
      *
      * @param mesh
      */
-    public static void render(RawMesh mesh) {
-        glBindVertexArray(mesh.vaoId);
+    public static void render(Mesh mesh) {
+        glBindVertexArray(mesh.getVaoId());
         glEnableVertexAttribArray(0); // positions
         glEnableVertexAttribArray(1); // texCoords
-        if (mesh.normalsVboId != null) {
+        if (mesh.getNormalsVboId() != null) {
             glEnableVertexAttribArray(2); //normals
         }
-        glDrawElements(GL_TRIANGLES, mesh.vertexCount, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, mesh.getVertexCount(), GL_UNSIGNED_INT, 0);
 
 
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
-        if (mesh.normalsVboId != null) {
+        if (mesh.getNormalsVboId() != null) {
             glDisableVertexAttribArray(2);
         }
         glBindVertexArray(0);
@@ -108,20 +122,20 @@ class RawMeshManager {
      *
      * @param mesh
      */
-    public static void delete(RawMesh mesh) {
+    public static void delete(Mesh mesh) {
         // Disable
         glDisableVertexAttribArray(0);
 
         // Delete buffers
         glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glDeleteBuffers(mesh.positionsVboId);
-        glDeleteBuffers(mesh.textureCoordinatesVboId);
+        glDeleteBuffers(mesh.getPositionsVboId());
+        glDeleteBuffers(mesh.getTextureCoordinatesVboId());
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        glDeleteBuffers(mesh.indicesVboId);
+        glDeleteBuffers(mesh.getIndicesVboId());
 
         // Delete VAO
         glBindVertexArray(0);
-        glDeleteVertexArrays(mesh.vaoId);
+        glDeleteVertexArrays(mesh.getVaoId());
     }
 }

@@ -23,6 +23,7 @@ import org.chapzlock.core.graphics.shader.EntityStaticShader;
 import org.chapzlock.core.registry.ComponentRegistry;
 import org.chapzlock.core.system.CameraFreeRoamSystem;
 import org.chapzlock.core.system.EntityRenderSystem;
+import org.chapzlock.core.system.MeshSystem;
 import org.chapzlock.core.system.System;
 import org.chapzlock.core.system.TerrainRenderSystem;
 import org.joml.Vector3f;
@@ -30,6 +31,7 @@ import org.joml.Vector3f;
 public class TestLayer implements Layer {
 
     private final ComponentRegistry registry = new ComponentRegistry();
+    private final MeshSystem meshSystem = MeshSystem.instance();
 
     private final List<System> systems = List.of(
         new EntityRenderSystem(registry),
@@ -47,7 +49,7 @@ public class TestLayer implements Layer {
     private void createEntities() {
         int player = Entity.create();
         RawMeshData rawMeshData = FileUtils.loadWavefrontFileToMesh("wavefront/funcar.obj");
-        Mesh playerMesh = new Mesh(rawMeshData);
+        Mesh playerMesh = meshSystem.uploadRawMesh(rawMeshData);
         EntityMaterial playerMat = new EntityMaterial(new EntityStaticShader(), Texture.loadTexture("textures/funcar.png"));
 
         registry.addComponent(player, new Transform(new Vector3f(0, 0, -5), new Vector3f(90, 0, 180)));
@@ -67,7 +69,7 @@ public class TestLayer implements Layer {
         Terrain terrainProps = new Terrain(20);
         registry.addComponent(terrain, new Transform(new Vector3f(-10, 0, -10)));
         registry.addComponent(terrain, new TerrainMaterial(Texture.loadTexture("textures/terrain.png")));
-        registry.addComponent(terrain, new Mesh(
+        registry.addComponent(terrain, meshSystem.uploadRawMesh(
             RawMeshDataFactory.generateFlatTerrain(terrainProps.getVertexCount(), terrainProps.getSize())));
         registry.addComponent(terrain, terrainProps);
     }

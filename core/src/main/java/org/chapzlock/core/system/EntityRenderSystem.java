@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.chapzlock.core.asset.ResourceManager;
 import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.Transform;
@@ -25,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 public class EntityRenderSystem implements System {
 
     private final ComponentRegistry registry;
-    private final ResourceManager resourceManager = ResourceManager.instance();
+    private final MeshSystem meshSystem = MeshSystem.instance();
 
     private final Map<EntityMaterial, List<EntityView>> renderQueue = new HashMap<>();
 
@@ -89,7 +88,7 @@ public class EntityRenderSystem implements System {
 
             for (EntityView entity : renderables) {
                 shader.loadTransformationMatrix(entity.get(Transform.class).calculateTransformationMatrix());
-                resourceManager.renderMesh(entity.get(Mesh.class).getMeshHandle());
+                meshSystem.render(entity.get(Mesh.class));
             }
 
             entityMaterial.unbind();

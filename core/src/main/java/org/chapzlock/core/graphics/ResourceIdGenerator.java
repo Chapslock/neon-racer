@@ -1,11 +1,11 @@
-package org.chapzlock.core.asset;
+package org.chapzlock.core.graphics;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
-class ResourceIdGenerator {
+public class ResourceIdGenerator {
     private static final AtomicInteger sequence = new AtomicInteger(0);
 
     public static int nextId() {
