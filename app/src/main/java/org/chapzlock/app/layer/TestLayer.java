@@ -31,7 +31,7 @@ public class TestLayer implements Layer {
 
     private final ComponentRegistry registry = ComponentRegistry.instance();
     private final MeshSystem meshSystem = MeshSystem.instance();
-    private final TextureSystem textureSystem = new TextureSystem();
+    private final TextureSystem textureSystem = TextureSystem.instance();
 
     private final List<System> systems = List.of(
         new EntityRenderSystem(),
@@ -48,12 +48,12 @@ public class TestLayer implements Layer {
 
     private void createEntities() {
         int player = Entity.create();
-        Mesh playerMesh = meshSystem.bind("wavefront/funcar.obj");
+        Mesh playerMesh = meshSystem.load("wavefront/funcar.obj");
         Material playerMat = new Material(
             new Shader(
                 EntityShaderProps.VERTEX_FILE,
                 EntityShaderProps.FRAGMENT_FILE),
-            textureSystem.loadTexture("textures/funcar.png")
+            textureSystem.load("textures/funcar.png")
         );
         registry.addComponent(player, new Transform(new Vector3f(0, 0, -5), new Vector3f(90, 0, 180)));
         registry.addComponent(player, playerMesh);
@@ -75,11 +75,11 @@ public class TestLayer implements Layer {
                 TerrainShaderProps.VERTEX_FILE,
                 TerrainShaderProps.FRAGMENT_FILE
             ),
-            textureSystem.loadTexture("textures/terrain.png")
+            textureSystem.load("textures/terrain.png")
         );
         registry.addComponent(terrain, new Transform(new Vector3f(-10, 0, -10)));
         registry.addComponent(terrain, mat);
-        registry.addComponent(terrain, meshSystem.bind(
+        registry.addComponent(terrain, meshSystem.load(
             RawMeshDataFactory.generateFlatTerrain(terrainProps.getVertexCount(), terrainProps.getSize())));
         registry.addComponent(terrain, terrainProps);
     }

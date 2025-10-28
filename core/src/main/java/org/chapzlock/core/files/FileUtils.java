@@ -5,13 +5,23 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.chapzlock.core.geometry.RawMeshData;
+import org.chapzlock.core.graphics.RawImageData;
 import org.chapzlock.core.logging.Log;
+import org.lwjgl.stb.STBImage;
+import org.lwjgl.system.MemoryStack;
 
 import lombok.experimental.UtilityClass;
 
@@ -62,6 +72,74 @@ public class FileUtils {
             Log.error("Error while reading wavefront file! error: " + e.getMessage());
             throw new RuntimeException("Failed to read file: " + resourcePath, e);
         }
+    }
+
+    /**
+     * Loads raw image data from an image file
+     *
+     * @param resourcePath path of the file relative to the resource directory
+     * @return raw image data
+     */
+    public static RawImageData loadImage(String resourcePath) {
+        ByteBuffer image;
+        int width;
+        int height;
+
+        try {
+            ByteBuffer resourceBuffer = ioResourceToByteBuffer(resourcePath);
+            try (MemoryStack stack = MemoryStack.stackPush()) {
+                IntBuffer w = stack.mallocInt(1);
+                IntBuffer h = stack.mallocInt(1);
+                IntBuffer comp = stack.mallocInt(1);
+
+                STBImage.stbi_set_flip_vertically_on_load(true);
+                image = STBImage.stbi_load_from_memory(resourceBuffer, w, h, comp, 4);
+                if (image == null) {
+                    throw new RuntimeException("Failed to load texture: " + STBImage.stbi_failure_reason());
+                }
+                width = w.get(0);
+                height = h.get(0);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read resource: " + resourcePath, e);
+        }
+        return new RawImageData(image, width, height, resourcePath);
+    }
+
+    /**
+     * helper to read a resource into a ByteBuffer
+     */
+    private static ByteBuffer ioResourceToByteBuffer(String resourcePath) throws IOException {
+        ByteBuffer buffer;
+        Path path = Paths.get(resourcePath);
+        if (Files.isReadable(path)) {
+            try (SeekableByteChannel fc = Files.newByteChannel(path)) {
+                buffer = ByteBuffer.allocateDirect((int) fc.size() + 1);
+                while (fc.read(buffer) != -1)
+                    ;
+            }
+        } else {
+            try (
+                var source = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath);
+                var rbc = Channels.newChannel(source)
+            ) {
+                buffer = ByteBuffer.allocateDirect(8192);
+                while (true) {
+                    int bytes = rbc.read(buffer);
+                    if (bytes == -1) {
+                        break;
+                    }
+                    if (buffer.remaining() == 0) {
+                        ByteBuffer newBuffer = ByteBuffer.allocateDirect(buffer.capacity() * 2);
+                        buffer.flip();
+                        newBuffer.put(buffer);
+                        buffer = newBuffer;
+                    }
+                }
+            }
+        }
+        buffer.flip();
+        return buffer;
     }
 
     private static BufferedReader openResource(String resourcePath) throws IOException {

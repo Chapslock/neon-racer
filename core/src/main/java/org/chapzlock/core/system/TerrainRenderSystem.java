@@ -33,8 +33,7 @@ public class TerrainRenderSystem implements System {
     private final MeshSystem meshSystem = MeshSystem.instance();
     private final ShaderSystem shaderSystem = new ShaderSystem();
     private final TerrainMaterialSystem materialSystem = new TerrainMaterialSystem(
-        shaderSystem,
-        new TextureSystem()
+        shaderSystem
     );
 
     private final Map<Material, List<EntityView>> renderQueue = new Object2ObjectArrayMap<>();

@@ -10,11 +10,10 @@ import org.chapzlock.core.component.Texture;
 
 public class TerrainMaterialSystem {
     private final ShaderSystem shaderSystem;
-    private final TextureSystem textureSystem;
+    private final TextureSystem textureSystem = TextureSystem.instance();
 
-    public TerrainMaterialSystem(ShaderSystem shaderSystem, TextureSystem textureSystem) {
+    public TerrainMaterialSystem(ShaderSystem shaderSystem) {
         this.shaderSystem = shaderSystem;
-        this.textureSystem = textureSystem;
     }
 
     /**

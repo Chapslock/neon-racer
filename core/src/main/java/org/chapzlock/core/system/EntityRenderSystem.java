@@ -31,8 +31,7 @@ public class EntityRenderSystem implements System {
     private final MeshSystem meshSystem = MeshSystem.instance();
     private final ShaderSystem shaderSystem = new ShaderSystem();
     private final EntityMaterialSystem materialSystem = new EntityMaterialSystem(
-        shaderSystem,
-        new TextureSystem()
+        shaderSystem
     );
 
     private final Map<Material, List<EntityView>> renderQueue = new HashMap<>();

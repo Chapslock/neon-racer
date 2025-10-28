@@ -30,7 +30,7 @@ public class MeshSystem {
      * @param resourcePath file path to the .obj file
      * @return uploaded mesh component
      */
-    public Mesh bind(String resourcePath) {
+    public Mesh load(String resourcePath) {
         Integer existingId = resourcePathToIdMap.get(resourcePath);
         if (existingId != null) {
             return meshPool.get(existingId);
@@ -49,7 +49,7 @@ public class MeshSystem {
      * @param rawMeshData
      * @return uploaded mesh component
      */
-    public Mesh bind(RawMeshData rawMeshData) {
+    public Mesh load(RawMeshData rawMeshData) {
         Integer existingId = rawMeshDataToIdMap.get(rawMeshData);
         if (existingId != null) {
             return meshPool.get(existingId);

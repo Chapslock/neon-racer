@@ -1,131 +1,82 @@
 package org.chapzlock.core.system;
 
-import static org.lwjgl.opengl.GL11.GL_NEAREST;
-import static org.lwjgl.opengl.GL11.GL_RGBA;
-import static org.lwjgl.opengl.GL11.GL_RGBA8;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_MAG_FILTER;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_MIN_FILTER;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_S;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_T;
-import static org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE;
-import static org.lwjgl.opengl.GL11.glBindTexture;
-import static org.lwjgl.opengl.GL11.glDeleteTextures;
-import static org.lwjgl.opengl.GL11.glGenTextures;
-import static org.lwjgl.opengl.GL11.glTexImage2D;
-import static org.lwjgl.opengl.GL11.glTexParameteri;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
-import static org.lwjgl.opengl.GL13.glActiveTexture;
-
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.SeekableByteChannel;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Map;
 
 import org.chapzlock.core.component.Texture;
-import org.lwjgl.opengl.GL13;
-import org.lwjgl.stb.STBImage;
-import org.lwjgl.system.MemoryStack;
+import org.chapzlock.core.files.FileUtils;
+import org.chapzlock.core.graphics.RawImageData;
+import org.chapzlock.core.graphics.TextureUtil;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+
+/**
+ * Caches and handles OpenGL calls on textures.
+ * Implemented as a singleton to keep track of globally allocated texture resources.
+ */
 public class TextureSystem {
+    private static TextureSystem instance;
 
-    /**
-     * Load a texture from a resource path and create a Texture (calls GL).
-     */
-    public Texture loadTexture(String resourcePath) {
-        ByteBuffer image;
-        int width, height;
+    private final Map<Integer, Texture> texturePool = new Int2ObjectOpenHashMap<>();
+    private final Map<String, Integer> filePathToIdMap = new Object2IntOpenHashMap<>();
 
-        try {
-            ByteBuffer resourceBuffer = ioResourceToByteBuffer(resourcePath);
-            try (MemoryStack stack = MemoryStack.stackPush()) {
-                IntBuffer w = stack.mallocInt(1);
-                IntBuffer h = stack.mallocInt(1);
-                IntBuffer comp = stack.mallocInt(1);
-
-                STBImage.stbi_set_flip_vertically_on_load(true);
-                image = STBImage.stbi_load_from_memory(resourceBuffer, w, h, comp, 4);
-                if (image == null) {
-                    throw new RuntimeException("Failed to load texture: " + STBImage.stbi_failure_reason());
-                }
-                width = w.get(0);
-                height = h.get(0);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to read resource: " + resourcePath, e);
-        }
-
-        int id = glGenTextures();
-        glBindTexture(GL_TEXTURE_2D, id);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL13.GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL13.GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        STBImage.stbi_image_free(image);
-        return new Texture(id, width, height, resourcePath);
+    private TextureSystem() {
     }
 
     /**
-     * helper to read a resource into a ByteBuffer
+     * Load a texture from a file and creates a Texture (calls GL).
+     * @param filePath
+     * @return texture bound to GPU
      */
-    private static ByteBuffer ioResourceToByteBuffer(String resourcePath) throws IOException {
-        ByteBuffer buffer;
-        Path path = Paths.get(resourcePath);
-        if (java.nio.file.Files.isReadable(path)) {
-            try (SeekableByteChannel fc = java.nio.file.Files.newByteChannel(path)) {
-                buffer = java.nio.ByteBuffer.allocateDirect((int) fc.size() + 1);
-                while (fc.read(buffer) != -1);
-            }
-        } else {
-            try (
-                var source = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath);
-                var rbc = Channels.newChannel(source)
-            ) {
-                buffer = java.nio.ByteBuffer.allocateDirect(8192);
-                while (true) {
-                    int bytes = rbc.read(buffer);
-                    if (bytes == -1) {
-                        break;
-                    }
-                    if (buffer.remaining() == 0) {
-                        ByteBuffer newBuffer = java.nio.ByteBuffer.allocateDirect(buffer.capacity() * 2);
-                        buffer.flip();
-                        newBuffer.put(buffer);
-                        buffer = newBuffer;
-                    }
-                }
-            }
+    public Texture load(String filePath) {
+        Integer existingId = filePathToIdMap.get(filePath);
+        if (existingId != null) {
+            return texturePool.get(existingId);
         }
-        buffer.flip();
-        return buffer;
+        RawImageData rawImageData = FileUtils.loadImage(filePath);
+        Texture texture = TextureUtil.bindTextureDataToGpu(rawImageData);
+        texturePool.put(texture.getId(), texture);
+        filePathToIdMap.put(texture.getFilePath(), texture.getId());
+        return texture;
     }
 
-    public void bind(Texture tex, int unit) {
-        if (tex == null) {
+    /**
+     * Binds a texture for rendering
+     *
+     * @param texture
+     * @param unit
+     */
+    public void bind(Texture texture, int unit) {
+        if (texture == null) {
             return;
         }
-        glActiveTexture(GL_TEXTURE0 + unit);
-        glBindTexture(GL_TEXTURE_2D, tex.getHandle());
+        TextureUtil.bind(texture, unit);
     }
 
-    public void unbind(Texture tex) {
-        if (tex == null) {
+    /**
+     * Unbinds a texture after rendering
+     *
+     * @param texture
+     */
+    public void unbind(Texture texture) {
+        if (texture == null) {
             return;
         }
-        glBindTexture(GL_TEXTURE_2D, 0);
+        TextureUtil.unbind();
     }
 
-    public void delete(Texture tex) {
-        if (tex == null) {
+    public void delete(Texture texture) {
+        if (texture == null) {
             return;
         }
-        glDeleteTextures(tex.getHandle());
+        TextureUtil.delete(texture);
+        texturePool.remove(texture.getId());
+    }
+
+    public static TextureSystem instance() {
+        if (instance == null) {
+            instance = new TextureSystem();
+        }
+        return instance;
     }
 }
