@@ -5,6 +5,9 @@ import org.chapzlock.core.application.Component;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Component for storing generic terrain information
+ */
 @RequiredArgsConstructor
 @Getter
 public class Terrain implements Component {

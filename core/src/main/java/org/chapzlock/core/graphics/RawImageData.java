@@ -7,6 +7,9 @@ import org.lwjgl.stb.STBImage;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * POJO for a raw image loaded from an image file
+ */
 @Getter
 @RequiredArgsConstructor
 public class RawImageData {

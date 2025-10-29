@@ -5,13 +5,13 @@ import static org.joml.Math.cos;
 import static org.joml.Math.sin;
 import static org.joml.Math.toRadians;
 
-import org.chapzlock.core.application.Application;
 import org.chapzlock.core.application.Component;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import lombok.Getter;
 import lombok.Setter;
+
 
 public class Camera implements Component {
     @Getter
@@ -83,20 +83,5 @@ public class Camera implements Component {
 
     public void setPitch(float value) {
         rotation.x = value;
-    }
-
-    public Matrix4f getViewMatrix() {
-        this.cameraViewMatrix.identity();
-        return this.cameraViewMatrix.lookAt(getPosition(), getPosition().add(getCameraFront(), new Vector3f()), getCameraUp());
-    }
-
-    public Matrix4f getProjectionMatrix() {
-        this.projectionMatrix.identity();
-        return this.projectionMatrix.perspective(
-            fieldOfView,
-            Application.instance().getAppSpec().getWindowSpec().getAspectRatio(),
-            nearPlane,
-            farPlane
-        );
     }
 }

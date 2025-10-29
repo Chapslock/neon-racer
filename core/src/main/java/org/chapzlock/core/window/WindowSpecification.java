@@ -4,6 +4,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * Properties for windows
+ */
 @Builder
 @Getter
 @Setter

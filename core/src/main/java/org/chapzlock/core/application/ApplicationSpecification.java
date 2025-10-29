@@ -6,6 +6,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * Properties for the application.
+ */
 @Builder
 @Getter
 @Setter

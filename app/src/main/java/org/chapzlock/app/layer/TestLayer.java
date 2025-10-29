@@ -55,7 +55,8 @@ public class TestLayer implements Layer {
         Material playerMat = new Material(
             new Shader(
                 EntityShaderProps.VERTEX_FILE,
-                EntityShaderProps.FRAGMENT_FILE),
+                EntityShaderProps.FRAGMENT_FILE
+            ),
             textureSystem.load("textures/funcar.png"),
             Reflection.builder()
                 .reflectivity(.5f)

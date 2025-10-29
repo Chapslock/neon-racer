@@ -3,8 +3,7 @@ package org.chapzlock.core.component;
 import org.chapzlock.core.application.Component;
 
 /**
- * Material component for terrain.
- *
+ * A generic material component
  */
 public final class Material implements Component {
     private final Shader shader;

@@ -44,6 +44,9 @@ import org.lwjgl.opengl.GLCapabilities;
 
 import lombok.Getter;
 
+/**
+ * Window class used to create windows for the application
+ */
 public class Window {
     @Getter
     private Long id;

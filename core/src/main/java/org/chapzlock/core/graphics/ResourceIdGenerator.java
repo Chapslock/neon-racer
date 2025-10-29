@@ -4,6 +4,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import lombok.experimental.UtilityClass;
 
+/**
+ * Thread safe id generator for GPU resources.
+ */
 @UtilityClass
 public class ResourceIdGenerator {
     private static final AtomicInteger sequence = new AtomicInteger(0);
