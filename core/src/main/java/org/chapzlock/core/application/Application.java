@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class Application {
-    private static Application INSTANCE;
+    private static Application instance;
     @Getter
     private ApplicationSpecification appSpec;
     private Window window;
@@ -27,7 +27,7 @@ public class Application {
     private Application(ApplicationSpecification appSpec) {
         this.appSpec = appSpec;
 
-        GLFWErrorCallback.createPrint(System.err).set();
+        GLFWErrorCallback.createPrint(java.lang.System.err).set();
 
         if (!glfwInit()) {
             throw new IllegalStateException("Unable to initialize GLFW");
@@ -70,7 +70,7 @@ public class Application {
     public void stop() {
         this.isRunning = false;
         this.window.destroy();
-        INSTANCE = null;
+        instance = null;
 
         this.layerStack.forEach(Layer::onDestroy);
 
@@ -83,16 +83,16 @@ public class Application {
         this.layerStack.add(layer);
     }
 
-    public static Application get() {
-        if (INSTANCE == null) {
+    public static Application instance() {
+        if (instance == null) {
             throw new IllegalStateException("Application instance referenced outside of application!");
         }
-        return INSTANCE;
+        return instance;
     }
 
     public static Application create(ApplicationSpecification appSpec) {
-        INSTANCE = new Application(appSpec);
-        return INSTANCE;
+        instance = new Application(appSpec);
+        return instance;
     }
 
     public static float getTime() {

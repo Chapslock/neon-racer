@@ -1,11 +1,5 @@
 package org.chapzlock.core.system;
 
-import static org.chapzlock.core.graphics.shader.EntityShaderProps.UNIFORM_LIGHT_COLOR;
-import static org.chapzlock.core.graphics.shader.EntityShaderProps.UNIFORM_LIGHT_POSITION;
-import static org.chapzlock.core.graphics.shader.EntityShaderProps.UNIFORM_PROJECTION_MATRIX;
-import static org.chapzlock.core.graphics.shader.EntityShaderProps.UNIFORM_TRANSFORMATION_MATRIX;
-import static org.chapzlock.core.graphics.shader.EntityShaderProps.UNIFORM_VIEW_MATRIX;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -18,6 +12,7 @@ import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.PointLight;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.entity.EntityView;
+import org.chapzlock.core.graphics.material.MaterialRenderer;
 import org.chapzlock.core.logging.Log;
 import org.chapzlock.core.registry.ComponentRegistry;
 import org.lwjgl.opengl.GL11;
@@ -25,12 +20,11 @@ import org.lwjgl.opengl.GL11;
 /**
  * The core render system
  */
-public class EntityRenderSystem implements System {
+public class RenderSystem implements System {
 
     private final ComponentRegistry registry = ComponentRegistry.instance();
     private final MeshSystem meshSystem = MeshSystem.instance();
-    private final ShaderSystem shaderSystem = ShaderSystem.instance();
-    private final EntityMaterialSystem materialSystem = new EntityMaterialSystem();
+    private final MaterialSystem materialSystem = MaterialSystem.instance();
 
     private final Map<Material, List<EntityView>> renderQueue = new HashMap<>();
 
@@ -78,27 +72,17 @@ public class EntityRenderSystem implements System {
 
     private void renderEntitiesFromQueue(Camera camera, PointLight light) {
         for (var batch : renderQueue.entrySet()) {
-            Material entityMaterial = batch.getKey();
+            Material material = batch.getKey();
             List<EntityView> renderables = batch.getValue();
-            var shader = entityMaterial.getShader();
-
-            // Bind entityMaterial/shader once
-            materialSystem.applyMaterial(entityMaterial);
-
-            // Load global uniforms once per batch
-            shaderSystem.setUniform(shader, UNIFORM_VIEW_MATRIX, camera.getViewMatrix());
-            shaderSystem.setUniform(shader, UNIFORM_PROJECTION_MATRIX, camera.getProjectionMatrix());
-
-            if (light != null) {
-                shaderSystem.setUniform(shader, UNIFORM_LIGHT_POSITION, light.position());
-                shaderSystem.setUniform(shader, UNIFORM_LIGHT_COLOR, light.color().toVector3f());
-            }
+            MaterialRenderer materialRenderer = materialSystem.getRenderer(material);
+            // Bind material/shader once & Load global uniforms once per batch
+            materialRenderer.apply(material, camera, light);
 
             for (EntityView entity : renderables) {
-                shaderSystem.setUniform(shader, UNIFORM_TRANSFORMATION_MATRIX, entity.get(Transform.class).calculateTransformationMatrix());
+                materialRenderer.prepareEntity(entity, material);
                 meshSystem.render(entity.get(Mesh.class));
             }
-            materialSystem.unapplyMaterial(entityMaterial);
+            materialRenderer.unapply(material);
         }
     }
 

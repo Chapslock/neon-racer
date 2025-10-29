@@ -94,7 +94,7 @@ public class Camera implements Component {
         this.projectionMatrix.identity();
         return this.projectionMatrix.perspective(
             fieldOfView,
-            Application.get().getAppSpec().getWindowSpec().getAspectRatio(),
+            Application.instance().getAppSpec().getWindowSpec().getAspectRatio(),
             nearPlane,
             farPlane
         );

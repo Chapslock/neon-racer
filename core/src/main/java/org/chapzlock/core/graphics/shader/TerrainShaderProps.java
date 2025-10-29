@@ -1,5 +1,8 @@
 package org.chapzlock.core.graphics.shader;
 
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
 public class TerrainShaderProps {
     public static final String VERTEX_FILE = "shaders/TerrainVertex.glsl";
     public static final String FRAGMENT_FILE = "shaders/TerrainFragment.glsl";
