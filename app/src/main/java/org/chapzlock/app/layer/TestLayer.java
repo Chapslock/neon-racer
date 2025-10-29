@@ -23,7 +23,6 @@ import org.chapzlock.core.registry.ComponentRegistry;
 import org.chapzlock.core.system.CameraFreeRoamSystem;
 import org.chapzlock.core.system.EntityRenderSystem;
 import org.chapzlock.core.system.MeshSystem;
-import org.chapzlock.core.system.TerrainRenderSystem;
 import org.chapzlock.core.system.TextureSystem;
 import org.joml.Vector3f;
 
@@ -35,7 +34,7 @@ public class TestLayer implements Layer {
 
     private final List<System> systems = List.of(
         new EntityRenderSystem(),
-        new TerrainRenderSystem(),
+        //new TerrainRenderSystem(),
         new PlayerRotateSystem(),
         new CameraFreeRoamSystem()
     );

@@ -9,12 +9,8 @@ import org.chapzlock.core.component.Shader;
 import org.chapzlock.core.component.Texture;
 
 public class TerrainMaterialSystem {
-    private final ShaderSystem shaderSystem;
+    private final ShaderSystem shaderSystem = ShaderSystem.instance();
     private final TextureSystem textureSystem = TextureSystem.instance();
-
-    public TerrainMaterialSystem(ShaderSystem shaderSystem) {
-        this.shaderSystem = shaderSystem;
-    }
 
     /**
      * Apply a terrain material: bind shader + texture and set common uniforms.
@@ -38,6 +34,6 @@ public class TerrainMaterialSystem {
         if (tex != null) {
             textureSystem.unbind(tex);
         }
-        shaderSystem.stop();
+        shaderSystem.clearProgram();
     }
 }

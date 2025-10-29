@@ -7,7 +7,10 @@ import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.registry.ComponentRegistry;
 import org.lwjgl.glfw.GLFW;
 
-
+/**
+ * Allows to move the camera in a spectator like manner.
+ * Useful system for debugging a 3D world.
+ */
 public class CameraFreeRoamSystem implements System {
 
     private final ComponentRegistry registry = ComponentRegistry.instance();

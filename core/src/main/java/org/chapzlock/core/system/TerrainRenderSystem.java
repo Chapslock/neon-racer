@@ -15,6 +15,7 @@ import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.Material;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.PointLight;
+import org.chapzlock.core.component.Terrain;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.entity.EntityView;
 import org.chapzlock.core.logging.Log;
@@ -31,10 +32,8 @@ public class TerrainRenderSystem implements System {
 
     private final ComponentRegistry registry = ComponentRegistry.instance();
     private final MeshSystem meshSystem = MeshSystem.instance();
-    private final ShaderSystem shaderSystem = new ShaderSystem();
-    private final TerrainMaterialSystem materialSystem = new TerrainMaterialSystem(
-        shaderSystem
-    );
+    private final ShaderSystem shaderSystem = ShaderSystem.instance();
+    private final TerrainMaterialSystem materialSystem = new TerrainMaterialSystem();
 
     private final Map<Material, List<EntityView>> renderQueue = new Object2ObjectArrayMap<>();
 
@@ -50,7 +49,7 @@ public class TerrainRenderSystem implements System {
 
         PointLight light = getPointLight();
 
-        registry.view(Mesh.class, Material.class, Transform.class)
+        registry.view(Mesh.class, Material.class, Transform.class, Terrain.class)
             .forEach(this::submitToRenderQueue);
         renderEntitiesFromQueue(camera, light);
         clearRenderQueue();
