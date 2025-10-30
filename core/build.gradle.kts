@@ -25,7 +25,7 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok:$lombokVersion")
 
     implementation("org.projectlombok:lombok:$lombokVersion")
-    implementation("cz.advel.jbullet:jbullet:$jBulletVersion")
+    api("cz.advel.jbullet:jbullet:$jBulletVersion")
 
     api("fastutil:fastutil:$fastUtilVersion")
     api("org.joml:joml:$jomlVersion")

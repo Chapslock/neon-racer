@@ -49,6 +49,12 @@ public class Transform implements Component {
         this.scale = scale;
     }
 
+    public void setPosition(float x, float y, float z) {
+        this.position.x = x;
+        this.position.y = y;
+        this.position.z = z;
+    }
+
     /**
      * Calculates a transformation matrix for the current transform
      */
@@ -61,7 +67,8 @@ public class Transform implements Component {
         // Apply translation
         this.transformationMatrix.translate(this.position);
         // Apply rotations (order: X → Y → Z)
-        this.transformationMatrix.rotate(rotX, 1, 0, 0)
+        this.transformationMatrix
+            .rotate(rotX, 1, 0, 0)
             .rotate(rotY, 0, 1, 0)
             .rotate(rotZ, 0, 0, 1);
         // Apply uniform scale

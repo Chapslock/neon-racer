@@ -20,9 +20,11 @@ public class MaterialSystem {
      *
      * @param material
      * @param renderer
+     * @return registered material
      */
-    public void registerNewMaterial(Material material, MaterialRenderer renderer) {
+    public Material registerNewMaterial(Material material, MaterialRenderer renderer) {
         registry.register(material, renderer);
+        return material;
     }
 
     /**
