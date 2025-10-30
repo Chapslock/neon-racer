@@ -2,6 +2,7 @@ package org.chapzlock.core.component;
 
 import org.chapzlock.core.application.Component;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,6 +13,7 @@ import lombok.Setter;
  */
 @Builder
 @Getter
+@AllArgsConstructor
 public class Shader implements Component {
     private final String vertexPath;
     private final String fragmentPath;
