@@ -107,7 +107,7 @@ public class GameWorldLayer implements Layer {
                 TerrainShaderProps.VERTEX_FILE,
                 TerrainShaderProps.FRAGMENT_FILE
             ),
-            textureSystem.load("textures/terrain.png")
+            textureSystem.load("textures/grassBright.png")
         );
         materialSystem.registerNewMaterial(terrainMaterial, new TerrainMaterialRenderer());
         registry.addComponent(terrain, new Transform(new Vector3f(-10, 0, -10), new Vector3f(0, 0, 10)));
