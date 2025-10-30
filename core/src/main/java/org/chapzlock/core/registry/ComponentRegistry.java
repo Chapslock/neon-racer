@@ -74,6 +74,7 @@ public class ComponentRegistry {
      * @param entityId
      * @param components
      */
+    @SuppressWarnings("unchecked")
     public <T extends Component> void addComponents(int entityId, T... components) {
         for (T component : components) {
             addComponent(entityId, component);

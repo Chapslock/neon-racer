@@ -34,8 +34,6 @@ import org.chapzlock.core.system.RenderSystem;
 import org.chapzlock.core.system.TextureSystem;
 import org.joml.Vector3f;
 
-import com.bulletphysics.collision.shapes.StaticPlaneShape;
-
 public class GameWorldLayer implements Layer {
 
     private final ComponentRegistry registry = ComponentRegistry.instance();
@@ -115,7 +113,7 @@ public class GameWorldLayer implements Layer {
         );
         registry.addComponent(terrain, terrainProps);
         registry.addComponent(terrain, new PhysicsBody(
-            new StaticPlaneShape(new javax.vecmath.Vector3f(0, 1, 0), 0),
+            CollisionShapeFactory.createStaticPlane(),
             PhysicsSpecs.builder()
                 .restitution(0)
                 .build()

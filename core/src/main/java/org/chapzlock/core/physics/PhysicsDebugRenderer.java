@@ -94,7 +94,7 @@ public class PhysicsDebugRenderer {
         glEnable(GL_DEPTH_TEST);
         lines.clear();
     }
-    
+
     public static void init() {
         if (initialized) {
             return;

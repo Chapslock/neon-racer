@@ -13,7 +13,7 @@ import com.bulletphysics.linearmath.IDebugDraw;
  */
 public class PhysicsDebugger extends IDebugDraw {
 
-    private int debugMode = DebugDrawModes.DRAW_WIREFRAME | DebugDrawModes.DRAW_CONTACT_POINTS | DebugDrawModes.MAX_DEBUG_DRAW_MODE;
+    private int debugMode = DebugDrawModes.DRAW_WIREFRAME | DebugDrawModes.DRAW_CONTACT_POINTS | DebugDrawModes.DRAW_AABB;
 
     @Override
     public void drawLine(Vector3f from, Vector3f to, Vector3f color) {

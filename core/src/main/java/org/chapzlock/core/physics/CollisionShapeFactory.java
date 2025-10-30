@@ -8,6 +8,7 @@ import com.bulletphysics.collision.shapes.BoxShape;
 import com.bulletphysics.collision.shapes.CollisionShape;
 import com.bulletphysics.collision.shapes.CompoundShape;
 import com.bulletphysics.collision.shapes.ConvexHullShape;
+import com.bulletphysics.collision.shapes.StaticPlaneShape;
 import com.bulletphysics.linearmath.Transform;
 import com.bulletphysics.util.ObjectArrayList;
 
@@ -128,6 +129,10 @@ public class CollisionShapeFactory {
         }
 
         return convex;
+    }
+
+    public static CollisionShape createStaticPlane() {
+        return new StaticPlaneShape(new javax.vecmath.Vector3f(0, 1, 0), 0);
     }
 
     /**
