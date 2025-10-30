@@ -18,6 +18,7 @@ public class MeshSystem {
     private static MeshSystem instance;
 
     private final Map<Integer, Mesh> meshPool = new Int2ObjectOpenHashMap<>();
+    private final Map<Integer, RawMeshData> rawMeshDataPool = new Int2ObjectOpenHashMap<>();
     private final Map<String, Integer> resourcePathToIdMap = new Object2IntOpenHashMap<>();
     private final Map<RawMeshData, Integer> rawMeshDataToIdMap = new Object2IntOpenHashMap<>();
 
@@ -38,6 +39,7 @@ public class MeshSystem {
         RawMeshData rawMeshData = FileUtils.loadMeshData(resourcePath);
         Mesh mesh = MeshUtil.bindMeshDataToGpu(rawMeshData);
         meshPool.put(mesh.getId(), mesh);
+        rawMeshDataPool.put(mesh.getId(), rawMeshData);
         rawMeshDataToIdMap.put(rawMeshData, mesh.getId());
         resourcePathToIdMap.put(resourcePath, mesh.getId());
         return mesh;
@@ -56,6 +58,7 @@ public class MeshSystem {
         }
         Mesh mesh = MeshUtil.bindMeshDataToGpu(rawMeshData);
         meshPool.put(mesh.getId(), mesh);
+        rawMeshDataPool.put(mesh.getId(), rawMeshData);
         rawMeshDataToIdMap.put(rawMeshData, mesh.getId());
         return mesh;
     }
@@ -65,6 +68,16 @@ public class MeshSystem {
      */
     public void render(Mesh mesh) {
         MeshUtil.render(mesh);
+    }
+
+    /**
+     * Finds the Raw mesh data associated with the mesh component
+     *
+     * @param id of the mesh component
+     * @return RawMeshData for the given mesh
+     */
+    public RawMeshData getRawMeshById(int id) {
+        return rawMeshDataPool.get(id);
     }
 
     public static MeshSystem instance() {

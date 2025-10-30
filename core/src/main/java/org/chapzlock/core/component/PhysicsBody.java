@@ -16,7 +16,6 @@ import lombok.Getter;
  */
 @Getter
 public class PhysicsBody implements Component {
-    private static final Vector3f INITIAL_LOCAL_INERTIA = new Vector3f(0f, 0f, 0f);
     private RigidBody rigidBody;
     private CollisionShape collisionShape;
     private float mass;
@@ -24,14 +23,15 @@ public class PhysicsBody implements Component {
     public PhysicsBody(CollisionShape shape, PhysicsSpecs specs) {
         this.collisionShape = shape;
         this.mass = specs.getMass();
+        Vector3f localInertia = new Vector3f(0f, 0f, 0f);
         if (specs.getMass() != 0) {
-            shape.calculateLocalInertia(specs.getMass(), INITIAL_LOCAL_INERTIA);
+            shape.calculateLocalInertia(specs.getMass(), localInertia);
         }
         RigidBodyConstructionInfo rigidBodyConstructionInfo = new RigidBodyConstructionInfo(
             specs.getMass(),
             null,
             shape,
-            INITIAL_LOCAL_INERTIA
+            localInertia
         );
         this.rigidBody = new RigidBody(rigidBodyConstructionInfo);
         rigidBody.setFriction(specs.getFriction());

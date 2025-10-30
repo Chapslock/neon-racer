@@ -1,6 +1,6 @@
 package org.chapzlock;
 
-import org.chapzlock.app.layer.TestLayer;
+import org.chapzlock.app.layer.GameWorldLayer;
 import org.chapzlock.core.application.Application;
 import org.chapzlock.core.application.ApplicationSpecification;
 import org.chapzlock.core.window.WindowSpecification;
@@ -13,7 +13,7 @@ public class Main {
                 .build())
             .build();
         Application application = Application.create(appSpec);
-        application.pushLayer(new TestLayer());
+        application.pushLayer(new GameWorldLayer());
         application.run();
     }
 

@@ -9,6 +9,7 @@ import org.chapzlock.core.application.System;
 import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.Color;
 import org.chapzlock.core.component.Material;
+import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.PointLight;
 import org.chapzlock.core.component.Reflection;
@@ -21,7 +22,9 @@ import org.chapzlock.core.graphics.material.EntityMaterialRenderer;
 import org.chapzlock.core.graphics.material.TerrainMaterialRenderer;
 import org.chapzlock.core.graphics.shader.EntityShaderProps;
 import org.chapzlock.core.graphics.shader.TerrainShaderProps;
+import org.chapzlock.core.physics.CollisionShapeFactory;
 import org.chapzlock.core.physics.PhysicsSpecs;
+import org.chapzlock.core.physics.PhysicsSystemSpecs;
 import org.chapzlock.core.registry.ComponentRegistry;
 import org.chapzlock.core.system.CameraFreeRoamSystem;
 import org.chapzlock.core.system.MaterialSystem;
@@ -31,10 +34,9 @@ import org.chapzlock.core.system.RenderSystem;
 import org.chapzlock.core.system.TextureSystem;
 import org.joml.Vector3f;
 
-import com.bulletphysics.collision.shapes.SphereShape;
 import com.bulletphysics.collision.shapes.StaticPlaneShape;
 
-public class TestLayer implements Layer {
+public class GameWorldLayer implements Layer {
 
     private final ComponentRegistry registry = ComponentRegistry.instance();
     private final MeshSystem meshSystem = MeshSystem.instance();
@@ -43,7 +45,9 @@ public class TestLayer implements Layer {
 
     private final List<System> systems = List.of(
         new RenderSystem(),
-        new PhysicsSystem(),
+        new PhysicsSystem(PhysicsSystemSpecs.builder()
+            .isDebugEnabled(true)
+            .build()),
         new CameraFreeRoamSystem()
     );
 
@@ -79,16 +83,18 @@ public class TestLayer implements Layer {
                 .shineDamper(1f)
                 .build()
         );
-
+        Mesh mesh = meshSystem.load("wavefront/funcar.obj");
+        PhysicsBody physicsBody = new PhysicsBody(
+            CollisionShapeFactory.createConvexHullShapeFromMesh(meshSystem.getRawMeshById(mesh.getId())),
+            PhysicsSpecs.builder()
+                .mass(1)
+                .build());
         registry.addComponent(player, new Transform(new Vector3f(0, 10, -5), new Vector3f(90, 0, 180)));
-        registry.addComponent(player, meshSystem.load("wavefront/funcar.obj"));
+        registry.addComponent(player, mesh);
         registry.addComponent(player, materialSystem.registerNewMaterial(material, new EntityMaterialRenderer()));
         registry.addComponent(player, new PlayerTag());
         registry.addComponent(player, new PlayerInputComponent());
-        registry.addComponent(player, new PhysicsBody(new SphereShape(1f), PhysicsSpecs.builder()
-            .mass(1)
-            .restitution(0.2f)
-            .build()));
+        registry.addComponent(player, physicsBody);
     }
 
     private void createTerrain() {
@@ -102,15 +108,16 @@ public class TestLayer implements Layer {
             textureSystem.load("textures/terrain.png")
         );
         materialSystem.registerNewMaterial(terrainMaterial, new TerrainMaterialRenderer());
-        registry.addComponent(terrain, new Transform(new Vector3f(-10, 0, -10), new Vector3f(0, 0, 20)));
+        registry.addComponent(terrain, new Transform(new Vector3f(-10, 0, -10), new Vector3f(0, 0, 10)));
         registry.addComponent(terrain, terrainMaterial);
         registry.addComponent(terrain, meshSystem.load(
             RawMeshDataFactory.generateFlatTerrain(terrainProps.getVertexCount(), terrainProps.getSize()))
         );
         registry.addComponent(terrain, terrainProps);
         registry.addComponent(terrain, new PhysicsBody(
-            new StaticPlaneShape(new javax.vecmath.Vector3f(0, 1, 0), 1f),
+            new StaticPlaneShape(new javax.vecmath.Vector3f(0, 1, 0), 0),
             PhysicsSpecs.builder()
+                .restitution(0)
                 .build()
         ));
     }

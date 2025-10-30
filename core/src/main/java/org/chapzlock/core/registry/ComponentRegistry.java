@@ -69,6 +69,18 @@ public class ComponentRegistry {
     }
 
     /**
+     * Adds multiple components to an entity
+     *
+     * @param entityId
+     * @param components
+     */
+    public <T extends Component> void addComponents(int entityId, T... components) {
+        for (T component : components) {
+            addComponent(entityId, component);
+        }
+    }
+
+    /**
      * Retrieves a component from an entity.
      */
     @SuppressWarnings("unchecked")
