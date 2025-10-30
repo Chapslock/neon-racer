@@ -14,6 +14,7 @@ import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.PointLight;
 import org.chapzlock.core.component.Reflection;
 import org.chapzlock.core.component.Shader;
+import org.chapzlock.core.component.Sky;
 import org.chapzlock.core.component.Terrain;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.entity.Entity;
@@ -63,6 +64,9 @@ public class GameWorldLayer implements Layer {
 
         int camera = Entity.create();
         registry.addComponent(camera, new Camera(new Vector3f(0, 5, 10)));
+
+        int sky = Entity.create();
+        registry.addComponent(sky, new Sky());
 
         createTerrain();
     }

@@ -1,6 +1,8 @@
 package org.chapzlock.core.graphics;
 
-import static org.lwjgl.opengl.GL11.GL_NEAREST;
+import static org.lwjgl.opengl.GL11.GL_LINEAR;
+import static org.lwjgl.opengl.GL11.GL_LINEAR_MIPMAP_LINEAR;
+import static org.lwjgl.opengl.GL11.GL_REPEAT;
 import static org.lwjgl.opengl.GL11.GL_RGBA;
 import static org.lwjgl.opengl.GL11.GL_RGBA8;
 import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
@@ -16,9 +18,9 @@ import static org.lwjgl.opengl.GL11.glTexImage2D;
 import static org.lwjgl.opengl.GL11.glTexParameteri;
 import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
 import static org.lwjgl.opengl.GL13.glActiveTexture;
+import static org.lwjgl.opengl.GL30.glGenerateMipmap;
 
 import org.chapzlock.core.component.Texture;
-import org.lwjgl.opengl.GL13;
 
 import lombok.experimental.UtilityClass;
 
@@ -31,14 +33,19 @@ public class TextureUtil {
     public static Texture bindTextureDataToGpu(RawImageData rawImageData) {
         int handle = glGenTextures();
         glBindTexture(GL_TEXTURE_2D, handle);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL13.GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL13.GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, rawImageData.getWidth(), rawImageData.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, rawImageData.getImageData());
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
+            rawImageData.getWidth(), rawImageData.getHeight(), 0,
+            GL_RGBA, GL_UNSIGNED_BYTE, rawImageData.getImageData());
+
+        glGenerateMipmap(GL_TEXTURE_2D);
+
         glBindTexture(GL_TEXTURE_2D, 0);
-
         rawImageData.deleteBufferFromMemory();
 
         return Texture.builder()

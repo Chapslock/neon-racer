@@ -1,5 +1,7 @@
 package org.chapzlock.core.system;
 
+import static org.lwjgl.opengl.GL11.glClearColor;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -10,6 +12,7 @@ import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.Material;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.PointLight;
+import org.chapzlock.core.component.Sky;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.entity.EntityView;
 import org.chapzlock.core.graphics.material.MaterialRenderer;
@@ -45,8 +48,16 @@ public class RenderSystem implements System {
         }
 
         PointLight light = getPointLight();
-
+        renderSky();
         renderEntities(camera, light);
+    }
+
+    private void renderSky() {
+        var skyEntity = registry.view(Sky.class).getFirst();
+        if (skyEntity != null) {
+            var color = skyEntity.get(Sky.class).getColor();
+            glClearColor(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha());
+        }
     }
 
     private void renderEntities(Camera camera, PointLight light) {
