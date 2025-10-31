@@ -14,5 +14,8 @@ public class TerrainShaderProps {
     public static final String UNIFORM_LIGHT_COLOR = "lightColor";
     public static final String UNIFORM_SHINE_DAMPER = "shineDamper";
     public static final String UNIFORM_REFLECTIVITY = "reflectivity";
-    public static final String UNIFORM_TEXTURE_SAMPLER = "textureSampler";
+    public static final String UNIFORM_TEXTURE_0 = "backgroundTexture";
+    public static final String UNIFORM_TEXTURE_1 = "rTexture";
+    public static final String UNIFORM_TEXTURE_2 = "bTexture";
+    public static final String UNIFORM_TEXTURE_BLEND_MAP = "blendMapTexture";
 }

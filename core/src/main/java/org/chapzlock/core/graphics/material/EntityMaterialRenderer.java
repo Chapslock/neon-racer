@@ -30,7 +30,7 @@ public class EntityMaterialRenderer implements MaterialRenderer {
         Shader shader = material.getShader();
         shaderSystem.use(shader);
 
-        Texture texture = material.getTexture();
+        Texture texture = material.getFirstTexture();
         if (texture != null) {
             textureSystem.bind(texture, 0);
             shaderSystem.setUniform(shader, UNIFORM_TEXTURE_SAMPLER, 0);
@@ -54,7 +54,7 @@ public class EntityMaterialRenderer implements MaterialRenderer {
 
     @Override
     public void unapply(Material material) {
-        Texture texture = material.getTexture();
+        Texture texture = material.getFirstTexture();
         if (texture != null) {
             textureSystem.unbind(texture);
         }

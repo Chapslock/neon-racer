@@ -7,13 +7,30 @@ in vec3 toCameraVector;
 
 out vec4 fragmentColor;
 
-uniform sampler2D textureSampler;
+uniform sampler2D backgroundTexture;
+uniform sampler2D rTexture;
+uniform sampler2D bTexture;
+uniform sampler2D blendMapTexture;
+
+
 uniform vec3 lightColor;
 uniform float shineDamper;
 uniform float reflectivity;
 
 void main()
 {
+
+    vec4 blendMapColour = texture(blendMapTexture, passTextureCoords);
+    float backGroundTextureAmount = 1 - (blendMapColour.r + blendMapColour.g + blendMapColour.b);
+    vec2 tiledCoords = passTextureCoords * 40.0;
+    vec4 backgroundTextureColour = texture(backgroundTexture, tiledCoords) * backGroundTextureAmount;
+
+    vec4 rTextureColour = texture(rTexture, tiledCoords) * blendMapColour.r;
+    vec4 bTextureColour = texture(bTexture, tiledCoords) * blendMapColour.b;
+
+    vec4 totalColour = backgroundTextureColour + rTextureColour + bTextureColour;
+
+
     vec3 unitNormal = normalize(surfaceNormal);
     vec3 unitLight = normalize(toLightVector);
     float dotProduct = dot(unitNormal, unitLight);
@@ -30,5 +47,5 @@ void main()
     float dampedFactor = pow(specularFactor, shineDamper);
     vec3 specularLight = dampedFactor * reflectivity * lightColor;
 
-    fragmentColor = vec4(diffuse, 1.0) * texture(textureSampler, passTextureCoords) + vec4(specularLight, 1.0);
+    fragmentColor = vec4(diffuse, 1.0) * totalColour + vec4(specularLight, 1.0);
 }

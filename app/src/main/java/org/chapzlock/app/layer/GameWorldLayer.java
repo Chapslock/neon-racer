@@ -18,6 +18,7 @@ import org.chapzlock.core.component.Sky;
 import org.chapzlock.core.component.Terrain;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.entity.Entity;
+import org.chapzlock.core.files.FileUtils;
 import org.chapzlock.core.geometry.RawMeshDataFactory;
 import org.chapzlock.core.graphics.material.EntityMaterialRenderer;
 import org.chapzlock.core.graphics.material.TerrainMaterialRenderer;
@@ -60,7 +61,7 @@ public class GameWorldLayer implements Layer {
         createPlayer();
 
         int light = Entity.create();
-        registry.addComponent(light, new PointLight(new Vector3f(-5, 10, -10), Color.WHITE));
+        registry.addComponent(light, new PointLight(new Vector3f(-5, 300, -10), Color.WHITE));
 
         int camera = Entity.create();
         registry.addComponent(camera, new Camera(new Vector3f(0, 5, 10)));
@@ -85,7 +86,7 @@ public class GameWorldLayer implements Layer {
                 .shineDamper(1f)
                 .build()
         );
-        Mesh mesh = meshSystem.load("wavefront/funcar.obj");
+        Mesh mesh = meshSystem.load("obj/funcar.obj");
         PhysicsBody physicsBody = new PhysicsBody(
             CollisionShapeFactory.createConvexHullShapeFromMesh(meshSystem.getRawMeshById(mesh.getId())),
             PhysicsSpecs.builder()
@@ -101,19 +102,27 @@ public class GameWorldLayer implements Layer {
 
     private void createTerrain() {
         int terrain = Entity.create();
-        Terrain terrainProps = new Terrain(20);
-        Material terrainMaterial = new Material(
-            new Shader(
+        Terrain terrainProps = Terrain.builder()
+            .maxHeight(40)
+            .build();
+        Material terrainMaterial = Material.builder()
+            .textures(List.of(
+                textureSystem.load("textures/terrain/grass.png"),
+                textureSystem.load("textures/terrain/dirt.png"),
+                textureSystem.load("textures/terrain/concrete.png")
+            ))
+            .blendMap(textureSystem.load("textures/terrain/blendMap.png"))
+            .shader(new Shader(
                 TerrainShaderProps.VERTEX_FILE,
                 TerrainShaderProps.FRAGMENT_FILE
-            ),
-            textureSystem.load("textures/grassBright.png")
-        );
+            ))
+            .build();
+        Mesh mesh = meshSystem.load(
+            RawMeshDataFactory.generateTerrainFromHeightMap(FileUtils.loadBufferedImage("textures/terrain/heightmap.png"), terrainProps.getSize(), terrainProps.getMaxHeight()));
         materialSystem.registerNewMaterial(terrainMaterial, new TerrainMaterialRenderer());
-        registry.addComponent(terrain, new Transform(new Vector3f(-10, 0, -10), new Vector3f(0, 0, 10)));
+        registry.addComponent(terrain, new Transform(new Vector3f(-400, 0, -400), new Vector3f(10, 0, 0)));
         registry.addComponent(terrain, terrainMaterial);
-        registry.addComponent(terrain, meshSystem.load(
-            RawMeshDataFactory.generateFlatTerrain(terrainProps.getVertexCount(), terrainProps.getSize()))
+        registry.addComponent(terrain, mesh
         );
         registry.addComponent(terrain, terrainProps);
         registry.addComponent(terrain, new PhysicsBody(

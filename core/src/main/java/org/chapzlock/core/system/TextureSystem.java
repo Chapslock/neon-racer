@@ -33,7 +33,7 @@ public class TextureSystem {
         if (existingId != null) {
             return texturePool.get(existingId);
         }
-        RawImageData rawImageData = FileUtils.loadImage(filePath);
+        RawImageData rawImageData = FileUtils.loadRawImage(filePath);
         Texture texture = TextureUtil.bindTextureDataToGpu(rawImageData);
         texturePool.put(texture.getId(), texture);
         filePathToIdMap.put(texture.getFilePath(), texture.getId());

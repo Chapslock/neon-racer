@@ -5,7 +5,10 @@ import static org.chapzlock.core.graphics.shader.TerrainShaderProps.UNIFORM_LIGH
 import static org.chapzlock.core.graphics.shader.TerrainShaderProps.UNIFORM_PROJECTION_MATRIX;
 import static org.chapzlock.core.graphics.shader.TerrainShaderProps.UNIFORM_REFLECTIVITY;
 import static org.chapzlock.core.graphics.shader.TerrainShaderProps.UNIFORM_SHINE_DAMPER;
-import static org.chapzlock.core.graphics.shader.TerrainShaderProps.UNIFORM_TEXTURE_SAMPLER;
+import static org.chapzlock.core.graphics.shader.TerrainShaderProps.UNIFORM_TEXTURE_0;
+import static org.chapzlock.core.graphics.shader.TerrainShaderProps.UNIFORM_TEXTURE_1;
+import static org.chapzlock.core.graphics.shader.TerrainShaderProps.UNIFORM_TEXTURE_2;
+import static org.chapzlock.core.graphics.shader.TerrainShaderProps.UNIFORM_TEXTURE_BLEND_MAP;
 import static org.chapzlock.core.graphics.shader.TerrainShaderProps.UNIFORM_TRANSFORMATION_MATRIX;
 import static org.chapzlock.core.graphics.shader.TerrainShaderProps.UNIFORM_VIEW_MATRIX;
 
@@ -30,11 +33,8 @@ public class TerrainMaterialRenderer implements MaterialRenderer {
         Shader shader = material.getShader();
         shaderSystem.use(shader);
 
-        Texture texture = material.getTexture();
-        if (texture != null) {
-            textureSystem.bind(texture, 0);
-            shaderSystem.setUniform(shader, UNIFORM_TEXTURE_SAMPLER, 0);
-        }
+        bindTextures(material, shader);
+        bindBlendMap(material, shader);
 
         shaderSystem.setUniform(shader, UNIFORM_SHINE_DAMPER, material.getReflection().getShineDamper());
         shaderSystem.setUniform(shader, UNIFORM_REFLECTIVITY, material.getReflection().getReflectivity());
@@ -46,6 +46,23 @@ public class TerrainMaterialRenderer implements MaterialRenderer {
         }
     }
 
+    private void bindTextures(Material material, Shader shader) {
+        for (int i = 0; i < material.getTextures().size(); i++) {
+            textureSystem.bind(material.getTextures().get(i), i);
+        }
+        shaderSystem.setUniform(shader, UNIFORM_TEXTURE_0, 0);
+        shaderSystem.setUniform(shader, UNIFORM_TEXTURE_1, 1);
+        shaderSystem.setUniform(shader, UNIFORM_TEXTURE_2, 2);
+    }
+
+    private void bindBlendMap(Material material, Shader shader) {
+        Texture blendMap = material.getBlendMap();
+        if (blendMap != null) {
+            textureSystem.bind(blendMap, material.getTextures().size());
+            shaderSystem.setUniform(shader, UNIFORM_TEXTURE_BLEND_MAP, material.getTextures().size());
+        }
+    }
+
     @Override
     public void prepareEntity(EntityView entity, Material material) {
         shaderSystem.setUniform(material.getShader(), UNIFORM_TRANSFORMATION_MATRIX, entity.get(Transform.class)
@@ -54,7 +71,7 @@ public class TerrainMaterialRenderer implements MaterialRenderer {
 
     @Override
     public void unapply(Material material) {
-        Texture texture = material.getTexture();
+        Texture texture = material.getFirstTexture();
         if (texture != null) {
             textureSystem.unbind(texture);
         }

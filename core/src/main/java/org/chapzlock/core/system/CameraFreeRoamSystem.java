@@ -15,8 +15,8 @@ public class CameraFreeRoamSystem implements System {
 
     private final ComponentRegistry registry = ComponentRegistry.instance();
 
-    private static final float CAMERA_MOUSE_SENSITIVITY = .01f;
-    private static final float CAMERA_MOVEMENT_SPEED = 3f;
+    private static final float CAMERA_MOUSE_SENSITIVITY = .03f;
+    private static final float CAMERA_MOVEMENT_SPEED = 10f;
 
     private double lastMouseX;
     private double lastMouseY;

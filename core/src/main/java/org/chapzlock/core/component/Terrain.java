@@ -2,6 +2,8 @@ package org.chapzlock.core.component;
 
 import org.chapzlock.core.application.Component;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -10,6 +12,8 @@ import lombok.RequiredArgsConstructor;
  */
 @RequiredArgsConstructor
 @Getter
+@Builder
+@AllArgsConstructor
 public class Terrain implements Component {
 
     public static final float DEFAULT_SIZE = 800;
@@ -18,6 +22,13 @@ public class Terrain implements Component {
      * How many repeats per world unit of a Texture
      */
     private final float tileScale;
+    @Builder.Default
     private float size = DEFAULT_SIZE;
+    @Builder.Default
     private int vertexCount = DEFAULT_VERTEX_COUNT;
+    /**
+     * By default assume terrain to be flat
+     */
+    @Builder.Default
+    private int maxHeight = 0;
 }

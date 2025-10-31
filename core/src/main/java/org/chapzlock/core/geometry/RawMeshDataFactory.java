@@ -1,7 +1,10 @@
 package org.chapzlock.core.geometry;
 
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.joml.Vector3f;
 
 import lombok.experimental.UtilityClass;
 
@@ -230,5 +233,87 @@ public class RawMeshDataFactory {
             }
         }
         return new RawMeshData(vertices, textureCoords, indices, normals);
+    }
+
+    /**
+     * Generates a terrain from a heightmap image. The heightmap image should be a square image in grayscale.
+     *
+     * @param heightMapImage
+     * @param size
+     * @param maxHeight
+     * @return
+     */
+    public static RawMeshData generateTerrainFromHeightMap(BufferedImage heightMapImage, float size, float maxHeight) {
+        int vertexCount = heightMapImage.getHeight(); // assuming square image
+        int count = vertexCount * vertexCount;
+        float[] vertices = new float[count * 3];
+        float[] normals = new float[count * 3];
+        float[] textureCoords = new float[count * 2];
+        int[] indices = new int[6 * (vertexCount - 1) * (vertexCount - 1)];
+
+        int vertexPointer = 0;
+        for (int z = 0; z < vertexCount; z++) {
+            for (int x = 0; x < vertexCount; x++) {
+                float height = getHeight(x, z, heightMapImage, maxHeight);
+
+                vertices[vertexPointer * 3] = (float) x / ((float) vertexCount - 1) * size;
+                vertices[vertexPointer * 3 + 1] = height;
+                vertices[vertexPointer * 3 + 2] = (float) z / ((float) vertexCount - 1) * size;
+
+                Vector3f normal = calculateNormal(x, z, heightMapImage, maxHeight);
+                normals[vertexPointer * 3] = normal.x;
+                normals[vertexPointer * 3 + 1] = normal.y;
+                normals[vertexPointer * 3 + 2] = normal.z;
+
+                textureCoords[vertexPointer * 2] = (float) x / ((float) vertexCount - 1);
+                textureCoords[vertexPointer * 2 + 1] = (float) z / ((float) vertexCount - 1);
+
+                vertexPointer++;
+            }
+        }
+
+        int pointer = 0;
+        for (int gz = 0; gz < vertexCount - 1; gz++) {
+            for (int gx = 0; gx < vertexCount - 1; gx++) {
+                int topLeft = (gz * vertexCount) + gx;
+                int topRight = topLeft + 1;
+                int bottomLeft = ((gz + 1) * vertexCount) + gx;
+                int bottomRight = bottomLeft + 1;
+
+                indices[pointer++] = topLeft;
+                indices[pointer++] = bottomLeft;
+                indices[pointer++] = topRight;
+                indices[pointer++] = topRight;
+                indices[pointer++] = bottomLeft;
+                indices[pointer++] = bottomRight;
+            }
+        }
+
+        return new RawMeshData(vertices, textureCoords, indices, normals);
+    }
+
+    private static float getHeight(int x, int z, BufferedImage image, float maxHeight) {
+        if (x < 0 || x >= image.getWidth() || z < 0 || z >= image.getHeight()) {
+            return 0;
+        }
+
+        int rgb = image.getRGB(x, z);
+        int r = (rgb >> 16) & 0xFF;
+        int g = (rgb >> 8) & 0xFF;
+        int b = rgb & 0xFF;
+        float height = (r + g + b) / (3f * 255f); // normalize [0,1]
+        height = height * 2f - 1f; // convert to [-1,1]
+        return height * maxHeight;
+    }
+
+    private static Vector3f calculateNormal(int x, int z, BufferedImage image, float maxHeight) {
+        float heightL = getHeight(x - 1, z, image, maxHeight);
+        float heightR = getHeight(x + 1, z, image, maxHeight);
+        float heightD = getHeight(x, z - 1, image, maxHeight);
+        float heightU = getHeight(x, z + 1, image, maxHeight);
+
+        Vector3f normal = new Vector3f(heightL - heightR, 2f, heightD - heightU);
+        normal.normalize();
+        return normal;
     }
 }

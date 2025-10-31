@@ -1,5 +1,6 @@
 package org.chapzlock.core.files;
 
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -16,6 +17,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.imageio.ImageIO;
 
 import org.chapzlock.core.geometry.RawMeshData;
 import org.chapzlock.core.graphics.RawImageData;
@@ -80,7 +83,7 @@ public class FileUtils {
      * @param resourcePath path of the file relative to the resource directory
      * @return raw image data
      */
-    public static RawImageData loadImage(String resourcePath) {
+    public static RawImageData loadRawImage(String resourcePath) {
         ByteBuffer image;
         int width;
         int height;
@@ -104,6 +107,30 @@ public class FileUtils {
             throw new RuntimeException("Failed to read resource: " + resourcePath, e);
         }
         return new RawImageData(image, width, height, resourcePath);
+    }
+
+    /**
+     * Loads an image from the classpath resource directory (e.g., src/main/resources).
+     *
+     * @param resourcePath The path to the image resource (e.g. "textures/heightmap.png").
+     * @return The loaded BufferedImage.
+     * @throws RuntimeException if the resource cannot be found or read.
+     */
+    public static BufferedImage loadBufferedImage(String resourcePath) {
+        if (resourcePath.startsWith("/")) {
+            resourcePath = resourcePath.substring(1);
+        }
+
+        try (InputStream stream = Thread.currentThread()
+            .getContextClassLoader()
+            .getResourceAsStream(resourcePath)) {
+            if (stream == null) {
+                throw new IOException("Resource not found: " + resourcePath);
+            }
+            return ImageIO.read(stream);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load image resource: " + resourcePath, e);
+        }
     }
 
     /**
