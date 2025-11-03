@@ -19,6 +19,7 @@ import org.chapzlock.core.component.Terrain;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.entity.Entity;
 import org.chapzlock.core.files.FileUtils;
+import org.chapzlock.core.geometry.RawMeshData;
 import org.chapzlock.core.geometry.RawMeshDataFactory;
 import org.chapzlock.core.graphics.material.EntityMaterialRenderer;
 import org.chapzlock.core.graphics.material.TerrainMaterialRenderer;
@@ -88,7 +89,7 @@ public class GameWorldLayer implements Layer {
         );
         Mesh mesh = meshSystem.load("obj/funcar.obj");
         PhysicsBody physicsBody = new PhysicsBody(
-            CollisionShapeFactory.createConvexHullShapeFromMesh(meshSystem.getRawMeshById(mesh.getId())),
+            CollisionShapeFactory.createConvexHullShape(meshSystem.getRawMeshById(mesh.getId())),
             PhysicsSpecs.builder()
                 .mass(1)
                 .build());
@@ -125,8 +126,9 @@ public class GameWorldLayer implements Layer {
         registry.addComponent(terrain, mesh
         );
         registry.addComponent(terrain, terrainProps);
+        RawMeshData rawMeshData = meshSystem.getRawMeshById(mesh.getId());
         registry.addComponent(terrain, new PhysicsBody(
-            CollisionShapeFactory.createStaticPlane(),
+            CollisionShapeFactory.createBvhTriangleMeshShapeFromRaw(rawMeshData, true),
             PhysicsSpecs.builder()
                 .restitution(0)
                 .build()

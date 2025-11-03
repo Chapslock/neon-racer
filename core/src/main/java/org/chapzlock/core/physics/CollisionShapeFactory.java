@@ -1,143 +1,168 @@
 package org.chapzlock.core.physics;
 
-import javax.vecmath.Vector3f;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.chapzlock.core.geometry.RawMeshData;
+import org.joml.Vector3f;
 
-import com.bulletphysics.collision.shapes.BoxShape;
+import com.bulletphysics.collision.shapes.BvhTriangleMeshShape;
 import com.bulletphysics.collision.shapes.CollisionShape;
 import com.bulletphysics.collision.shapes.CompoundShape;
 import com.bulletphysics.collision.shapes.ConvexHullShape;
-import com.bulletphysics.collision.shapes.StaticPlaneShape;
+import com.bulletphysics.collision.shapes.IndexedMesh;
+import com.bulletphysics.collision.shapes.ScalarType;
+import com.bulletphysics.collision.shapes.TriangleIndexVertexArray;
 import com.bulletphysics.linearmath.Transform;
 import com.bulletphysics.util.ObjectArrayList;
 
 import lombok.experimental.UtilityClass;
 
+
 /**
- * Utility class for generating CollisionShapes for meshes
- * that correctly account for the mesh’s geometric center offset.
+ * Factory utilities for creating Bullet collision shapes from RawMeshData.
+ *
+ * - createConvexHullShapeFromRaw: creates a ConvexHullShape from raw vertex positions.
+ * - createCompoundFromRawWithOffset: wraps the base shape in a CompoundShape so you can apply an offset
+ *   (useful to cancel visual pivot offsets without modifying vertex data).
+ *
+ * Notes:
+ * - The returned shapes should be cached/reused where appropriate (MeshSystem-like caching).
+ * - Convex hull creation may be slow for very large meshes; consider simplified collision meshes for complex models.
  */
 @UtilityClass
-public class CollisionShapeFactory {
+public final class CollisionShapeFactory {
 
     /**
-     * Creates a simple box collider centered correctly around the mesh geometry.
-     * This is a very performant collisionShape. Use it where collision shape accuracy is not that important
+     * Overload: accepts an org.joml.Vector3f offset (your engine uses JOML in transforms).
      */
-    public static CollisionShape createBoxShapeFromMesh(RawMeshData mesh) {
-        BoundingBox bounds = computeBoundingBox(mesh);
-
-        Vector3f halfExtents = new Vector3f(
-            (bounds.max.x - bounds.min.x) / 2f,
-            (bounds.max.y - bounds.min.y) / 2f,
-            (bounds.max.z - bounds.min.z) / 2f
-        );
-
-        Vector3f center = new Vector3f(
-            (bounds.max.x + bounds.min.x) / 2f,
-            (bounds.max.y + bounds.min.y) / 2f,
-            (bounds.max.z + bounds.min.z) / 2f
-        );
-
-        BoxShape box = new BoxShape(halfExtents);
-
-        // If the mesh isn't centered at origin, offset it
-        if (center.lengthSquared() > 1e-6f) {
-            Transform offset = new Transform();
-            offset.setIdentity();
-            offset.origin.set(center);
-
-            CompoundShape compound = new CompoundShape();
-            compound.addChildShape(offset, box);
-            return compound;
-        }
-
-        return box;
+    public static CompoundShape createCompoundShapeWithOffset(RawMeshData raw, Vector3f jomlOffset) {
+        javax.vecmath.Vector3f off = new javax.vecmath.Vector3f(jomlOffset.x, jomlOffset.y, jomlOffset.z);
+        return createCompoundShapeWithOffset(raw, off);
     }
 
     /**
-     * Computes the AABB (axis-aligned bounding box) of a mesh.
+     * Wraps a collision shape produced from raw mesh data into a CompoundShape with a translation offset
+     * given as javax.vecmath.Vector3f.
+     *
+     * The offset is the translation applied to the child shape relative to the rigid body's local origin.
      */
-    private static BoundingBox computeBoundingBox(RawMeshData mesh) {
-        float minX = Float.MAX_VALUE, minY = Float.MAX_VALUE, minZ = Float.MAX_VALUE;
-        float maxX = -Float.MAX_VALUE, maxY = -Float.MAX_VALUE, maxZ = -Float.MAX_VALUE;
-
-        for (int i = 0; i < mesh.getPositions().length; i += 3) {
-            float x = mesh.getPositions()[i];
-            float y = mesh.getPositions()[i + 1];
-            float z = mesh.getPositions()[i + 2];
-            if (x < minX) {
-                minX = x;
-            }
-            if (y < minY) {
-                minY = y;
-            }
-            if (z < minZ) {
-                minZ = z;
-            }
-            if (x > maxX) {
-                maxX = x;
-            }
-            if (y > maxY) {
-                maxY = y;
-            }
-            if (z > maxZ) {
-                maxZ = z;
-            }
-        }
-
-        return new BoundingBox(
-            new Vector3f(minX, minY, minZ),
-            new Vector3f(maxX, maxY, maxZ)
-        );
+    public static CompoundShape createCompoundShapeWithOffset(RawMeshData raw, javax.vecmath.Vector3f offset) {
+        CollisionShape base = createConvexHullShape(raw);
+        CompoundShape compound = new CompoundShape();
+        Transform child = new Transform();
+        child.setIdentity();
+        child.origin.set(offset); // place the base shape at the requested local offset
+        compound.addChildShape(child, base);
+        return compound;
     }
 
     /**
-     * Creates a ConvexHullShape that correctly matches the mesh’s geometric center.
-     * This CollisionShape is a good balance between performance and collisionShape accuracy.
-     * Use this for most CollisionShapes
+     * Create a ConvexHullShape from raw mesh positions.
+     * This uses the raw positions array (assumed x,y,z triples) and will ignore normals/uvs.
      */
-    public static CollisionShape createConvexHullShapeFromMesh(RawMeshData mesh) {
-        BoundingBox bounds = computeBoundingBox(mesh);
-        Vector3f center = new Vector3f(
-            (bounds.max.x + bounds.min.x) / 2f,
-            (bounds.max.y + bounds.min.y) / 2f,
-            (bounds.max.z + bounds.min.z) / 2f
-        );
-
-        ObjectArrayList<Vector3f> points = new ObjectArrayList<>();
-        for (int i = 0; i < mesh.getPositions().length; i += 3) {
-            // Subtract the geometric center to center the shape around (0,0,0)
-            float x = mesh.getPositions()[i] - center.x;
-            float y = mesh.getPositions()[i + 1] - center.y;
-            float z = mesh.getPositions()[i + 2] - center.z;
-            points.add(new Vector3f(x, y, z));
+    public static CollisionShape createConvexHullShape(RawMeshData raw) {
+        List<javax.vecmath.Vector3f> points = extractVertices(raw);
+        if (points.isEmpty()) {
+            throw new IllegalArgumentException("RawMeshData contains no position vertices");
         }
-
-        ConvexHullShape convex = new ConvexHullShape(points);
-
-        // If the center is offset, wrap it so the shape is placed correctly
-        if (center.lengthSquared() > 1e-6f) {
-            Transform offset = new Transform();
-            offset.setIdentity();
-            offset.origin.set(center);
-
-            CompoundShape compound = new CompoundShape();
-            compound.addChildShape(offset, convex);
-            return compound;
-        }
-
-        return convex;
-    }
-
-    public static CollisionShape createStaticPlane() {
-        return new StaticPlaneShape(new javax.vecmath.Vector3f(0, 1, 0), 0);
+        // Convert to array - ConvexHullShape can accept an array of javax.vecmath.Vector3f
+        ObjectArrayList<javax.vecmath.Vector3f> pts = new ObjectArrayList<>();
+        pts.addAll(points);
+        return new ConvexHullShape(pts);
     }
 
     /**
-     * Simple utility record to hold min/max of a mesh.
+     * Extracts vertex positions from RawMeshData into a list of javax.vecmath.Vector3f.
+     * If indices are present, we use indexed vertices (and keep duplicates if they are present in positions).
      */
-    private static record BoundingBox(Vector3f min, Vector3f max) {
+    private static List<javax.vecmath.Vector3f> extractVertices(RawMeshData raw) {
+        float[] positions = raw.getPositions();
+        int[] indices = raw.getIndices();
+
+        if (positions == null || positions.length == 0) {
+            return List.of();
+        }
+        if (positions.length % 3 != 0) {
+            throw new IllegalArgumentException("RawMeshData.positions length must be multiple of 3 (x,y,z)");
+        }
+
+        List<javax.vecmath.Vector3f> out = new ArrayList<>();
+
+        if (indices != null && indices.length > 0) {
+            // Use indexed positions (common when you want the exact used vertex set)
+            for (int idx : indices) {
+                int base = idx * 3;
+                if (base + 2 >= positions.length) {
+                    // defensive: skip invalid index
+                    continue;
+                }
+                out.add(new javax.vecmath.Vector3f(
+                    positions[base],
+                    positions[base + 1],
+                    positions[base + 2]
+                ));
+            }
+        } else {
+            // Non-indexed: positions is a flat array x,y,z,x,y,z...
+            for (int i = 0; i < positions.length; i += 3) {
+                out.add(new javax.vecmath.Vector3f(
+                    positions[i],
+                    positions[i + 1],
+                    positions[i + 2]
+                ));
+            }
+        }
+        return out;
+    }
+
+    /**
+     * Creates a triangle-mesh BVH shape from raw mesh data. This is the recommended shape for static terrain.
+     * <p>
+     * Uses TriangleIndexVertexArray / IndexedMesh which is the standard JBullet wrapper for triangle meshes.
+     */
+    public static BvhTriangleMeshShape createBvhTriangleMeshShapeFromRaw(RawMeshData raw, boolean useQuantizedAabbCompression) {
+        float[] positions = raw.getPositions();
+        int[] indices = raw.getIndices();
+
+        if (positions == null || positions.length == 0) {
+            throw new IllegalArgumentException("Empty positions in RawMeshData");
+        }
+        if (indices == null || indices.length == 0) {
+            // If there are no indices, generate a simple index list assuming positions are triangles (x,y,z repeated per vertex)
+            int triCount = positions.length / 9; // 3 vertices per triangle, 3 floats per vertex => 9 floats per triangle
+            if (triCount <= 0) {
+                throw new IllegalArgumentException("RawMeshData has no indices and cannot be interpreted as triangles");
+            }
+            int[] autoIndices = new int[triCount * 3];
+            int write = 0;
+            for (int t = 0; t < triCount; t++) {
+                autoIndices[write++] = t * 3;
+                autoIndices[write++] = t * 3 + 1;
+                autoIndices[write++] = t * 3 + 2;
+            }
+            indices = autoIndices;
+        }
+
+        // Create an IndexedMesh and fill it
+        IndexedMesh mesh = new IndexedMesh();
+        mesh.numTriangles = indices.length / 3;
+        mesh.numVertices = positions.length / 3;
+        mesh.triangleIndexBase = java.nio.ByteBuffer
+            .allocateDirect(indices.length * Integer.BYTES)
+            .order(java.nio.ByteOrder.nativeOrder());
+        mesh.triangleIndexBase.asIntBuffer().put(indices);
+        mesh.triangleIndexStride = 3 * Integer.BYTES;
+
+        mesh.vertexBase = java.nio.ByteBuffer
+            .allocateDirect(positions.length * Float.BYTES)
+            .order(java.nio.ByteOrder.nativeOrder());
+        mesh.vertexBase.asFloatBuffer().put(positions);
+        mesh.vertexStride = 3 * Float.BYTES;
+
+        TriangleIndexVertexArray triangleIndexVertexArray = new TriangleIndexVertexArray();
+        triangleIndexVertexArray.addIndexedMesh(mesh, ScalarType.INTEGER);
+
+        return new BvhTriangleMeshShape(triangleIndexVertexArray, useQuantizedAabbCompression);
     }
 }
