@@ -18,4 +18,7 @@ public class TerrainShaderProps {
     public static final String UNIFORM_TEXTURE_1 = "rTexture";
     public static final String UNIFORM_TEXTURE_2 = "bTexture";
     public static final String UNIFORM_TEXTURE_BLEND_MAP = "blendMapTexture";
+    public static final String UNIFORM_SKY_COLOR = "skyColor";
+    public static final String UNIFORM_FOG_DENSITY = "fogDensity";
+    public static final String UNIFORM_FOG_GRADIENT = "fogGradient";
 }

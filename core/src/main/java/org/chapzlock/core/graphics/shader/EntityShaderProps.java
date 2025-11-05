@@ -16,5 +16,7 @@ public class EntityShaderProps {
     public static final String UNIFORM_SHINE_DAMPER = "shineDamper";   // fixed typo
     public static final String UNIFORM_REFLECTIVITY = "reflectivity";
     public static final String UNIFORM_TEXTURE_SAMPLER = "textureSampler";
-
+    public static final String UNIFORM_SKY_COLOR = "skyColor";
+    public static final String UNIFORM_FOG_DENSITY = "fogDensity";
+    public static final String UNIFORM_FOG_GRADIENT = "fogGradient";
 }

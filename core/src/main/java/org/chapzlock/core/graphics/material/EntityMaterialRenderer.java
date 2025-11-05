@@ -13,9 +13,11 @@ import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.Material;
 import org.chapzlock.core.component.PointLight;
 import org.chapzlock.core.component.Shader;
+import org.chapzlock.core.component.Sky;
 import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.entity.EntityView;
+import org.chapzlock.core.graphics.shader.EntityShaderProps;
 import org.chapzlock.core.system.CameraSystem;
 import org.chapzlock.core.system.ShaderSystem;
 import org.chapzlock.core.system.TextureSystem;
@@ -26,7 +28,7 @@ public class EntityMaterialRenderer implements MaterialRenderer {
     private final CameraSystem cameraSystem = new CameraSystem();
 
     @Override
-    public void apply(Material material, Camera camera, PointLight light) {
+    public void apply(Material material, Camera camera, PointLight light, Sky sky) {
         Shader shader = material.getShader();
         shaderSystem.use(shader);
 
@@ -34,6 +36,12 @@ public class EntityMaterialRenderer implements MaterialRenderer {
         if (texture != null) {
             textureSystem.bind(texture, 0);
             shaderSystem.setUniform(shader, UNIFORM_TEXTURE_SAMPLER, 0);
+        }
+
+        if (sky != null) {
+            shaderSystem.setUniform(shader, EntityShaderProps.UNIFORM_SKY_COLOR, sky.getColor().toVector3f());
+            shaderSystem.setUniform(shader, EntityShaderProps.UNIFORM_FOG_DENSITY, sky.getFogDensity());
+            shaderSystem.setUniform(shader, EntityShaderProps.UNIFORM_FOG_GRADIENT, sky.getFogGradient());
         }
 
         shaderSystem.setUniform(shader, UNIFORM_SHINE_DAMPER, material.getReflection().getShineDamper());

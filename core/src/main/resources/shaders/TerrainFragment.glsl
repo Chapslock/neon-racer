@@ -4,6 +4,7 @@ in vec2 passTextureCoords;
 in vec3 surfaceNormal;
 in vec3 toLightVector;
 in vec3 toCameraVector;
+in float visibility;
 
 out vec4 fragmentColor;
 
@@ -11,11 +12,10 @@ uniform sampler2D backgroundTexture;
 uniform sampler2D rTexture;
 uniform sampler2D bTexture;
 uniform sampler2D blendMapTexture;
-
-
 uniform vec3 lightColor;
 uniform float shineDamper;
 uniform float reflectivity;
+uniform vec3 skyColor;
 
 void main()
 {
@@ -48,4 +48,5 @@ void main()
     vec3 specularLight = dampedFactor * reflectivity * lightColor;
 
     fragmentColor = vec4(diffuse, 1.0) * totalColour + vec4(specularLight, 1.0);
+    fragmentColor = mix(vec4(skyColor, 1.0), fragmentColor, visibility);
 }

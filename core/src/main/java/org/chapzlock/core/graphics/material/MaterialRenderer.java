@@ -3,6 +3,7 @@ package org.chapzlock.core.graphics.material;
 import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.Material;
 import org.chapzlock.core.component.PointLight;
+import org.chapzlock.core.component.Sky;
 import org.chapzlock.core.entity.EntityView;
 
 /**
@@ -15,7 +16,7 @@ public interface MaterialRenderer {
      * Used to prepare material for rendering like setting
      * uniforms that are global for the render batch (projection/view, lights, etc)
      */
-    void apply(Material material, Camera camera, PointLight light);
+    void apply(Material material, Camera camera, PointLight light, Sky sky);
 
     /**
      * Prepare a single entity in the batch for rendering (transforms, per-entity uniforms)

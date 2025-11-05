@@ -16,9 +16,11 @@ import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.Material;
 import org.chapzlock.core.component.PointLight;
 import org.chapzlock.core.component.Shader;
+import org.chapzlock.core.component.Sky;
 import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.entity.EntityView;
+import org.chapzlock.core.graphics.shader.TerrainShaderProps;
 import org.chapzlock.core.system.CameraSystem;
 import org.chapzlock.core.system.ShaderSystem;
 import org.chapzlock.core.system.TextureSystem;
@@ -29,12 +31,18 @@ public class TerrainMaterialRenderer implements MaterialRenderer {
     private final CameraSystem cameraSystem = new CameraSystem();
 
     @Override
-    public void apply(Material material, Camera camera, PointLight light) {
+    public void apply(Material material, Camera camera, PointLight light, Sky sky) {
         Shader shader = material.getShader();
         shaderSystem.use(shader);
 
         bindTextures(material, shader);
         bindBlendMap(material, shader);
+
+        if (sky != null) {
+            shaderSystem.setUniform(shader, TerrainShaderProps.UNIFORM_SKY_COLOR, sky.getColor().toVector3f());
+            shaderSystem.setUniform(shader, TerrainShaderProps.UNIFORM_FOG_DENSITY, sky.getFogDensity());
+            shaderSystem.setUniform(shader, TerrainShaderProps.UNIFORM_FOG_GRADIENT, sky.getFogGradient());
+        }
 
         shaderSystem.setUniform(shader, UNIFORM_SHINE_DAMPER, material.getReflection().getShineDamper());
         shaderSystem.setUniform(shader, UNIFORM_REFLECTIVITY, material.getReflection().getReflectivity());

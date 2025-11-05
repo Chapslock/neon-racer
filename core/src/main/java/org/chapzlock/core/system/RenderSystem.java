@@ -9,6 +9,7 @@ import java.util.Map;
 
 import org.chapzlock.core.application.System;
 import org.chapzlock.core.component.Camera;
+import org.chapzlock.core.component.Color;
 import org.chapzlock.core.component.Material;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.PointLight;
@@ -48,23 +49,25 @@ public class RenderSystem implements System {
         }
 
         PointLight light = getPointLight();
-        renderSky();
-        renderEntities(camera, light);
+        Sky sky = registry.view(Sky.class).getFirst().get(Sky.class);
+
+
+        renderEntities(camera, light, sky);
     }
 
-    private void renderSky() {
-        var skyEntity = registry.view(Sky.class).getFirst();
-        if (skyEntity != null) {
-            var color = skyEntity.get(Sky.class).getColor();
-            glClearColor(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha());
-        }
-    }
-
-    private void renderEntities(Camera camera, PointLight light) {
+    private void renderEntities(Camera camera, PointLight light, Sky sky) {
         registry.view(Mesh.class, Material.class, Transform.class)
             .forEach(this::submitToRenderQueue);
-        renderEntitiesFromQueue(camera, light);
+        renderSky(sky);
+        renderEntitiesFromQueue(camera, light, sky);
         clearRenderQueue();
+    }
+
+    private void renderSky(Sky sky) {
+        if (sky != null) {
+            Color color = sky.getColor();
+            glClearColor(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha());
+        }
     }
 
     private void clearRenderQueue() {
@@ -81,13 +84,13 @@ public class RenderSystem implements System {
         this.renderQueue.computeIfAbsent(entity.get(Material.class), m -> new ArrayList<>()).add(entity);
     }
 
-    private void renderEntitiesFromQueue(Camera camera, PointLight light) {
+    private void renderEntitiesFromQueue(Camera camera, PointLight light, Sky sky) {
         for (var batch : renderQueue.entrySet()) {
             Material material = batch.getKey();
             List<EntityView> renderables = batch.getValue();
             MaterialRenderer materialRenderer = materialSystem.getRenderer(material);
             // Bind material/shader once & Load global uniforms once per batch
-            materialRenderer.apply(material, camera, light);
+            materialRenderer.apply(material, camera, light, sky);
 
             for (EntityView entity : renderables) {
                 materialRenderer.prepareEntity(entity, material);

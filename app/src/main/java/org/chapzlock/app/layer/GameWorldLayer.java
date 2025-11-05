@@ -118,13 +118,12 @@ public class GameWorldLayer implements Layer {
                 TerrainShaderProps.FRAGMENT_FILE
             ))
             .build();
+        materialSystem.registerNewMaterial(terrainMaterial, new TerrainMaterialRenderer());
         Mesh mesh = meshSystem.load(
             RawMeshDataFactory.generateTerrainFromHeightMap(FileUtils.loadBufferedImage("textures/terrain/heightmap.png"), terrainProps.getSize(), terrainProps.getMaxHeight()));
-        materialSystem.registerNewMaterial(terrainMaterial, new TerrainMaterialRenderer());
         registry.addComponent(terrain, new Transform(new Vector3f(-400, 0, -400), new Vector3f(10, 0, 0)));
         registry.addComponent(terrain, terrainMaterial);
-        registry.addComponent(terrain, mesh
-        );
+        registry.addComponent(terrain, mesh);
         registry.addComponent(terrain, terrainProps);
         RawMeshData rawMeshData = meshSystem.getRawMeshById(mesh.getId());
         registry.addComponent(terrain, new PhysicsBody(
