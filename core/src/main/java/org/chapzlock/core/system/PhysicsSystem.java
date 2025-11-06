@@ -8,6 +8,7 @@ import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.entity.EntityView;
 import org.chapzlock.core.physics.EntityMotionState;
+import org.chapzlock.core.physics.PhysicsCollisionUtil;
 import org.chapzlock.core.physics.PhysicsDebugRenderer;
 import org.chapzlock.core.physics.PhysicsDebugger;
 import org.chapzlock.core.physics.PhysicsSystemSpecs;
@@ -72,6 +73,7 @@ public class PhysicsSystem implements System {
     @Override
     public void onUpdate(float deltaTime) {
         stepSimulation(deltaTime);
+        PhysicsCollisionUtil.rebuildContactCache(dynamicsWorld);
     }
 
     @Override

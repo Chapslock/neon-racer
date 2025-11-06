@@ -1,6 +1,10 @@
 package org.chapzlock.core.component;
 
 
+import static org.joml.Math.cos;
+import static org.joml.Math.sin;
+import static org.joml.Math.toRadians;
+
 import org.chapzlock.core.application.Component;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -74,5 +78,39 @@ public class Transform implements Component {
         // Apply uniform scale
         this.transformationMatrix.scale(this.scale);
         return this.transformationMatrix;
+    }
+
+    /**
+     * Calculates normalized forward facing vector of the transform
+     *
+     * @return forward vector
+     */
+    public Vector3f getForwardVector() {
+        float yRotationRad = toRadians(this.rotation.y);
+        float xRotationRad = toRadians(this.rotation.x);
+
+        Vector3f front = new Vector3f();
+        front.x = cos(yRotationRad) * cos(xRotationRad);
+        front.y = sin(xRotationRad);
+        front.z = sin(yRotationRad) * cos(xRotationRad);
+        return front.normalize();
+    }
+
+    /**
+     * Returns the upwards facing normalised vector of the transform
+     *
+     * @return
+     */
+    public Vector3f getUpVector() {
+        float rotationX = toRadians(this.rotation.x);
+        float rotationY = toRadians(this.rotation.y);
+        float rotationZ = toRadians(this.rotation.z);
+        Vector3f up = new Vector3f(0, 1, 0);
+        Matrix4f rotationMatrix = new Matrix4f()
+            .rotate(rotationX, 1, 0, 0)
+            .rotate(rotationY, 0, 1, 0)
+            .rotate(rotationZ, 0, 0, 1);
+        rotationMatrix.transformDirection(up);
+        return up.normalize();
     }
 }

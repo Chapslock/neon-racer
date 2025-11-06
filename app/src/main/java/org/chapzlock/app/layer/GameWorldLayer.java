@@ -3,6 +3,8 @@ package org.chapzlock.app.layer;
 import java.util.List;
 
 import org.chapzlock.app.component.PlayerInputComponent;
+import org.chapzlock.app.systems.PlayerInputSystem;
+import org.chapzlock.app.systems.PlayerMovementSystem;
 import org.chapzlock.app.tags.PlayerTag;
 import org.chapzlock.core.application.Layer;
 import org.chapzlock.core.application.System;
@@ -46,6 +48,8 @@ public class GameWorldLayer implements Layer {
 
     private final List<System> systems = List.of(
         new RenderSystem(),
+        new PlayerMovementSystem(),
+        new PlayerInputSystem(),
         new PhysicsSystem(PhysicsSystemSpecs.builder()
             .isDebugEnabled(true)
             .build()),
@@ -93,7 +97,7 @@ public class GameWorldLayer implements Layer {
             PhysicsSpecs.builder()
                 .mass(1)
                 .build());
-        registry.addComponent(player, new Transform(new Vector3f(0, 10, -5), new Vector3f(90, 0, 180)));
+        registry.addComponent(player, new Transform(new Vector3f(0, 10, -5), new Vector3f(0, 0, 180)));
         registry.addComponent(player, mesh);
         registry.addComponent(player, materialSystem.registerNewMaterial(material, new EntityMaterialRenderer()));
         registry.addComponent(player, new PlayerTag());
