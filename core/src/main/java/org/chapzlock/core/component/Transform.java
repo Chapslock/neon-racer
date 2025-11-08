@@ -1,8 +1,6 @@
 package org.chapzlock.core.component;
 
 
-import static org.joml.Math.cos;
-import static org.joml.Math.sin;
 import static org.joml.Math.toRadians;
 
 import org.chapzlock.core.application.Component;
@@ -83,17 +81,22 @@ public class Transform implements Component {
     /**
      * Calculates normalized forward facing vector of the transform
      *
-     * @return forward vector
+     * @return forward vector (world space)
      */
     public Vector3f getForwardVector() {
-        float yRotationRad = toRadians(this.rotation.y);
-        float xRotationRad = toRadians(this.rotation.x);
+        Vector3f forward = new Vector3f(0, 0, 1);
 
-        Vector3f front = new Vector3f();
-        front.x = cos(yRotationRad) * cos(xRotationRad);
-        front.y = sin(xRotationRad);
-        front.z = sin(yRotationRad) * cos(xRotationRad);
-        return front.normalize();
+        float rotX = toRadians(this.rotation.x);
+        float rotY = toRadians(this.rotation.y);
+        float rotZ = toRadians(this.rotation.z);
+
+        Matrix4f rotationMatrix = new Matrix4f()
+            .rotate(rotX, 1, 0, 0)
+            .rotate(rotY, 0, 1, 0)
+            .rotate(rotZ, 0, 0, 1);
+
+        rotationMatrix.transformDirection(forward);
+        return forward.normalize();
     }
 
     /**
@@ -101,16 +104,20 @@ public class Transform implements Component {
      *
      * @return
      */
-    public Vector3f getUpVector() {
-        float rotationX = toRadians(this.rotation.x);
-        float rotationY = toRadians(this.rotation.y);
-        float rotationZ = toRadians(this.rotation.z);
-        Vector3f up = new Vector3f(0, 1, 0);
+    public Vector3f getRightVector() {
+        // Canonical right is +X
+        Vector3f right = new Vector3f(1, 0, 0);
+
+        float rotX = toRadians(this.rotation.x);
+        float rotY = toRadians(this.rotation.y);
+        float rotZ = toRadians(this.rotation.z);
+
         Matrix4f rotationMatrix = new Matrix4f()
-            .rotate(rotationX, 1, 0, 0)
-            .rotate(rotationY, 0, 1, 0)
-            .rotate(rotationZ, 0, 0, 1);
-        rotationMatrix.transformDirection(up);
-        return up.normalize();
+            .rotate(rotX, 1, 0, 0)
+            .rotate(rotY, 0, 1, 0)
+            .rotate(rotZ, 0, 0, 1);
+
+        rotationMatrix.transformDirection(right);
+        return right.normalize();
     }
 }

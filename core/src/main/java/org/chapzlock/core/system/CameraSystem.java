@@ -14,6 +14,7 @@ public class CameraSystem {
     private float cachedFieldOfView = 0;
     private float cachedNearPlane = 0;
     private float cachedFarPlane = 0;
+    private float cachedAspectRatio = 0;
 
     /**
      * Calculates the perspective projection matrix based on the camera settings
@@ -28,10 +29,11 @@ public class CameraSystem {
         this.cachedFieldOfView = camera.getFieldOfView();
         this.cachedNearPlane = camera.getNearPlane();
         this.cachedFarPlane = camera.getFarPlane();
+        this.cachedAspectRatio = Application.instance().getAppSpec().getWindowSpec().getAspectRatio();
         this.projectionMatrix.identity();
         this.projectionMatrix.perspective(
             camera.getFieldOfView(),
-            Application.instance().getAppSpec().getWindowSpec().getAspectRatio(),
+            cachedAspectRatio,
             camera.getNearPlane(),
             camera.getFarPlane()
         );
@@ -41,7 +43,8 @@ public class CameraSystem {
     private boolean isCameraSettingsSame(Camera camera) {
         return cachedFieldOfView == camera.getFieldOfView() &&
             cachedNearPlane == camera.getNearPlane() &&
-            cachedFarPlane == camera.getFarPlane();
+            cachedFarPlane == camera.getFarPlane() &&
+            cachedAspectRatio == Application.instance().getAppSpec().getWindowSpec().getAspectRatio();
     }
 
     public Matrix4f calculateViewMatrix(Camera camera) {

@@ -3,6 +3,7 @@ package org.chapzlock.app.layer;
 import java.util.List;
 
 import org.chapzlock.app.component.PlayerInputComponent;
+import org.chapzlock.app.systems.PlayerCameraFollowSystem;
 import org.chapzlock.app.systems.PlayerInputSystem;
 import org.chapzlock.app.systems.PlayerMovementSystem;
 import org.chapzlock.app.tags.PlayerTag;
@@ -31,7 +32,6 @@ import org.chapzlock.core.physics.CollisionShapeFactory;
 import org.chapzlock.core.physics.PhysicsSpecs;
 import org.chapzlock.core.physics.PhysicsSystemSpecs;
 import org.chapzlock.core.registry.ComponentRegistry;
-import org.chapzlock.core.system.CameraFreeRoamSystem;
 import org.chapzlock.core.system.MaterialSystem;
 import org.chapzlock.core.system.MeshSystem;
 import org.chapzlock.core.system.PhysicsSystem;
@@ -53,7 +53,7 @@ public class GameWorldLayer implements Layer {
         new PhysicsSystem(PhysicsSystemSpecs.builder()
             .isDebugEnabled(true)
             .build()),
-        new CameraFreeRoamSystem()
+        new PlayerCameraFollowSystem()
     );
 
     @Override

@@ -37,6 +37,7 @@ import org.chapzlock.core.input.mouse.MouseButtonReleasedEvent;
 import org.chapzlock.core.input.mouse.MouseMovedEvent;
 import org.chapzlock.core.input.mouse.MouseScrolledEvent;
 import org.lwjgl.glfw.GLFWVidMode;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GLCapabilities;
 
 
@@ -143,6 +144,7 @@ public class Window {
         glfwSetFramebufferSizeCallback(id, (window, width, height) -> {
             specs.setHeight(height);
             specs.setWidth(width);
+            GL11.glViewport(0, 0, width, height);
             eventBus.publish(new WindowResizeEvent(window, width, height));
         });
         glfwSetWindowCloseCallback(id, window -> eventBus.publish(new WindowCloseEvent(window)));

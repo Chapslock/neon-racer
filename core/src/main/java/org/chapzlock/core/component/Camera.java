@@ -84,4 +84,36 @@ public class Camera implements Component {
     public void setPitch(float value) {
         rotation.x = value;
     }
+
+    public void lookAt(Vector3f target) {
+        // direction from camera to target
+        Vector3f dir = new Vector3f(target).sub(position);
+        float len2 = dir.lengthSquared();
+        if (len2 == 0f) {
+            // target equals camera position; nothing to do
+            return;
+        }
+
+        dir.normalize();
+
+        // pitch: asin(y) -> range [-90,90] degrees
+        float pitchDeg = (float) Math.toDegrees(Math.asin(dir.y));
+
+        // yaw: atan2(z, x) -> range [-180,180] degrees
+        float yawDeg = (float) Math.toDegrees(Math.atan2(dir.z, dir.x));
+
+        // clamp pitch a bit to avoid looking straight up/down (optional)
+        final float MAX_PITCH = 89.0f;
+        if (pitchDeg > MAX_PITCH) {
+            pitchDeg = MAX_PITCH;
+        }
+        if (pitchDeg < -MAX_PITCH) {
+            pitchDeg = -MAX_PITCH;
+        }
+
+        // apply
+        this.rotation.x = pitchDeg;
+        this.rotation.y = yawDeg;
+        // keep roll (rotation.z) as-is
+    }
 }

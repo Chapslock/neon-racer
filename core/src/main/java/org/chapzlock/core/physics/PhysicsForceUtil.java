@@ -20,6 +20,7 @@ public final class PhysicsForceUtil {
     // Not thread-safe — call only from the physics thread.
     private static final Vector3f tempWorldDir = new Vector3f();
     private static final Transform tempLocalDir = new Transform();
+    private static final Vector3f tempWorldPos = new Vector3f();
 
     /**
      * Applies a continuous world-space force.
@@ -65,11 +66,29 @@ public final class PhysicsForceUtil {
     }
 
     /**
+     * Applies a force given in the body's local space at a local-space position (convenience).
+     * Useful to push at wheel positions: will produce torque (steering roll/yaw).
+     */
+    public static void applyLocalForceAtPosition(RigidBody body, org.joml.Vector3f localForce, org.joml.Vector3f localPosition) {
+        Vector3f force = PhysicsMapper.vector3f(localForce);
+        Vector3f posLocal = PhysicsMapper.vector3f(localPosition);
+        if (!isValidDynamic(body, force) || posLocal == null) {
+            return;
+        }
+        body.activate(true);
+        transformLocalToWorldDir(body, force, tempWorldDir);
+        transformLocalToWorldPoint(body, posLocal);
+        body.applyForce(tempWorldDir, tempWorldPos);
+    }
+
+    /**
      * Converts a local-space direction vector into world-space direction.
      */
     private static void transformLocalToWorldDir(RigidBody body, Vector3f local, Vector3f out) {
+        // fill tempLocalDir with world transform
         body.getWorldTransform(tempLocalDir);
-        body.getWorldTransform(new Transform()).basis.transform(local, out);
+        // use the basis (rotation) to transform direction (no translation)
+        tempLocalDir.basis.transform(local, out);
     }
 
     /**
@@ -96,7 +115,16 @@ public final class PhysicsForceUtil {
     }
 
     /**
-     * Applies torque (rotational force).
+     * Converts a local-space point into a world-space point (includes translation).
+     */
+    private static void transformLocalToWorldPoint(RigidBody body, Vector3f localPoint) {
+        body.getWorldTransform(tempLocalDir);
+        // Transform point (includes translation)
+        tempLocalDir.transform(localPoint);
+    }
+
+    /**
+     * Applies torque (rotational force) in world space.
      */
     public static void applyTorque(RigidBody body, Vector3f torque) {
         if (!isValidDynamic(body, torque)) {
@@ -104,6 +132,20 @@ public final class PhysicsForceUtil {
         }
         body.activate(true);
         body.applyTorque(torque);
+    }
+
+    /**
+     * Applies a torque specified in local space (converted to world).
+     * e.g., rotate around the local up axis.
+     */
+    public static void applyLocalTorque(RigidBody body, org.joml.Vector3f localTorque) {
+        Vector3f t = PhysicsMapper.vector3f(localTorque);
+        if (!isValidDynamic(body, t)) {
+            return;
+        }
+        body.activate(true);
+        transformLocalToWorldDir(body, t, tempWorldDir);
+        body.applyTorque(tempWorldDir);
     }
 
     /**

@@ -36,10 +36,10 @@ public class PlayerInputSystem implements System {
         for (EntityView e : registry.view(PlayerTag.class, PlayerInputComponent.class)) {
             var input = e.get(PlayerInputComponent.class);
             switch (event.key()) {
-                case GLFW.GLFW_KEY_W, GLFW.GLFW_KEY_UP -> input.setMovingForward(true);
-                case GLFW.GLFW_KEY_S, GLFW.GLFW_KEY_DOWN -> input.setMovingBackwards(true);
-                case GLFW.GLFW_KEY_A, GLFW.GLFW_KEY_LEFT -> input.setMovingLeft(true);
-                case GLFW.GLFW_KEY_D, GLFW.GLFW_KEY_RIGHT -> input.setMovingRight(true);
+                case GLFW.GLFW_KEY_UP -> input.setMovingForward(true);
+                case GLFW.GLFW_KEY_DOWN -> input.setMovingBackwards(true);
+                case GLFW.GLFW_KEY_LEFT -> input.setMovingLeft(true);
+                case GLFW.GLFW_KEY_RIGHT -> input.setMovingRight(true);
             }
         }
         return false;
@@ -49,10 +49,10 @@ public class PlayerInputSystem implements System {
         for (EntityView e : registry.view(PlayerTag.class, PlayerInputComponent.class)) {
             var input = e.get(PlayerInputComponent.class);
             switch (event.keyCode()) {
-                case GLFW.GLFW_KEY_W, GLFW.GLFW_KEY_UP -> input.setMovingForward(false);
-                case GLFW.GLFW_KEY_S, GLFW.GLFW_KEY_DOWN -> input.setMovingBackwards(false);
-                case GLFW.GLFW_KEY_A, GLFW.GLFW_KEY_LEFT -> input.setMovingLeft(false);
-                case GLFW.GLFW_KEY_D, GLFW.GLFW_KEY_RIGHT -> input.setMovingRight(false);
+                case GLFW.GLFW_KEY_UP -> input.setMovingForward(false);
+                case GLFW.GLFW_KEY_DOWN -> input.setMovingBackwards(false);
+                case GLFW.GLFW_KEY_LEFT -> input.setMovingLeft(false);
+                case GLFW.GLFW_KEY_RIGHT -> input.setMovingRight(false);
             }
         }
         return false;
