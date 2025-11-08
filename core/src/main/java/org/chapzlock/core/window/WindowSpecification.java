@@ -11,7 +11,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class WindowSpecification {
-    private String title;
+    @Builder.Default
+    private String title = "Application";
     @Builder.Default
     private int width = 600;
     @Builder.Default

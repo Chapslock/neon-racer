@@ -1,12 +1,7 @@
 package org.chapzlock.core.window;
 
-import static org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MAJOR;
-import static org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MINOR;
 import static org.lwjgl.glfw.GLFW.GLFW_FALSE;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE;
-import static org.lwjgl.glfw.GLFW.GLFW_OPENGL_CORE_PROFILE;
-import static org.lwjgl.glfw.GLFW.GLFW_OPENGL_FORWARD_COMPAT;
-import static org.lwjgl.glfw.GLFW.GLFW_OPENGL_PROFILE;
 import static org.lwjgl.glfw.GLFW.GLFW_PRESS;
 import static org.lwjgl.glfw.GLFW.GLFW_RELEASE;
 import static org.lwjgl.glfw.GLFW.GLFW_RESIZABLE;
@@ -19,7 +14,6 @@ import static org.lwjgl.glfw.GLFW.glfwGetCursorPos;
 import static org.lwjgl.glfw.GLFW.glfwGetPrimaryMonitor;
 import static org.lwjgl.glfw.GLFW.glfwGetVideoMode;
 import static org.lwjgl.glfw.GLFW.glfwMakeContextCurrent;
-import static org.lwjgl.glfw.GLFW.glfwPollEvents;
 import static org.lwjgl.glfw.GLFW.glfwSetCursorPosCallback;
 import static org.lwjgl.glfw.GLFW.glfwSetFramebufferSizeCallback;
 import static org.lwjgl.glfw.GLFW.glfwSetKeyCallback;
@@ -29,16 +23,10 @@ import static org.lwjgl.glfw.GLFW.glfwSetWindowCloseCallback;
 import static org.lwjgl.glfw.GLFW.glfwSetWindowPos;
 import static org.lwjgl.glfw.GLFW.glfwSetWindowShouldClose;
 import static org.lwjgl.glfw.GLFW.glfwShowWindow;
-import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
 import static org.lwjgl.glfw.GLFW.glfwSwapInterval;
 import static org.lwjgl.glfw.GLFW.glfwWindowHint;
 import static org.lwjgl.glfw.GLFW.glfwWindowShouldClose;
-import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
-import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
-import static org.lwjgl.opengl.GL11.GL_DEPTH_TEST;
-import static org.lwjgl.opengl.GL11.glClear;
-import static org.lwjgl.opengl.GL11.glClearColor;
-import static org.lwjgl.opengl.GL11.glEnable;
+import static org.lwjgl.opengl.GL.createCapabilities;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 import org.chapzlock.core.event.EventBus;
@@ -48,80 +36,83 @@ import org.chapzlock.core.input.mouse.MouseButtonPressedEvent;
 import org.chapzlock.core.input.mouse.MouseButtonReleasedEvent;
 import org.chapzlock.core.input.mouse.MouseMovedEvent;
 import org.chapzlock.core.input.mouse.MouseScrolledEvent;
-import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.glfw.GLFWVidMode;
-import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;
 
-import lombok.Getter;
 
 /**
- * Window class used to create windows for the application
+ * A single GLFW window, wrapping native handles and callbacks.
+ * Rendering logic (clearing, swapping, etc.) is handled by the Application.
  */
 public class Window {
-    @Getter
-    private Long id;
+
+    private long id = NULL;
     private final WindowSpecification specs;
-    private GLFWKeyCallback keyCallback;
+    private GLCapabilities glCapabilities;
     private final EventBus eventBus = EventBus.instance();
 
     public Window(WindowSpecification specs) {
         this.specs = specs;
     }
 
-    public void create() {
+    public long getId() {
+        return id;
+    }
+
+    public WindowSpecification getSpecification() {
+        return specs;
+    }
+
+    public GLCapabilities getGLCapabilities() {
+        return glCapabilities;
+    }
+
+    /**
+     * Creates a new GLFW window and its context. Optionally shares context with another window.
+     *
+     * @param sharedWith another window’s ID or 0 for no sharing
+     */
+    public void create(long sharedWith) {
         glfwDefaultWindowHints();
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-        long temp = glfwCreateWindow(1, 1, "", NULL, NULL);
-        glfwMakeContextCurrent(temp);
-        GL.createCapabilities();
-        GLCapabilities caps = GL.getCapabilities();
-        glfwDestroyWindow(temp);
+        glfwWindowHint(GLFW_RESIZABLE, specs.isResizable() ? GLFW_TRUE : GLFW_FALSE);
 
-        /* Reset and set window hints */
-        glfwDefaultWindowHints();
-        if (caps.OpenGL32) {
-            /* Hints for OpenGL 3.2 core profile */
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
-        } else if (caps.OpenGL21) {
-            /* Hints for legacy OpenGL 2.1 */
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-        } else {
-            throw new RuntimeException("Neither OpenGL 3.2 nor OpenGL 2.1 is "
-                + "supported, you may want to update your graphics driver.");
+        id = glfwCreateWindow(specs.getWidth(), specs.getHeight(), specs.getTitle(), NULL,
+            sharedWith == 0 ? NULL : sharedWith);
+
+        if (id == NULL) {
+            throw new RuntimeException("Failed to create GLFW window");
         }
 
-        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-        glfwWindowHint(GLFW_RESIZABLE, this.specs.isResizable() ? GLFW_TRUE : GLFW_FALSE);
-
-        id = glfwCreateWindow(this.specs.getWidth(), this.specs.getHeight(), this.specs.getTitle(), NULL, NULL);
-        if ( id == NULL ) {
-            throw new RuntimeException("Failed to create the GLFW window");
+        // Center window
+        GLFWVidMode vid = glfwGetVideoMode(glfwGetPrimaryMonitor());
+        if (vid != null) {
+            glfwSetWindowPos(id,
+                (vid.width() - specs.getWidth()) / 2,
+                (vid.height() - specs.getHeight()) / 2
+            );
         }
 
+        // Make context current and create GL capabilities
+        makeContextCurrent();
+        glCapabilities = createCapabilities();
+
+        // Enable vsync
+        glfwSwapInterval(specs.isVSyncEnabled() ? GLFW_TRUE : GLFW_FALSE);
+
+        // Register input/window callbacks
         initializeCallbacks();
 
-        /* Center window on screen */
-        GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-        assert vidmode != null;
-        glfwSetWindowPos(id,
-            (vidmode.width() - specs.getWidth()) / 2,
-            (vidmode.height() - specs.getHeight()) / 2
-        );
-
-        // Make the OpenGL context current
-        glfwMakeContextCurrent(id);
-        // Enable v-sync
-        glfwSwapInterval(this.specs.isVSyncEnabled() ? GLFW_TRUE : GLFW_FALSE);
-
-        // Make the window visible
         glfwShowWindow(id);
     }
 
+    public void makeContextCurrent() {
+        glfwMakeContextCurrent(id);
+    }
+
+    /**
+     * Simple input + resize + close callbacks
+     */
     private void initializeCallbacks() {
         glfwSetKeyCallback(id, (long window, int key, int scancode, int action, int mods) -> {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
@@ -159,16 +150,10 @@ public class Window {
     }
 
     public void destroy() {
-        glfwDestroyWindow(id);
-        keyCallback.free();
-    }
-
-    public void update() {
-        glfwSwapBuffers(id);
-        glEnable(GL_DEPTH_TEST);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        glfwPollEvents();
+        if (id != NULL) {
+            glfwDestroyWindow(id);
+            id = NULL;
+        }
     }
 
     public boolean shouldClose() {
