@@ -74,7 +74,7 @@ public class TerrainMaterialRenderer implements MaterialRenderer {
     @Override
     public void prepareEntity(EntityView entity, Material material) {
         shaderSystem.setUniform(material.getShader(), UNIFORM_TRANSFORMATION_MATRIX, entity.get(Transform.class)
-            .calculateTransformationMatrix());
+            .getTransformationMatrix());
     }
 
     @Override

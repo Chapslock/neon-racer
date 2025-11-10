@@ -44,7 +44,6 @@ public class PhysicsSystem implements System {
     private final PhysicsDebugger debugger;
     private final CameraSystem cameraSystem;
 
-    private float accumulator = 0f;
     private boolean isDebugEnabled;
 
     /**
@@ -72,7 +71,7 @@ public class PhysicsSystem implements System {
 
     @Override
     public void onUpdate(float deltaTime) {
-        stepSimulation(deltaTime);
+        dynamicsWorld.stepSimulation(deltaTime, MAX_SUB_STEPS, FIXED_TIME_STEP);
         PhysicsCollisionUtil.rebuildContactCache(dynamicsWorld);
     }
 
@@ -124,15 +123,4 @@ public class PhysicsSystem implements System {
         PhysicsDebugRenderer.drawLines(projectionMatrix, viewMatrix);
     }
 
-    private void stepSimulation(float deltaTime) {
-        accumulator += deltaTime;
-        if (accumulator < FIXED_TIME_STEP) {
-            return;
-        }
-
-        while (accumulator >= FIXED_TIME_STEP) {
-            dynamicsWorld.stepSimulation(FIXED_TIME_STEP, MAX_SUB_STEPS);
-            accumulator -= FIXED_TIME_STEP;
-        }
-    }
 }

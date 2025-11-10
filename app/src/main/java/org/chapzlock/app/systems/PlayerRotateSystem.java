@@ -15,9 +15,9 @@ public class PlayerRotateSystem implements System {
             var transform = e.get(Transform.class);
 
             float speed = 10 * deltaTime;
-            transform.getRotation().x += speed;
-            transform.getRotation().y += speed;
-            transform.getRotation().z += speed;
+            transform.getRotationEuler().x += speed;
+            transform.getRotationEuler().y += speed;
+            transform.getRotationEuler().z += speed;
         }
     }
 }

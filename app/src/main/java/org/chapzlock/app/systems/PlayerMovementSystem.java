@@ -13,7 +13,7 @@ import org.joml.Vector3f;
 public class PlayerMovementSystem implements System {
     private final ComponentRegistry registry = ComponentRegistry.instance();
 
-    private static final float ENGINE_FORCE = 800f;    // Newtons applied in local forward
+    private static final float ENGINE_FORCE = 1200f;    // Newtons applied in local forward
     private static final float BRAKE_FORCE = 1000f;     // stronger braking
     private static final float STEER_TORQUE = 1000f;    // torque around local up for yaw
     private static final float ROLL_DAMPING = 0.2f;     // optional damping factor (not used here)

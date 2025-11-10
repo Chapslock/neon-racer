@@ -15,8 +15,11 @@ public class EntityMotionState extends MotionState {
     public EntityMotionState(org.chapzlock.core.component.Transform tc) {
         this.transformComponent = tc;
         initialTransform.setIdentity();
+        // set bullet transform origin
         initialTransform.origin.set(tc.getPosition().x, tc.getPosition().y, tc.getPosition().z);
-        initialTransform.setRotation(PhysicsUtil.eulerToQuaternion(tc.getRotation()));
+        // convert engine quaternion (JOML) to javax.vecmath.Quat4f
+        Quat4f q = PhysicsUtil.toQuat4f(tc.getRotationQuaternion());
+        initialTransform.setRotation(q);
     }
 
     @Override
@@ -30,6 +33,9 @@ public class EntityMotionState extends MotionState {
     public void setWorldTransform(Transform worldTrans) {
         // Called by Bullet each simulation step to update the ECS transform
         transformComponent.setPosition(worldTrans.origin.x, worldTrans.origin.y, worldTrans.origin.z);
-        transformComponent.setRotation(PhysicsUtil.quaternionToEuler(worldTrans.getRotation(new Quat4f())));
+
+        // Convert bullet quaternion to engine quaternion and set it (this marks Euler dirty in Transform)
+        Quat4f q = worldTrans.getRotation(new Quat4f());
+        transformComponent.setRotationQuaternion(PhysicsUtil.toQuaternionf(q));
     }
 }

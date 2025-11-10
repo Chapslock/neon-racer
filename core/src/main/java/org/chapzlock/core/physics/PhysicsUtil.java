@@ -3,6 +3,7 @@ package org.chapzlock.core.physics;
 import javax.vecmath.Quat4f;
 
 import org.chapzlock.core.geometry.RawMeshData;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import lombok.experimental.UtilityClass;
@@ -11,72 +12,60 @@ import lombok.experimental.UtilityClass;
 public class PhysicsUtil {
 
     /**
-     * Transforms a quaternion rotation used by the physics system to an Euler rotation in degrees.
-     * The rotation order in this function must match the rotation order used in the transformation matrix.
-     * This helps ensure, that physics simulation and graphics rendering look the same.
-     *
-     * @param q quaternion to convert.
-     * @return Vector3f with the euler rotation in degrees
+     * Convert Euler degrees (Vector3f) -> javax.vecmath.Quat4f
      */
-    public static Vector3f quaternionToEuler(Quat4f q) {
-        // Normalize quaternion
-        float len = (float) Math.sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w);
-        float x = q.x / len;
-        float y = q.y / len;
-        float z = q.z / len;
-        float w = q.w / len;
+    public static Quat4f eulerDegreesToQuat4f(Vector3f eulerDeg) {
+        // Use JOML quaternion conversion to avoid re-implementing: build quaternion from radians then convert to Quat4f
+        float rx = (float) Math.toRadians(eulerDeg.x);
+        float ry = (float) Math.toRadians(eulerDeg.y);
+        float rz = (float) Math.toRadians(eulerDeg.z);
+        Quaternionf jq = new Quaternionf().identity().rotateX(rx).rotateY(ry).rotateZ(rz);
+        return toQuat4f(jq);
+    }
 
-        // XYZ order
-        float sinrCosp = 2 * (w * x - y * z);
-        float cosrCosp = 1 - 2 * (x * x + y * y);
-        float roll = (float) Math.atan2(sinrCosp, cosrCosp);  // X-axis
+    /**
+     * Convert JOML Quaternionf -> javax.vecmath.Quat4f
+     */
+    public static Quat4f toQuat4f(Quaternionf q) {
+        // javax.vecmath.Quat4f is (x, y, z, w)
+        return new Quat4f(q.x, q.y, q.z, q.w);
+    }
 
-        float sinp = 2 * (w * y + z * x);
-        float pitch;
-        if (Math.abs(sinp) >= 1) {
-            pitch = (float) Math.copySign(Math.PI / 2, sinp);
-        } else {
-            pitch = (float) Math.asin(sinp);  // Y-axis
-        }
+    /**
+     * Convert javax.vecmath.Quat4f -> Euler degrees (X,Y,Z)
+     */
+    public static Vector3f quat4fToEulerDegrees(Quat4f q4f) {
+        Quaternionf jq = toQuaternionf(q4f);
+        // compute euler as in Transform.eulerFromQuat()
+        float x = jq.x;
+        float y = jq.y;
+        float z = jq.z;
+        float w = jq.w;
 
-        float sinyCosp = 2 * (w * z - x * y);
-        float cosyCosp = 1 - 2 * (y * y + z * z);
-        float yaw = (float) Math.atan2(sinyCosp, cosyCosp);   // Z-axis
+        double t0 = 2.0 * (w * x + y * z);
+        double t1 = 1.0 - 2.0 * (x * x + y * y);
+        double rx = Math.atan2(t0, t1);
+
+        double t2 = 2.0 * (w * y - z * x);
+        t2 = Math.max(-1.0, Math.min(1.0, t2));
+        double ry = Math.asin(t2);
+
+        double t3 = 2.0 * (w * z + x * y);
+        double t4 = 1.0 - 2.0 * (y * y + z * z);
+        double rz = Math.atan2(t3, t4);
 
         return new Vector3f(
-            (float) Math.toDegrees(roll),
-            (float) Math.toDegrees(pitch),
-            (float) Math.toDegrees(yaw)
+            (float) Math.toDegrees(rx),
+            (float) Math.toDegrees(ry),
+            (float) Math.toDegrees(rz)
         );
     }
 
     /**
-     * Converts an euler rotation to a quaternion rotation.
-     * The rotation order in this function must match the rotation order used in the transformation matrix.
-     * This helps ensure, that physics simulation and graphics rendering look the same
-     *
-     * @param eulerRotation
-     * @return Quat4f quaternion
+     * Convert javax.vecmath.Quat4f -> JOML Quaternionf (reusing/setting passed instance is optional)
      */
-    public static Quat4f eulerToQuaternion(Vector3f eulerRotation) {
-        float xRad = (float) Math.toRadians(eulerRotation.x);
-        float yRad = (float) Math.toRadians(eulerRotation.y);
-        float zRad = (float) Math.toRadians(eulerRotation.z);
-
-        float cx = (float) Math.cos(xRad / 2);
-        float sx = (float) Math.sin(xRad / 2);
-        float cy = (float) Math.cos(yRad / 2);
-        float sy = (float) Math.sin(yRad / 2);
-        float cz = (float) Math.cos(zRad / 2);
-        float sz = (float) Math.sin(zRad / 2);
-
-        // XYZ rotation order
-        float w = cx * cy * cz - sx * sy * sz;
-        float x = sx * cy * cz + cx * sy * sz;
-        float y = cx * sy * cz - sx * cy * sz;
-        float z = cx * cy * sz + sx * sy * cz;
-
-        return new Quat4f(x, y, z, w);
+    public static Quaternionf toQuaternionf(Quat4f q) {
+        return new Quaternionf(q.x, q.y, q.z, q.w);
     }
 
 
