@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: determine-tag
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{ needs.determine-tag.outputs.tag }}
           fetch-depth: 0
@@ -78,7 +78,7 @@ jobs:
           export JAVA_HOME=/usr/lib/jvm/java-24-openjdk
           export PATH=$JAVA_HOME/bin:$PATH
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{ needs.determine-tag.outputs.tag }}
           fetch-depth: 0
@@ -106,7 +106,7 @@ jobs:
     runs-on: windows-latest
     needs: [determine-tag, build-linux]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{ needs.determine-tag.outputs.tag }}
           fetch-depth: 0
@@ -135,7 +135,7 @@ jobs:
     runs-on: macos-latest
     needs: [determine-tag, build-linux]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{ needs.determine-tag.outputs.tag }}
           fetch-depth: 0
