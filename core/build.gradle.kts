@@ -6,7 +6,7 @@ repositories {
     mavenCentral()
 }
 
-val lwjglVersion = "3.3.6"
+val lwjglVersion = "3.4.0"
 val os =
     org.gradle.internal.os.OperatingSystem
         .current()
