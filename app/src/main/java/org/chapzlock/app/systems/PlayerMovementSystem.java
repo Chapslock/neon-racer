@@ -2,12 +2,12 @@ package org.chapzlock.app.systems;
 
 import org.chapzlock.app.component.PlayerInputComponent;
 import org.chapzlock.app.tags.PlayerTag;
-import org.chapzlock.core.application.System;
+import org.chapzlock.core.ecs.System;
 import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.Transform;
-import org.chapzlock.core.entity.EntityView;
+import org.chapzlock.core.ecs.EntityView;
 import org.chapzlock.core.physics.PhysicsForceUtil;
-import org.chapzlock.core.registry.ComponentRegistry;
+import org.chapzlock.core.ecs.ComponentRegistry;
 import org.joml.Vector3f;
 
 public class PlayerMovementSystem implements System {

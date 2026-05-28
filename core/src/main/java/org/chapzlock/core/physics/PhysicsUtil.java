@@ -2,7 +2,7 @@ package org.chapzlock.core.physics;
 
 import javax.vecmath.Quat4f;
 
-import org.chapzlock.core.geometry.RawMeshData;
+import org.chapzlock.core.asset.RawMeshData;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 

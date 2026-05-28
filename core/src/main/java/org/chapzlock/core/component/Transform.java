@@ -1,7 +1,7 @@
 package org.chapzlock.core.component;
 
 
-import org.chapzlock.core.application.Component;
+import org.chapzlock.core.ecs.Component;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;

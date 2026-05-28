@@ -2,7 +2,7 @@ package org.chapzlock.core.component;
 
 import javax.vecmath.Vector3f;
 
-import org.chapzlock.core.application.Component;
+import org.chapzlock.core.ecs.Component;
 import org.chapzlock.core.physics.PhysicsSpecs;
 
 import com.bulletphysics.collision.shapes.CollisionShape;

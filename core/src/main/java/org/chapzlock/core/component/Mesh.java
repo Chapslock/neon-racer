@@ -1,6 +1,6 @@
 package org.chapzlock.core.component;
 
-import org.chapzlock.core.application.Component;
+import org.chapzlock.core.ecs.Component;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

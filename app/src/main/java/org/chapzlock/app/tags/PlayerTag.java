@@ -1,6 +1,6 @@
 package org.chapzlock.app.tags;
 
-import org.chapzlock.core.application.Tag;
+import org.chapzlock.core.ecs.Tag;
 
 public class PlayerTag implements Tag {
 }

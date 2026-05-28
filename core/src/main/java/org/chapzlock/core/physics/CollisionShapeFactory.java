@@ -3,7 +3,7 @@ package org.chapzlock.core.physics;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.chapzlock.core.geometry.RawMeshData;
+import org.chapzlock.core.asset.RawMeshData;
 import org.joml.Vector3f;
 
 import com.bulletphysics.collision.shapes.BvhTriangleMeshShape;

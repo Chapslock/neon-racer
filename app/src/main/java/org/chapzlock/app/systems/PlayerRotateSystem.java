@@ -1,10 +1,10 @@
 package org.chapzlock.app.systems;
 
 import org.chapzlock.app.tags.PlayerTag;
-import org.chapzlock.core.application.System;
+import org.chapzlock.core.ecs.System;
 import org.chapzlock.core.component.Transform;
-import org.chapzlock.core.entity.EntityView;
-import org.chapzlock.core.registry.ComponentRegistry;
+import org.chapzlock.core.ecs.EntityView;
+import org.chapzlock.core.ecs.ComponentRegistry;
 
 public class PlayerRotateSystem implements System {
     private final ComponentRegistry registry = ComponentRegistry.instance();

@@ -5,7 +5,7 @@ import static org.joml.Math.cos;
 import static org.joml.Math.sin;
 import static org.joml.Math.toRadians;
 
-import org.chapzlock.core.application.Component;
+import org.chapzlock.core.ecs.Component;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 

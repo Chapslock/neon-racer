@@ -3,7 +3,7 @@ package org.chapzlock.core.component;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.chapzlock.core.application.Component;
+import org.chapzlock.core.ecs.Component;
 import org.joml.Vector4f;
 
 import lombok.AllArgsConstructor;

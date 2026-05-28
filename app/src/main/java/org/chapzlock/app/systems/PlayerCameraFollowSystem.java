@@ -3,11 +3,11 @@ package org.chapzlock.app.systems;
 import java.util.List;
 
 import org.chapzlock.app.tags.PlayerTag;
-import org.chapzlock.core.application.System;
+import org.chapzlock.core.ecs.System;
 import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.Transform;
-import org.chapzlock.core.entity.EntityView;
-import org.chapzlock.core.registry.ComponentRegistry;
+import org.chapzlock.core.ecs.EntityView;
+import org.chapzlock.core.ecs.ComponentRegistry;
 import org.joml.Vector3f;
 
 

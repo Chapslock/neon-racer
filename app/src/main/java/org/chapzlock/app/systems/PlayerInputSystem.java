@@ -5,13 +5,13 @@ import java.util.List;
 
 import org.chapzlock.app.component.PlayerInputComponent;
 import org.chapzlock.app.tags.PlayerTag;
-import org.chapzlock.core.application.System;
-import org.chapzlock.core.entity.EntityView;
+import org.chapzlock.core.ecs.System;
+import org.chapzlock.core.ecs.EntityView;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.event.Subscription;
 import org.chapzlock.core.input.keyboard.KeyPressedEvent;
 import org.chapzlock.core.input.keyboard.KeyReleasedEvent;
-import org.chapzlock.core.registry.ComponentRegistry;
+import org.chapzlock.core.ecs.ComponentRegistry;
 import org.lwjgl.glfw.GLFW;
 
 public class PlayerInputSystem implements System {

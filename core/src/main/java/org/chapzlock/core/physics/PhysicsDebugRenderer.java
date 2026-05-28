@@ -26,8 +26,8 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.chapzlock.core.files.FileUtils;
-import org.chapzlock.core.graphics.ShaderUtil;
+import org.chapzlock.core.asset.FileUtils;
+import org.chapzlock.core.render.ShaderUtil;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.system.MemoryUtil;
