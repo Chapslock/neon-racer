@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.chapzlock.core.application.System;
 import org.chapzlock.core.component.Camera;
@@ -40,17 +41,20 @@ public class RenderSystem implements System {
 
     @Override
     public void onRender(float deltaTime) {
-        Camera camera = registry.view(Camera.class)
-            .getFirst()
-            .get(Camera.class);
-        if (camera == null) {
-            Log.error("No Camera found! Skipping rendering");
+        Optional<EntityView> cameraView = registry.viewFirst(Camera.class);
+        if (cameraView.isEmpty()) {
+            Log.error("No Camera entity found. Skipping render.");
             return;
         }
+        Camera camera = cameraView.get().get(Camera.class);
 
-        PointLight light = getPointLight();
-        Sky sky = registry.view(Sky.class).getFirst().get(Sky.class);
+        PointLight light = registry.viewFirst(PointLight.class)
+            .map(v -> v.get(PointLight.class))
+            .orElse(null);
 
+        Sky sky = registry.viewFirst(Sky.class)
+            .map(v -> v.get(Sky.class))
+            .orElse(null);
 
         renderEntities(camera, light, sky);
     }
@@ -72,12 +76,6 @@ public class RenderSystem implements System {
 
     private void clearRenderQueue() {
         this.renderQueue.clear();
-    }
-
-    private PointLight getPointLight() {
-        return registry.view(PointLight.class)
-            .getFirst()
-            .get(PointLight.class);
     }
 
     private void submitToRenderQueue(EntityView entity) {

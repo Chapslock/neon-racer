@@ -126,11 +126,11 @@ public class PhysicsSystem implements System {
 
     private void renderDebugInfo() {
         dynamicsWorld.debugDrawWorld();
-        var cameras = registry.view(Camera.class);
-        if (cameras.isEmpty()) return;
-        var camera = cameras.getFirst().get(Camera.class);
-        var projectionMatrix = cameraSystem.calculateProjectionMatrix(camera);
-        var viewMatrix = cameraSystem.calculateViewMatrix(camera);
-        PhysicsDebugRenderer.drawLines(projectionMatrix, viewMatrix);
+        registry.viewFirst(Camera.class).ifPresent(view -> {
+            var camera = view.get(Camera.class);
+            var projectionMatrix = cameraSystem.calculateProjectionMatrix(camera);
+            var viewMatrix = cameraSystem.calculateViewMatrix(camera);
+            PhysicsDebugRenderer.drawLines(projectionMatrix, viewMatrix);
+        });
     }
 }

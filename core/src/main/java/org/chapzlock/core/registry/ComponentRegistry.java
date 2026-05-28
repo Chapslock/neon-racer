@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.chapzlock.core.application.Component;
@@ -194,6 +195,16 @@ public class ComponentRegistry {
             }
         }
         return results;
+    }
+
+    /**
+     * Returns the first entity matching ALL required components, or empty if none match.
+     * Useful for singleton-style entities (e.g. Camera, Sky, PointLight).
+     */
+    @SafeVarargs
+    public final Optional<EntityView> viewFirst(Class<? extends Component>... requiredComponents) {
+        List<EntityView> results = view(requiredComponents);
+        return results.isEmpty() ? Optional.empty() : Optional.of(results.getFirst());
     }
 
     /**
