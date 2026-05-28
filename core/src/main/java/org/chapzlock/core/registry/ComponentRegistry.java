@@ -10,6 +10,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.chapzlock.core.application.Component;
 import org.chapzlock.core.entity.EntityView;
+import org.chapzlock.core.event.ComponentAddedEvent;
+import org.chapzlock.core.event.ComponentRemovedEvent;
+import org.chapzlock.core.event.EntityDestroyedEvent;
+import org.chapzlock.core.event.EventBus;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -23,6 +27,7 @@ public class ComponentRegistry {
     private static ComponentRegistry instance;
 
     private final Map<Class<? extends Component>, Integer> typeToId = new Object2IntOpenHashMap<>();
+    private final List<Class<? extends Component>> idToType = new ArrayList<>();
     private final List<ComponentStore<?>> stores = new ArrayList<>();
     private final AtomicInteger nextTypeId = new AtomicInteger();
     /**
@@ -51,6 +56,10 @@ public class ComponentRegistry {
                 stores.add(null);
             }
             stores.set(id, new ComponentStore<>());
+            while (idToType.size() <= id) {
+                idToType.add(null);
+            }
+            idToType.set(id, t);
             return id;
         });
     }
@@ -66,10 +75,13 @@ public class ComponentRegistry {
 
         BitSet mask = entityComponentMasks.computeIfAbsent(entityId, e -> new BitSet());
         mask.set(typeId);
+        EventBus.instance().publish(new ComponentAddedEvent(entityId, component.getClass()));
     }
 
     /**
-     * Adds multiple components to an entity
+     * Adds multiple components to an entity.
+     * All components are stored first, then events are published.
+     * This ensures sibling components are accessible during any event handler.
      *
      * @param entityId
      * @param components
@@ -77,7 +89,15 @@ public class ComponentRegistry {
     @SuppressWarnings("unchecked")
     public <T extends Component> void addComponents(int entityId, T... components) {
         for (T component : components) {
-            addComponent(entityId, component);
+            int typeId = getOrRegisterTypeId(component.getClass());
+            ComponentStore<T> store = (ComponentStore<T>) stores.get(typeId);
+            store.put(entityId, component);
+
+            BitSet mask = entityComponentMasks.computeIfAbsent(entityId, e -> new BitSet());
+            mask.set(typeId);
+        }
+        for (T component : components) {
+            EventBus.instance().publish(new ComponentAddedEvent(entityId, component.getClass()));
         }
     }
 
@@ -104,6 +124,7 @@ public class ComponentRegistry {
             return;
         }
         ComponentStore<T> store = (ComponentStore<T>) stores.get(typeId);
+        EventBus.instance().publish(new ComponentRemovedEvent(entityId, type));
         store.remove(entityId);
 
         BitSet mask = entityComponentMasks.get(entityId);
@@ -113,6 +134,25 @@ public class ComponentRegistry {
                 entityComponentMasks.remove(entityId); // cleanup if no components left
             }
         }
+    }
+
+    /**
+     * Destroys an entity by removing all its components and publishing lifecycle events.
+     * ComponentRemovedEvent is published for each component (while still accessible),
+     * then EntityDestroyedEvent is published last.
+     */
+    public void destroyEntity(int entityId) {
+        BitSet mask = entityComponentMasks.get(entityId);
+        if (mask == null) return;
+
+        for (int typeId = mask.nextSetBit(0); typeId >= 0; typeId = mask.nextSetBit(typeId + 1)) {
+            Class<? extends Component> type = idToType.get(typeId);
+            EventBus.instance().publish(new ComponentRemovedEvent(entityId, type));
+            stores.get(typeId).remove(entityId);
+        }
+
+        entityComponentMasks.remove(entityId);
+        EventBus.instance().publish(new EntityDestroyedEvent(entityId));
     }
 
     /**

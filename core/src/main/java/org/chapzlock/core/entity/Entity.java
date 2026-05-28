@@ -1,10 +1,15 @@
 package org.chapzlock.core.entity;
 
+import org.chapzlock.core.event.EntityCreatedEvent;
+import org.chapzlock.core.event.EventBus;
+
 public class Entity {
     private Entity() {
     }
 
     public static int create() {
-        return EntityIdGenerator.nextId();
+        int id = EntityIdGenerator.nextId();
+        EventBus.instance().publish(new EntityCreatedEvent(id));
+        return id;
     }
 }
