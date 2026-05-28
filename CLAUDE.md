@@ -23,7 +23,7 @@ Two Gradle modules (Kotlin DSL):
 
 ### Core Packages
 
-- `ecs/` — GameSystem, Component, Tag, Entity, EntityView, ComponentRegistry, ComponentStore
+- `ecs/` — GameSystem, SystemPhase, Component, Tag, Entity, EntityView, ComponentRegistry, ComponentStore
 - `application/` — Application, Layer, EngineContext, Disposable, ApplicationUtil
 - `render/` — RenderSystem, CameraSystem, MaterialSystem, MeshSystem, TextureSystem, ShaderSystem, MaterialRendererRegistry, MaterialRenderer impls, ShaderProps, GL utilities
 - `component/` — All data components (Camera, Transform, Mesh, Material, PhysicsBody, etc.)
@@ -40,7 +40,7 @@ Two Gradle modules (Kotlin DSL):
 
 Entities are plain integer IDs (`Entity.create(registry)`). Components are marker-interface data holders (`implements Component`). Tags are empty components used for querying (`implements Tag`). Systems implement `GameSystem` and receive dependencies via `onInit(EngineContext ctx)`. They operate on entities via `registry.view(ComponentA.class, ComponentB.class, ...)` which returns entities possessing all listed components.
 
-`ComponentRegistry` stores components in typed `ComponentStore` maps, indexed by entity ID. It uses bitset masks for fast archetype queries.
+`ComponentRegistry` stores components in typed `ComponentStore` maps, indexed by entity ID. It uses bitset masks for fast archetype queries. Query results are cached internally and invalidated on component mutations — `view()` is O(1) on stable frames.
 
 ### EngineContext
 
@@ -54,9 +54,17 @@ Entities are plain integer IDs (`Entity.create(registry)`). Components are marke
 
 ### Application Lifecycle
 
-`Application.create(spec)` builds the application. `run()` creates the `EngineContext`, initializes layers, and enters the main loop. Each `Layer` has `onInit(ctx)/onUpdate/onRender/onDestroy` hooks. Layers own their `GameSystem` instances and forward lifecycle calls.
+`Application.create(spec)` builds the application. `run()` creates the `EngineContext`, collects systems from all layers, sorts them by `SystemPhase` (INPUT → LOGIC → PHYSICS → RENDER, stable sort preserves declaration order within a phase), and enters the main loop.
 
-Main loop order per frame: `onUpdate(delta)` on all layers, then `onRender(delta)` on all layers.
+Layers are declarative: `systems()` returns the list of systems, `onInit(ctx)` sets up entities. The engine drives system lifecycle (init, update, render, destroy) — layers do not forward calls manually.
+
+**Init order:** Systems are initialized first (so they can subscribe to lifecycle events), then layers (which create entities that fire those events).
+
+**Main loop order per frame:** `onUpdate(delta)` on all sorted systems, then `onRender(delta)` on all sorted systems.
+
+### SystemPhase
+
+Systems declare their execution phase via `default SystemPhase phase()`. The enum values are: `INPUT`, `LOGIC` (default), `PHYSICS`, `RENDER`. Core systems (PhysicsSystem, RenderSystem) declare their own phase; game-specific systems default to LOGIC.
 
 ### Rendering Pipeline
 
