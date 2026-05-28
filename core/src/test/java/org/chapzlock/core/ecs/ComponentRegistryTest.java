@@ -3,7 +3,6 @@ package org.chapzlock.core.ecs;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.chapzlock.core.ecs.Component;
 import org.chapzlock.core.event.ComponentAddedEvent;
 import org.chapzlock.core.event.ComponentRemovedEvent;
 import org.chapzlock.core.event.EntityDestroyedEvent;
@@ -17,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ComponentRegistryTest {
 
+    private EventBus eventBus;
     private ComponentRegistry registry;
     private List<Subscription> subscriptions;
 
@@ -25,20 +25,21 @@ class ComponentRegistryTest {
 
     @BeforeEach
     void setUp() {
-        registry = ComponentRegistry.instance();
+        eventBus = new EventBus();
+        registry = new ComponentRegistry(eventBus);
         subscriptions = new ArrayList<>();
     }
 
     @AfterEach
     void tearDown() {
         subscriptions.forEach(Subscription::unsubscribe);
-        EventBus.instance().clearAllListeners();
+        eventBus.clearAllListeners();
     }
 
     @Test
     void addComponentPublishesComponentAddedEvent() {
         List<ComponentAddedEvent> events = new ArrayList<>();
-        subscriptions.add(EventBus.instance().subscribe(ComponentAddedEvent.class, event -> {
+        subscriptions.add(eventBus.subscribe(ComponentAddedEvent.class, event -> {
             events.add(event);
             return false;
         }));
@@ -56,7 +57,7 @@ class ComponentRegistryTest {
     @Test
     void addComponentsPublishesEventsAfterAllStored() {
         List<ComponentAddedEvent> events = new ArrayList<>();
-        subscriptions.add(EventBus.instance().subscribe(ComponentAddedEvent.class, event -> {
+        subscriptions.add(eventBus.subscribe(ComponentAddedEvent.class, event -> {
             events.add(event);
             if (event.componentType() == PositionComponent.class) {
                 assertNotNull(registry.getComponent(event.entityId(), VelocityComponent.class),
@@ -79,7 +80,7 @@ class ComponentRegistryTest {
         registry.addComponent(entityId, new PositionComponent(5, 6));
 
         List<ComponentRemovedEvent> events = new ArrayList<>();
-        subscriptions.add(EventBus.instance().subscribe(ComponentRemovedEvent.class, event -> {
+        subscriptions.add(eventBus.subscribe(ComponentRemovedEvent.class, event -> {
             events.add(event);
             assertNotNull(registry.getComponent(event.entityId(), PositionComponent.class),
                 "Component should still be accessible during removal event");
@@ -101,11 +102,11 @@ class ComponentRegistryTest {
         registry.addComponents(entityId, new PositionComponent(1, 1), new VelocityComponent(2, 2));
 
         List<Object> eventOrder = new ArrayList<>();
-        subscriptions.add(EventBus.instance().subscribe(ComponentRemovedEvent.class, event -> {
+        subscriptions.add(eventBus.subscribe(ComponentRemovedEvent.class, event -> {
             if (event.entityId() == entityId) eventOrder.add(event);
             return false;
         }));
-        subscriptions.add(EventBus.instance().subscribe(EntityDestroyedEvent.class, event -> {
+        subscriptions.add(eventBus.subscribe(EntityDestroyedEvent.class, event -> {
             if (event.entityId() == entityId) eventOrder.add(event);
             return false;
         }));
@@ -126,7 +127,7 @@ class ComponentRegistryTest {
     @Test
     void destroyEntityWithNoComponentsIsNoOp() {
         List<Object> events = new ArrayList<>();
-        subscriptions.add(EventBus.instance().subscribe(EntityDestroyedEvent.class, event -> {
+        subscriptions.add(eventBus.subscribe(EntityDestroyedEvent.class, event -> {
             events.add(event);
             return false;
         }));

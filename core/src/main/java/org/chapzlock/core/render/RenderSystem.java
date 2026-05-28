@@ -8,7 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.chapzlock.core.ecs.System;
+import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.Color;
 import org.chapzlock.core.component.Material;
@@ -17,7 +18,6 @@ import org.chapzlock.core.component.PointLight;
 import org.chapzlock.core.component.Sky;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.EntityView;
-import org.chapzlock.core.render.MaterialRenderer;
 import org.chapzlock.core.logging.Log;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.lwjgl.opengl.GL11;
@@ -25,16 +25,19 @@ import org.lwjgl.opengl.GL11;
 /**
  * The core render system
  */
-public class RenderSystem implements System {
+public class RenderSystem implements GameSystem {
 
-    private final ComponentRegistry registry = ComponentRegistry.instance();
-    private final MeshSystem meshSystem = MeshSystem.instance();
-    private final MaterialSystem materialSystem = MaterialSystem.instance();
+    private ComponentRegistry registry;
+    private MeshSystem meshSystem;
+    private MaterialSystem materialSystem;
 
     private final Map<Material, List<EntityView>> renderQueue = new HashMap<>();
 
     @Override
-    public void onInit() {
+    public void onInit(EngineContext ctx) {
+        this.registry = ctx.getRegistry();
+        this.meshSystem = ctx.getMeshSystem();
+        this.materialSystem = ctx.getMaterialSystem();
         GL11.glEnable(GL11.GL_CULL_FACE);
         GL11.glCullFace(GL11.GL_BACK);
     }

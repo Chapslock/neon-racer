@@ -5,7 +5,8 @@ import java.util.List;
 
 import org.chapzlock.app.component.PlayerInputComponent;
 import org.chapzlock.app.tags.PlayerTag;
-import org.chapzlock.core.ecs.System;
+import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.ecs.EntityView;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.event.Subscription;
@@ -14,15 +15,17 @@ import org.chapzlock.core.input.keyboard.KeyReleasedEvent;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.lwjgl.glfw.GLFW;
 
-public class PlayerInputSystem implements System {
+public class PlayerInputSystem implements GameSystem {
 
-    private final ComponentRegistry registry = ComponentRegistry.instance();
-    private final EventBus eventBus = EventBus.instance();
+    private ComponentRegistry registry;
+    private EventBus eventBus;
     private final List<Subscription> subscriptions = new ArrayList<>();
 
 
     @Override
-    public void onInit() {
+    public void onInit(EngineContext ctx) {
+        this.registry = ctx.getRegistry();
+        this.eventBus = ctx.getEventBus();
         this.subscriptions.add(eventBus.subscribe(KeyPressedEvent.class, this::handleKeyPress));
         this.subscriptions.add(eventBus.subscribe(KeyReleasedEvent.class, this::handleKeyRelease));
     }

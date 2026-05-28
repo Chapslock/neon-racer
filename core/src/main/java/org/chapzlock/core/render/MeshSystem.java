@@ -2,27 +2,25 @@ package org.chapzlock.core.render;
 
 import java.util.Map;
 
+import org.chapzlock.core.application.Disposable;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.asset.FileUtils;
 import org.chapzlock.core.asset.RawMeshData;
-import org.chapzlock.core.render.MeshUtil;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 /**
  * Caches and handles OpenGL calls on Meshes.
- * Implemented as a singleton to optimize GPU resource usage
  */
-public class MeshSystem {
-    private static MeshSystem instance;
+public class MeshSystem implements Disposable {
 
     private final Map<Integer, Mesh> meshPool = new Int2ObjectOpenHashMap<>();
     private final Map<Integer, RawMeshData> rawMeshDataPool = new Int2ObjectOpenHashMap<>();
     private final Map<String, Integer> resourcePathToIdMap = new Object2IntOpenHashMap<>();
     private final Map<RawMeshData, Integer> rawMeshDataToIdMap = new Object2IntOpenHashMap<>();
 
-    private MeshSystem() {
+    public MeshSystem() {
     }
 
     /**
@@ -80,12 +78,11 @@ public class MeshSystem {
         return rawMeshDataPool.get(id);
     }
 
-    public static MeshSystem instance() {
-        if (instance == null) {
-            instance = new MeshSystem();
-        }
-
-        return instance;
+    @Override
+    public void dispose() {
+        meshPool.clear();
+        rawMeshDataPool.clear();
+        resourcePathToIdMap.clear();
+        rawMeshDataToIdMap.clear();
     }
-
 }

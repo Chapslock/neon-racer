@@ -7,23 +7,25 @@ import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.chapzlock.core.ecs.ComponentRegistry;
+import org.chapzlock.core.event.EventBus;
+import org.chapzlock.core.render.MaterialRendererRegistry;
+import org.chapzlock.core.render.MaterialSystem;
+import org.chapzlock.core.render.MeshSystem;
+import org.chapzlock.core.render.ShaderSystem;
+import org.chapzlock.core.render.TextureSystem;
 import org.chapzlock.core.window.Window;
 
 import lombok.Getter;
 
 /**
  * Main application class — manages the layer stack, windows, and the main loop.
- * Supports multiple windows through WindowManager.
  */
 public class Application {
-    private static Application instance;
     @Getter
     private final ApplicationSpecification appSpec;
     private final List<Layer> layerStack = new ArrayList<>();
-    /**
-     * Application window (may be null until attached)
-     */
-    private Window window;
+    private EngineContext context;
     private boolean isRunning = false;
 
     private Application(ApplicationSpecification spec) {
@@ -37,17 +39,27 @@ public class Application {
 
     /**
      * Main loop of the application
-     * Attaches a window to the application and starts the loop
      */
     public void run() {
-        if (window == null) {
-            Window w = new Window(appSpec.getWindowSpec());
-            w.create(0);
-            attachWindow(w);
-        }
+        EventBus eventBus = new EventBus();
+        ComponentRegistry registry = new ComponentRegistry(eventBus);
+
+        Window window = new Window(appSpec.getWindowSpec(), eventBus);
+        window.create(0);
+
+        ShaderSystem shaderSystem = new ShaderSystem();
+        TextureSystem textureSystem = new TextureSystem();
+        MeshSystem meshSystem = new MeshSystem();
+        MaterialRendererRegistry materialRendererRegistry = new MaterialRendererRegistry(shaderSystem);
+        MaterialSystem materialSystem = new MaterialSystem(materialRendererRegistry);
+
+        context = new EngineContext(
+            registry, eventBus, meshSystem, textureSystem,
+            shaderSystem, materialSystem, materialRendererRegistry, window
+        );
 
         isRunning = true;
-        layerStack.forEach(Layer::onInit);
+        layerStack.forEach(layer -> layer.onInit(context));
         float lastTime = getTime();
 
         while (isRunning) {
@@ -56,7 +68,6 @@ public class Application {
             lastTime = now;
 
             if (window.shouldClose()) {
-                detachWindow();
                 stop();
                 break;
             }
@@ -71,32 +82,13 @@ public class Application {
         }
 
         layerStack.forEach(Layer::onDestroy);
+        context.dispose();
+        window.destroy();
         ApplicationUtil.terminate();
-        instance = null;
     }
 
     /**
-     * Attach a window to the application. The window must already be created
-     * (Window.create(...)) on the thread that will call run() or otherwise be safe.
-     * This method will destroy any previously attached window.
-     */
-    private void attachWindow(Window w) {
-        if (w == null) {
-            throw new IllegalArgumentException("window cannot be null");
-        }
-        if (this.window != null) {
-            // safely destroy previous window before replacing
-            try {
-                this.window.destroy();
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
-        }
-        this.window = w;
-    }
-
-    /**
-     * Gives the time since the intialization of the application
+     * Gives the time since the initialization of the application
      *
      * @return seconds since the start of the application
      */
@@ -104,43 +96,14 @@ public class Application {
         return (float) glfwGetTime();
     }
 
-    /**
-     * Detach (and destroy) the current window.
-     */
-    private void detachWindow() {
-        if (this.window != null) {
-            try {
-                this.window.destroy();
-            } catch (Throwable t) {
-                t.printStackTrace();
-            } finally {
-                this.window = null;
-            }
-        }
-    }
-
     private void stop() {
         isRunning = false;
     }
 
     /**
-     * @return the application instance
-     */
-    public static Application instance() {
-        if (instance == null) {
-            throw new IllegalStateException("Application not yet created!");
-        }
-        return instance;
-    }
-
-    /**
-     * Creates a new application and initializes GLFW context
+     * Creates a new application instance
      */
     public static Application create(ApplicationSpecification spec) {
-        if (instance != null) {
-            throw new IllegalStateException("Application already created!");
-        }
-        instance = new Application(spec);
-        return instance;
+        return new Application(spec);
     }
 }

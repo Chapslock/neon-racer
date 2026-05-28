@@ -2,25 +2,22 @@ package org.chapzlock.core.render;
 
 import java.util.Map;
 
+import org.chapzlock.core.application.Disposable;
 import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.asset.FileUtils;
-import org.chapzlock.core.render.RawImageData;
-import org.chapzlock.core.render.TextureUtil;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 /**
  * Caches and handles OpenGL calls on textures.
- * Implemented as a singleton to keep track of globally allocated texture resources.
  */
-public class TextureSystem {
-    private static TextureSystem instance;
+public class TextureSystem implements Disposable {
 
     private final Map<Integer, Texture> texturePool = new Int2ObjectOpenHashMap<>();
     private final Map<String, Integer> filePathToIdMap = new Object2IntOpenHashMap<>();
 
-    private TextureSystem() {
+    public TextureSystem() {
     }
 
     /**
@@ -73,10 +70,9 @@ public class TextureSystem {
         texturePool.remove(texture.getId());
     }
 
-    public static TextureSystem instance() {
-        if (instance == null) {
-            instance = new TextureSystem();
-        }
-        return instance;
+    @Override
+    public void dispose() {
+        texturePool.clear();
+        filePathToIdMap.clear();
     }
 }

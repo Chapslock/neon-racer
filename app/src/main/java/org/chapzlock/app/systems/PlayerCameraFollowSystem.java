@@ -3,7 +3,8 @@ package org.chapzlock.app.systems;
 import java.util.List;
 
 import org.chapzlock.app.tags.PlayerTag;
-import org.chapzlock.core.ecs.System;
+import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.EntityView;
@@ -11,9 +12,9 @@ import org.chapzlock.core.ecs.ComponentRegistry;
 import org.joml.Vector3f;
 
 
-public class PlayerCameraFollowSystem implements System {
+public class PlayerCameraFollowSystem implements GameSystem {
 
-    private final ComponentRegistry registry = ComponentRegistry.instance();
+    private ComponentRegistry registry;
 
     private final float followDistance = 12f;   // behind the car
     private final float height = 4.0f;          // above the car
@@ -25,6 +26,11 @@ public class PlayerCameraFollowSystem implements System {
     private final Vector3f camVelocity = new Vector3f();    // for position smooth
     private final Vector3f lookVelocity = new Vector3f();   // for look-target smooth
     private boolean initialized = false;
+
+    @Override
+    public void onInit(EngineContext ctx) {
+        this.registry = ctx.getRegistry();
+    }
 
     @Override
     public void onUpdate(float deltaTime) {
@@ -88,17 +94,12 @@ public class PlayerCameraFollowSystem implements System {
 
         // Smooth the look-at target for stable rotation
         Vector3f desiredLook = new Vector3f(playerPos.x, playerPos.y + 1.2f, playerPos.z);
-        Vector3f currentLook = new Vector3f(); // build a current look target from camera's forward (or we could store it)
-        // easiest: compute current look target as current cam pos + current forward direction
-        // but Camera may not expose forward, so better to take desiredLook initial; we'll just smooth the raw target:
+        Vector3f currentLook = new Vector3f();
         Vector3f smoothedLook = smoothDamp(desiredLook, desiredLook, lookVelocity, rotSmoothTime, deltaTime);
-        // Note: above we set target==current as placeholder to maintain lookVelocity continuity.
-        // Simpler & effective: smooth the actual desired look point directly
         smoothedLook = smoothDamp(camT.getCameraFront() != null
             ? new Vector3f(camT.getPosition()).add(camT.getCameraFront())
             : desiredLook, desiredLook, lookVelocity, rotSmoothTime, deltaTime);
 
-        // For engines without camT.getForward(), you can instead smooth desiredLook with a separate 'previousLook' stored in the system.
         camT.lookAt(smoothedLook);
     }
 

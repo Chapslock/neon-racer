@@ -1,6 +1,5 @@
 package org.chapzlock.core.render;
 
-import org.chapzlock.core.application.Application;
 import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.Material;
 import org.chapzlock.core.component.PointLight;
@@ -9,10 +8,7 @@ import org.chapzlock.core.component.Sky;
 import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.EntityView;
-import org.chapzlock.core.render.UiShaderProps;
-import org.chapzlock.core.render.CameraSystem;
-import org.chapzlock.core.render.ShaderSystem;
-import org.chapzlock.core.render.TextureSystem;
+import org.chapzlock.core.window.WindowSpecification;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
@@ -25,16 +21,21 @@ import org.lwjgl.opengl.GL11;
  */
 public class UiMaterialRenderer implements MaterialRenderer {
 
-    private final ShaderSystem shaderSystem = ShaderSystem.instance();
-    private final TextureSystem textureSystem = TextureSystem.instance();
-    private final CameraSystem cameraSystem = new CameraSystem();
-    private final Matrix4f projecton = new Matrix4f() //TODO: Refactor to use events
-        .identity()
-        .ortho2D(0f,
-            Application.instance().getAppSpec().getWindowSpec().getWidth(),
-            Application.instance().getAppSpec().getWindowSpec().getHeight(),
-            0f
-        );
+    private final ShaderSystem shaderSystem;
+    private final TextureSystem textureSystem;
+    private final CameraSystem cameraSystem;
+    private final WindowSpecification windowSpec;
+    private final Matrix4f projection;
+
+    public UiMaterialRenderer(ShaderSystem shaderSystem, TextureSystem textureSystem, CameraSystem cameraSystem, WindowSpecification windowSpec) {
+        this.shaderSystem = shaderSystem;
+        this.textureSystem = textureSystem;
+        this.cameraSystem = cameraSystem;
+        this.windowSpec = windowSpec;
+        this.projection = new Matrix4f()
+            .identity()
+            .ortho2D(0f, windowSpec.getWidth(), windowSpec.getHeight(), 0f);
+    }
 
     @Override
     public void apply(Material material, Camera camera, PointLight light, Sky sky) {
@@ -47,7 +48,7 @@ public class UiMaterialRenderer implements MaterialRenderer {
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         GL11.glDisable(GL11.GL_CULL_FACE);
 
-        shaderSystem.setUniform(shader, UiShaderProps.UNIFORM_PROJECTION_MATRIX, projecton);
+        shaderSystem.setUniform(shader, UiShaderProps.UNIFORM_PROJECTION_MATRIX, projection);
 
         Texture texture = material.getFirstTexture();
         if (texture != null) {

@@ -2,8 +2,6 @@ package org.chapzlock.core.ecs;
 
 import java.util.Optional;
 
-import org.chapzlock.core.ecs.Component;
-import org.chapzlock.core.ecs.EntityView;
 import org.chapzlock.core.event.EventBus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ComponentRegistryViewFirstTest {
 
+    private EventBus eventBus;
     private ComponentRegistry registry;
 
     record TagA() implements Component {}
@@ -20,12 +19,13 @@ class ComponentRegistryViewFirstTest {
 
     @BeforeEach
     void setUp() {
-        registry = ComponentRegistry.instance();
+        eventBus = new EventBus();
+        registry = new ComponentRegistry(eventBus);
     }
 
     @AfterEach
     void tearDown() {
-        EventBus.instance().clearAllListeners();
+        eventBus.clearAllListeners();
     }
 
     @Test

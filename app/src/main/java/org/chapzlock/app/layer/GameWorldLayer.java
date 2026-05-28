@@ -7,8 +7,9 @@ import org.chapzlock.app.systems.PlayerCameraFollowSystem;
 import org.chapzlock.app.systems.PlayerInputSystem;
 import org.chapzlock.app.systems.PlayerMovementSystem;
 import org.chapzlock.app.tags.PlayerTag;
+import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.application.Layer;
-import org.chapzlock.core.ecs.System;
+import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.Color;
 import org.chapzlock.core.component.Material;
@@ -25,6 +26,7 @@ import org.chapzlock.core.ecs.Entity;
 import org.chapzlock.core.asset.FileUtils;
 import org.chapzlock.core.asset.RawMeshData;
 import org.chapzlock.core.asset.RawMeshDataFactory;
+import org.chapzlock.core.render.CameraSystem;
 import org.chapzlock.core.render.EntityMaterialRenderer;
 import org.chapzlock.core.render.TerrainMaterialRenderer;
 import org.chapzlock.core.render.UiMaterialRenderer;
@@ -37,19 +39,23 @@ import org.chapzlock.core.physics.PhysicsSystemSpecs;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.render.MaterialSystem;
 import org.chapzlock.core.render.MeshSystem;
+import org.chapzlock.core.render.ShaderSystem;
+import org.chapzlock.core.render.TextureSystem;
 import org.chapzlock.core.physics.PhysicsSystem;
 import org.chapzlock.core.render.RenderSystem;
-import org.chapzlock.core.render.TextureSystem;
+import org.chapzlock.core.window.WindowSpecification;
 import org.joml.Vector3f;
 
 public class GameWorldLayer implements Layer {
 
-    private final ComponentRegistry registry = ComponentRegistry.instance();
-    private final MeshSystem meshSystem = MeshSystem.instance();
-    private final TextureSystem textureSystem = TextureSystem.instance();
-    private final MaterialSystem materialSystem = MaterialSystem.instance();
+    private ComponentRegistry registry;
+    private MeshSystem meshSystem;
+    private TextureSystem textureSystem;
+    private MaterialSystem materialSystem;
+    private ShaderSystem shaderSystem;
+    private WindowSpecification windowSpec;
 
-    private final List<System> systems = List.of(
+    private final List<GameSystem> systems = List.of(
         new RenderSystem(),
         new PlayerMovementSystem(),
         new PlayerInputSystem(),
@@ -61,21 +67,28 @@ public class GameWorldLayer implements Layer {
     );
 
     @Override
-    public void onInit() {
-        systems.forEach(System::onInit);
+    public void onInit(EngineContext ctx) {
+        this.registry = ctx.getRegistry();
+        this.meshSystem = ctx.getMeshSystem();
+        this.textureSystem = ctx.getTextureSystem();
+        this.materialSystem = ctx.getMaterialSystem();
+        this.shaderSystem = ctx.getShaderSystem();
+        this.windowSpec = ctx.getWindow().getSpecification();
+
+        systems.forEach(s -> s.onInit(ctx));
         createEntities();
     }
 
     private void createEntities() {
         createPlayer();
 
-        int light = Entity.create();
+        int light = Entity.create(registry);
         registry.addComponent(light, new PointLight(new Vector3f(-5, 300, -10), Color.WHITE));
 
-        int camera = Entity.create();
+        int camera = Entity.create(registry);
         registry.addComponent(camera, new Camera(new Vector3f(0, 5, 10)));
 
-        int sky = Entity.create();
+        int sky = Entity.create(registry);
         registry.addComponent(sky, new Sky());
 
         createUi();
@@ -84,8 +97,9 @@ public class GameWorldLayer implements Layer {
     }
 
     private void createUi() {
-        int ui = Entity.create();
+        int ui = Entity.create(registry);
 
+        CameraSystem cameraSystem = new CameraSystem(windowSpec);
         Texture texture = textureSystem.load("textures/speedometer.png");
         Material material = Material.builder()
             .shader(new Shader(
@@ -94,7 +108,7 @@ public class GameWorldLayer implements Layer {
             ))
             .textures(List.of(texture))
             .build();
-        materialSystem.registerNewMaterial(material, new UiMaterialRenderer());
+        materialSystem.registerNewMaterial(material, new UiMaterialRenderer(shaderSystem, textureSystem, cameraSystem, windowSpec));
 
         Mesh mesh = meshSystem.load(RawMeshDataFactory.createUi());
         registry.addComponents(ui,
@@ -105,8 +119,9 @@ public class GameWorldLayer implements Layer {
     }
 
     private void createPlayer() {
-        int player = Entity.create();
+        int player = Entity.create(registry);
 
+        CameraSystem cameraSystem = new CameraSystem(windowSpec);
         Material material = new Material(
             new Shader(
                 EntityShaderProps.VERTEX_FILE,
@@ -126,14 +141,16 @@ public class GameWorldLayer implements Layer {
                 .build());
         registry.addComponent(player, new Transform(new Vector3f(0, 10, -5), new Vector3f(0, 0, 180)));
         registry.addComponent(player, mesh);
-        registry.addComponent(player, materialSystem.registerNewMaterial(material, new EntityMaterialRenderer()));
+        registry.addComponent(player, materialSystem.registerNewMaterial(material, new EntityMaterialRenderer(shaderSystem, textureSystem, cameraSystem)));
         registry.addComponent(player, new PlayerTag());
         registry.addComponent(player, new PlayerInputComponent());
         registry.addComponent(player, physicsBody);
     }
 
     private void createTerrain() {
-        int terrain = Entity.create();
+        int terrain = Entity.create(registry);
+
+        CameraSystem cameraSystem = new CameraSystem(windowSpec);
         Terrain terrainProps = Terrain.builder()
             .maxHeight(40)
             .build();
@@ -149,7 +166,7 @@ public class GameWorldLayer implements Layer {
                 TerrainShaderProps.FRAGMENT_FILE
             ))
             .build();
-        materialSystem.registerNewMaterial(terrainMaterial, new TerrainMaterialRenderer());
+        materialSystem.registerNewMaterial(terrainMaterial, new TerrainMaterialRenderer(shaderSystem, textureSystem, cameraSystem));
         Mesh mesh = meshSystem.load(
             RawMeshDataFactory.generateTerrainFromHeightMap(FileUtils.loadBufferedImage("textures/terrain/heightmap.png"), terrainProps.getSize(), terrainProps.getMaxHeight()));
         registry.addComponent(terrain, new Transform(new Vector3f(-400, 0, -400), new Vector3f(10, 0, 0)));
@@ -177,6 +194,6 @@ public class GameWorldLayer implements Layer {
 
     @Override
     public void onDestroy() {
-        systems.forEach(System::onDestroy);
+        systems.forEach(GameSystem::onDestroy);
     }
 }

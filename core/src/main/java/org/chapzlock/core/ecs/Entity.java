@@ -1,15 +1,14 @@
 package org.chapzlock.core.ecs;
 
 import org.chapzlock.core.event.EntityCreatedEvent;
-import org.chapzlock.core.event.EventBus;
 
 public class Entity {
     private Entity() {
     }
 
-    public static int create() {
+    public static int create(ComponentRegistry registry) {
         int id = EntityIdGenerator.nextId();
-        EventBus.instance().publish(new EntityCreatedEvent(id));
+        registry.publishEvent(new EntityCreatedEvent(id));
         return id;
     }
 }

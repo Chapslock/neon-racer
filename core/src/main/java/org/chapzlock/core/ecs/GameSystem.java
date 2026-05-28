@@ -1,15 +1,17 @@
 package org.chapzlock.core.ecs;
 
+import org.chapzlock.core.application.EngineContext;
+
 /**
  * System that needs to be a part of the application lifecycle
  */
-public interface System {
+public interface GameSystem {
+
+    default void onInit(EngineContext ctx) {}
 
     default void onUpdate(float deltaTime) {}
 
     default void onRender(float deltaTime) {}
-
-    default void onInit() {}
 
     default void onDestroy() {}
 

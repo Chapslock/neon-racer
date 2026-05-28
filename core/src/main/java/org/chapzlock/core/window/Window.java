@@ -50,10 +50,11 @@ public class Window {
     private long id = NULL;
     private final WindowSpecification specs;
     private GLCapabilities glCapabilities;
-    private final EventBus eventBus = EventBus.instance();
+    private final EventBus eventBus;
 
-    public Window(WindowSpecification specs) {
+    public Window(WindowSpecification specs, EventBus eventBus) {
         this.specs = specs;
+        this.eventBus = eventBus;
     }
 
     public long getId() {
@@ -71,7 +72,7 @@ public class Window {
     /**
      * Creates a new GLFW window and its context. Optionally shares context with another window.
      *
-     * @param sharedWith another window’s ID or 0 for no sharing
+     * @param sharedWith another window's ID or 0 for no sharing
      */
     public void create(long sharedWith) {
         glfwDefaultWindowHints();

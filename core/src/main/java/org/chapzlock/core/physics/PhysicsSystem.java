@@ -2,7 +2,8 @@ package org.chapzlock.core.physics;
 
 import javax.vecmath.Vector3f;
 
-import org.chapzlock.core.ecs.System;
+import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.Transform;
@@ -11,11 +12,6 @@ import org.chapzlock.core.event.ComponentRemovedEvent;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.event.Subscription;
 import org.chapzlock.core.logging.Log;
-import org.chapzlock.core.physics.EntityMotionState;
-import org.chapzlock.core.physics.PhysicsCollisionUtil;
-import org.chapzlock.core.physics.PhysicsDebugRenderer;
-import org.chapzlock.core.physics.PhysicsDebugger;
-import org.chapzlock.core.physics.PhysicsSystemSpecs;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.render.CameraSystem;
 
@@ -27,7 +23,7 @@ import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration;
 import com.bulletphysics.dynamics.DiscreteDynamicsWorld;
 import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver;
 
-public class PhysicsSystem implements System {
+public class PhysicsSystem implements GameSystem {
 
     private static final Vector3f DEFAULT_GRAVITY = new Vector3f(0f, -9.81f, 0f);
     private static final Vector3f WORLD_AABB_MIN = new Vector3f(-1000f, -1000f, -1000f);
@@ -35,8 +31,8 @@ public class PhysicsSystem implements System {
     private static final float FIXED_TIME_STEP = 1f / 60f;
     private static final int MAX_SUB_STEPS = 10;
 
-    private final ComponentRegistry registry = ComponentRegistry.instance();
-    private final EventBus eventBus = EventBus.instance();
+    private ComponentRegistry registry;
+    private EventBus eventBus;
 
     private final CollisionConfiguration collisionConfig;
     private final CollisionDispatcher dispatcher;
@@ -45,7 +41,7 @@ public class PhysicsSystem implements System {
     private final DiscreteDynamicsWorld dynamicsWorld;
 
     private final PhysicsDebugger debugger;
-    private final CameraSystem cameraSystem;
+    private CameraSystem cameraSystem;
 
     private final boolean isDebugEnabled;
 
@@ -64,12 +60,14 @@ public class PhysicsSystem implements System {
         this.dynamicsWorld = new DiscreteDynamicsWorld(dispatcher, broadPhase, solver, collisionConfig);
 
         this.debugger = new PhysicsDebugger();
-        this.cameraSystem = new CameraSystem();
         this.isDebugEnabled = specs.isDebugEnabled();
     }
 
     @Override
-    public void onInit() {
+    public void onInit(EngineContext ctx) {
+        this.registry = ctx.getRegistry();
+        this.eventBus = ctx.getEventBus();
+        this.cameraSystem = new CameraSystem(ctx.getWindow().getSpecification());
         setupPhysicsWorld();
         subscribeToLifecycleEvents();
     }

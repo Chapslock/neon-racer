@@ -1,15 +1,13 @@
 package org.chapzlock.core.render;
 
 import org.chapzlock.core.component.Material;
-import org.chapzlock.core.render.MaterialRenderer;
-import org.chapzlock.core.render.MaterialRendererRegistry;
 
 public class MaterialSystem {
-    private static MaterialSystem instance;
 
-    private final MaterialRendererRegistry registry = MaterialRendererRegistry.instance();
+    private final MaterialRendererRegistry registry;
 
-    private MaterialSystem() {
+    public MaterialSystem(MaterialRendererRegistry registry) {
+        this.registry = registry;
     }
 
     /**
@@ -34,12 +32,5 @@ public class MaterialSystem {
      */
     public MaterialRenderer getRenderer(Material material) {
         return registry.getRenderer(material);
-    }
-
-    public static MaterialSystem instance() {
-        if (instance == null) {
-            instance = new MaterialSystem();
-        }
-        return instance;
     }
 }

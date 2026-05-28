@@ -34,7 +34,7 @@ import lombok.NonNull;
  *
  * <p>Usage example:
  * <pre>{@code
- * EventBus bus = EventBus.instance();
+ * EventBus bus = new EventBus();
  *
  * // Subscribe
  * Subscription sub = bus.subscribe(PlayerDiedEvent.class, event -> {
@@ -50,7 +50,6 @@ import lombok.NonNull;
  * }</pre>
  */
 public final class EventBus {
-    private static final EventBus INSTANCE = new EventBus();
     /**
      * Cache of dispatch order (class hierarchy + interfaces) for each event class.
      */
@@ -66,7 +65,7 @@ public final class EventBus {
      */
     private final ConcurrentMap<Class<? extends Event>, CopyOnWriteArrayList<ListenerHolder>> listenersByEventType = new ConcurrentHashMap<>();
 
-    private EventBus() {
+    public EventBus() {
     }
 
     /**
@@ -186,9 +185,6 @@ public final class EventBus {
         listenersByEventType.clear();
     }
 
-    public static EventBus instance() {
-        return INSTANCE;
-    }
 
     /**
      * Computes the full dispatch order (superclasses + interfaces)

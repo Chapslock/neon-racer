@@ -6,27 +6,25 @@ import static org.lwjgl.opengl.GL20.GL_VERTEX_SHADER;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.chapzlock.core.application.Disposable;
 import org.chapzlock.core.component.Shader;
 import org.chapzlock.core.asset.FileUtils;
-import org.chapzlock.core.render.ShaderUtil;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 /**
- * Caches shader programs and handles OpenGL calls on shaders
- * Implemented as a singleton to keep track of all shader programs.
+ * Caches shader programs and handles OpenGL calls on shaders.
  */
-public class ShaderSystem {
-    private static ShaderSystem instance;
+public class ShaderSystem implements Disposable {
 
     /**
      * per-program uniform cache: programId -> (name -> location)
      */
     private final Map<Integer, Map<String, Integer>> uniformCache = new HashMap<>();
-    private static int currentlyActiveProgramId = 0;
+    private int currentlyActiveProgramId = 0;
 
-    private ShaderSystem() {
+    public ShaderSystem() {
     }
 
     public void use(Shader shader) {
@@ -116,10 +114,9 @@ public class ShaderSystem {
         ShaderUtil.setUniform(getUniformLocation(shader, name), vector4f);
     }
 
-    public static ShaderSystem instance() {
-        if (instance == null) {
-            instance = new ShaderSystem();
-        }
-        return instance;
+    @Override
+    public void dispose() {
+        uniformCache.clear();
+        currentlyActiveProgramId = 0;
     }
 }

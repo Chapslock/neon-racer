@@ -5,7 +5,8 @@ import static org.joml.Math.clamp;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.chapzlock.core.ecs.System;
+import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.event.Subscription;
@@ -20,10 +21,10 @@ import org.lwjgl.glfw.GLFW;
  * Allows to move the camera in a spectator like manner.
  * Useful system for debugging a 3D world.
  */
-public class CameraFreeRoamSystem implements System {
+public class CameraFreeRoamSystem implements GameSystem {
 
-    private final ComponentRegistry registry = ComponentRegistry.instance();
-    private final EventBus eventBus = EventBus.instance();
+    private ComponentRegistry registry;
+    private EventBus eventBus;
     private final List<Subscription> subscriptions = new ArrayList<>();
 
     private static final float CAMERA_MOUSE_SENSITIVITY = .03f;
@@ -77,7 +78,10 @@ public class CameraFreeRoamSystem implements System {
     }
 
     @Override
-    public void onInit() {
+    public void onInit(EngineContext ctx) {
+        this.registry = ctx.getRegistry();
+        this.eventBus = ctx.getEventBus();
+
         // disable cursor for free-roam
         long window = GLFW.glfwGetCurrentContext();
         GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);

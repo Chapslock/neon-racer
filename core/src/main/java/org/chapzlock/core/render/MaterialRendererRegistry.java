@@ -3,8 +3,6 @@ package org.chapzlock.core.render;
 import java.util.Map;
 
 import org.chapzlock.core.component.Material;
-import org.chapzlock.core.render.MaterialRenderer;
-import org.chapzlock.core.render.ShaderSystem;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
@@ -12,11 +10,12 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
  * Links materials to material renderers
  */
 public class MaterialRendererRegistry {
-    private static final ShaderSystem shaderSystem = ShaderSystem.instance();
-    private static MaterialRendererRegistry instance;
+
+    private final ShaderSystem shaderSystem;
     private final Map<Integer, MaterialRenderer> renderersByShaderId = new Int2ObjectOpenHashMap<>();
 
-    private MaterialRendererRegistry() {
+    public MaterialRendererRegistry(ShaderSystem shaderSystem) {
+        this.shaderSystem = shaderSystem;
     }
 
     /**
@@ -49,12 +48,5 @@ public class MaterialRendererRegistry {
                     "\n Make sure you have implemented and registered renderer for this material");
         }
         return renderer;
-    }
-
-    public static MaterialRendererRegistry instance() {
-        if (instance == null) {
-            instance = new MaterialRendererRegistry();
-        }
-        return instance;
     }
 }

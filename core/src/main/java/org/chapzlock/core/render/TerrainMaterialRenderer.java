@@ -20,15 +20,17 @@ import org.chapzlock.core.component.Sky;
 import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.EntityView;
-import org.chapzlock.core.render.TerrainShaderProps;
-import org.chapzlock.core.render.CameraSystem;
-import org.chapzlock.core.render.ShaderSystem;
-import org.chapzlock.core.render.TextureSystem;
 
 public class TerrainMaterialRenderer implements MaterialRenderer {
-    private final ShaderSystem shaderSystem = ShaderSystem.instance();
-    private final TextureSystem textureSystem = TextureSystem.instance();
-    private final CameraSystem cameraSystem = new CameraSystem();
+    private final ShaderSystem shaderSystem;
+    private final TextureSystem textureSystem;
+    private final CameraSystem cameraSystem;
+
+    public TerrainMaterialRenderer(ShaderSystem shaderSystem, TextureSystem textureSystem, CameraSystem cameraSystem) {
+        this.shaderSystem = shaderSystem;
+        this.textureSystem = textureSystem;
+        this.cameraSystem = cameraSystem;
+    }
 
     @Override
     public void apply(Material material, Camera camera, PointLight light, Sky sky) {

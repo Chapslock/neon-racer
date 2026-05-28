@@ -9,23 +9,22 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.chapzlock.core.ecs.Component;
-import org.chapzlock.core.ecs.EntityView;
 import org.chapzlock.core.event.ComponentAddedEvent;
 import org.chapzlock.core.event.ComponentRemovedEvent;
 import org.chapzlock.core.event.EntityDestroyedEvent;
+import org.chapzlock.core.event.Event;
 import org.chapzlock.core.event.EventBus;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 /**
- * Central registry for all the components and entities tied to them
- * Mainly used in Systems to execute logic
- * Implemented as a singleton because it carries the global state of entities
+ * Central registry for all the components and entities tied to them.
+ * Mainly used in Systems to execute logic.
  */
 public class ComponentRegistry {
-    private static ComponentRegistry instance;
+
+    private final EventBus eventBus;
 
     private final Map<Class<? extends Component>, Integer> typeToId = new Object2IntOpenHashMap<>();
     private final List<Class<? extends Component>> idToType = new ArrayList<>();
@@ -36,14 +35,15 @@ public class ComponentRegistry {
      */
     private final Int2ObjectOpenHashMap<BitSet> entityComponentMasks = new Int2ObjectOpenHashMap<>();
 
-    private ComponentRegistry() {
+    public ComponentRegistry(EventBus eventBus) {
+        this.eventBus = eventBus;
     }
 
-    public static ComponentRegistry instance() {
-        if (instance == null) {
-            instance = new ComponentRegistry();
-        }
-        return instance;
+    /**
+     * Publishes an event through the associated EventBus.
+     */
+    public void publishEvent(Event event) {
+        eventBus.publish(event);
     }
 
     /**
@@ -76,16 +76,13 @@ public class ComponentRegistry {
 
         BitSet mask = entityComponentMasks.computeIfAbsent(entityId, e -> new BitSet());
         mask.set(typeId);
-        EventBus.instance().publish(new ComponentAddedEvent(entityId, component.getClass()));
+        eventBus.publish(new ComponentAddedEvent(entityId, component.getClass()));
     }
 
     /**
      * Adds multiple components to an entity.
      * All components are stored first, then events are published.
      * This ensures sibling components are accessible during any event handler.
-     *
-     * @param entityId
-     * @param components
      */
     @SuppressWarnings("unchecked")
     public <T extends Component> void addComponents(int entityId, T... components) {
@@ -98,7 +95,7 @@ public class ComponentRegistry {
             mask.set(typeId);
         }
         for (T component : components) {
-            EventBus.instance().publish(new ComponentAddedEvent(entityId, component.getClass()));
+            eventBus.publish(new ComponentAddedEvent(entityId, component.getClass()));
         }
     }
 
@@ -125,7 +122,7 @@ public class ComponentRegistry {
             return;
         }
         ComponentStore<T> store = (ComponentStore<T>) stores.get(typeId);
-        EventBus.instance().publish(new ComponentRemovedEvent(entityId, type));
+        eventBus.publish(new ComponentRemovedEvent(entityId, type));
         store.remove(entityId);
 
         BitSet mask = entityComponentMasks.get(entityId);
@@ -148,12 +145,12 @@ public class ComponentRegistry {
 
         for (int typeId = mask.nextSetBit(0); typeId >= 0; typeId = mask.nextSetBit(typeId + 1)) {
             Class<? extends Component> type = idToType.get(typeId);
-            EventBus.instance().publish(new ComponentRemovedEvent(entityId, type));
+            eventBus.publish(new ComponentRemovedEvent(entityId, type));
             stores.get(typeId).remove(entityId);
         }
 
         entityComponentMasks.remove(entityId);
-        EventBus.instance().publish(new EntityDestroyedEvent(entityId));
+        eventBus.publish(new EntityDestroyedEvent(entityId));
     }
 
     /**
@@ -179,12 +176,12 @@ public class ComponentRegistry {
         // Iterate entity -> mask entries
         for (Entry<Integer, BitSet> entry : entityComponentMasks.entrySet()) {
             int entityId = entry.getKey();
-            BitSet mask = entry.getValue();
+            BitSet entityMask = entry.getValue();
 
             // Check all required bits are present in the entity mask
             boolean matches = true;
             for (int typeId : requiredTypeIds) {
-                if (!mask.get(typeId)) { // BitSet.get is cheap and doesn't allocate
+                if (!entityMask.get(typeId)) { // BitSet.get is cheap and doesn't allocate
                     matches = false;
                     break;
                 }
