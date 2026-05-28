@@ -48,39 +48,33 @@ import org.joml.Vector3f;
 
 public class GameWorldLayer implements Layer {
 
-    private ComponentRegistry registry;
-    private MeshSystem meshSystem;
-    private TextureSystem textureSystem;
-    private MaterialSystem materialSystem;
-    private ShaderSystem shaderSystem;
-    private WindowSpecification windowSpec;
-
-    private final List<GameSystem> systems = List.of(
-        new RenderSystem(),
-        new PlayerMovementSystem(),
-        new PlayerInputSystem(),
-        new PhysicsSystem(PhysicsSystemSpecs.builder()
-            .isDebugEnabled(true)
-            .build()),
-        new PlayerCameraFollowSystem()
-        //new CameraFreeRoamSystem()
-    );
+    @Override
+    public List<GameSystem> systems() {
+        return List.of(
+            new PlayerInputSystem(),
+            new PlayerMovementSystem(),
+            new PhysicsSystem(PhysicsSystemSpecs.builder()
+                .isDebugEnabled(true)
+                .build()),
+            new PlayerCameraFollowSystem(),
+            new RenderSystem()
+        );
+    }
 
     @Override
     public void onInit(EngineContext ctx) {
-        this.registry = ctx.getRegistry();
-        this.meshSystem = ctx.getMeshSystem();
-        this.textureSystem = ctx.getTextureSystem();
-        this.materialSystem = ctx.getMaterialSystem();
-        this.shaderSystem = ctx.getShaderSystem();
-        this.windowSpec = ctx.getWindow().getSpecification();
-
-        systems.forEach(s -> s.onInit(ctx));
-        createEntities();
+        createEntities(ctx);
     }
 
-    private void createEntities() {
-        createPlayer();
+    private void createEntities(EngineContext ctx) {
+        ComponentRegistry registry = ctx.getRegistry();
+        MeshSystem meshSystem = ctx.getMeshSystem();
+        TextureSystem textureSystem = ctx.getTextureSystem();
+        MaterialSystem materialSystem = ctx.getMaterialSystem();
+        ShaderSystem shaderSystem = ctx.getShaderSystem();
+        WindowSpecification windowSpec = ctx.getWindow().getSpecification();
+
+        createPlayer(registry, meshSystem, textureSystem, materialSystem, shaderSystem, windowSpec);
 
         int light = Entity.create(registry);
         registry.addComponent(light, new PointLight(new Vector3f(-5, 300, -10), Color.WHITE));
@@ -91,12 +85,12 @@ public class GameWorldLayer implements Layer {
         int sky = Entity.create(registry);
         registry.addComponent(sky, new Sky());
 
-        createUi();
-
-        createTerrain();
+        createUi(registry, meshSystem, textureSystem, materialSystem, shaderSystem, windowSpec);
+        createTerrain(registry, meshSystem, textureSystem, materialSystem, shaderSystem, windowSpec);
     }
 
-    private void createUi() {
+    private void createUi(ComponentRegistry registry, MeshSystem meshSystem, TextureSystem textureSystem,
+                          MaterialSystem materialSystem, ShaderSystem shaderSystem, WindowSpecification windowSpec) {
         int ui = Entity.create(registry);
 
         CameraSystem cameraSystem = new CameraSystem(windowSpec);
@@ -118,7 +112,8 @@ public class GameWorldLayer implements Layer {
         );
     }
 
-    private void createPlayer() {
+    private void createPlayer(ComponentRegistry registry, MeshSystem meshSystem, TextureSystem textureSystem,
+                              MaterialSystem materialSystem, ShaderSystem shaderSystem, WindowSpecification windowSpec) {
         int player = Entity.create(registry);
 
         CameraSystem cameraSystem = new CameraSystem(windowSpec);
@@ -147,7 +142,8 @@ public class GameWorldLayer implements Layer {
         registry.addComponent(player, physicsBody);
     }
 
-    private void createTerrain() {
+    private void createTerrain(ComponentRegistry registry, MeshSystem meshSystem, TextureSystem textureSystem,
+                               MaterialSystem materialSystem, ShaderSystem shaderSystem, WindowSpecification windowSpec) {
         int terrain = Entity.create(registry);
 
         CameraSystem cameraSystem = new CameraSystem(windowSpec);
@@ -180,20 +176,5 @@ public class GameWorldLayer implements Layer {
                 .restitution(0)
                 .build()
         ));
-    }
-
-    @Override
-    public void onUpdate(float deltaTime) {
-        systems.forEach(s -> s.onUpdate(deltaTime));
-    }
-
-    @Override
-    public void onRender(float deltaTime) {
-        systems.forEach(s -> s.onRender(deltaTime));
-    }
-
-    @Override
-    public void onDestroy() {
-        systems.forEach(GameSystem::onDestroy);
     }
 }
