@@ -8,6 +8,10 @@ public class Log {
         System.out.println(s);
     }
 
+    public static void warn(String s) {
+        System.out.println("[WARN] " + s);
+    }
+
     public static void error(String s) {
         System.err.println(s);
     }
