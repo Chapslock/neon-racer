@@ -8,7 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.chapzlock.core.ecs.ComponentRegistry;
+import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.event.EventBus;
+import org.chapzlock.core.logging.Log;
 import org.chapzlock.core.render.MaterialRendererRegistry;
 import org.chapzlock.core.render.MaterialSystem;
 import org.chapzlock.core.render.MeshSystem;
@@ -18,9 +20,6 @@ import org.chapzlock.core.window.Window;
 
 import lombok.Getter;
 
-/**
- * Main application class — manages the layer stack, windows, and the main loop.
- */
 public class Application {
     @Getter
     private final ApplicationSpecification appSpec;
@@ -37,9 +36,6 @@ public class Application {
         layerStack.add(layer);
     }
 
-    /**
-     * Main loop of the application
-     */
     public void run() {
         EventBus eventBus = new EventBus();
         ComponentRegistry registry = new ComponentRegistry(eventBus);
@@ -58,8 +54,13 @@ public class Application {
             shaderSystem, materialSystem, materialRendererRegistry, window
         );
 
+        List<GameSystem> sortedSystems = collectAndSortSystems();
+        logExecutionOrder(sortedSystems);
+
         isRunning = true;
+        sortedSystems.forEach(system -> system.onInit(context));
         layerStack.forEach(layer -> layer.onInit(context));
+
         float lastTime = getTime();
 
         while (isRunning) {
@@ -74,24 +75,42 @@ public class Application {
 
             ApplicationUtil.clearAndPrepareWindowState();
 
-            layerStack.forEach(layer -> layer.onUpdate(delta));
-            layerStack.forEach(layer -> layer.onRender(delta));
+            for (GameSystem system : sortedSystems) {
+                system.onUpdate(delta);
+            }
+            for (GameSystem system : sortedSystems) {
+                system.onRender(delta);
+            }
 
             glfwSwapBuffers(window.getId());
             glfwPollEvents();
         }
 
+        sortedSystems.forEach(GameSystem::onDestroy);
         layerStack.forEach(Layer::onDestroy);
         context.dispose();
         window.destroy();
         ApplicationUtil.terminate();
     }
 
-    /**
-     * Gives the time since the initialization of the application
-     *
-     * @return seconds since the start of the application
-     */
+    private List<GameSystem> collectAndSortSystems() {
+        List<GameSystem> all = new ArrayList<>();
+        for (Layer layer : layerStack) {
+            all.addAll(layer.systems());
+        }
+        all.sort((a, b) -> Integer.compare(a.phase().ordinal(), b.phase().ordinal()));
+        return all;
+    }
+
+    private void logExecutionOrder(List<GameSystem> systems) {
+        StringBuilder sb = new StringBuilder("System execution order:\n");
+        for (GameSystem system : systems) {
+            sb.append("  [").append(system.phase()).append("] ")
+              .append(system.getClass().getSimpleName()).append("\n");
+        }
+        Log.info(sb.toString());
+    }
+
     public static float getTime() {
         return (float) glfwGetTime();
     }
@@ -100,9 +119,6 @@ public class Application {
         isRunning = false;
     }
 
-    /**
-     * Creates a new application instance
-     */
     public static Application create(ApplicationSpecification spec) {
         return new Application(spec);
     }
