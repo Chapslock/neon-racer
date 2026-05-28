@@ -3,7 +3,9 @@ package org.chapzlock.core.render;
 import static org.lwjgl.opengl.GL20.GL_FRAGMENT_SHADER;
 import static org.lwjgl.opengl.GL20.GL_VERTEX_SHADER;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.chapzlock.core.application.Disposable;
@@ -22,6 +24,7 @@ public class ShaderSystem implements Disposable {
      * per-program uniform cache: programId -> (name -> location)
      */
     private final Map<Integer, Map<String, Integer>> uniformCache = new HashMap<>();
+    private final List<Integer> allProgramIds = new ArrayList<>();
     private int currentlyActiveProgramId = 0;
 
     public ShaderSystem() {
@@ -53,6 +56,7 @@ public class ShaderSystem implements Disposable {
         int fragmentShaderId = ShaderUtil.compileShader(fragmentShader, GL_FRAGMENT_SHADER);
         int programId = ShaderUtil.linkShaderProgram(vertexShaderId, fragmentShaderId);
         shader.setProgramId(programId);
+        allProgramIds.add(programId);
         uniformCache.put(programId, new HashMap<>());
     }
 
@@ -66,6 +70,7 @@ public class ShaderSystem implements Disposable {
             return;
         }
         ShaderUtil.deleteProgram(shaderComp.getProgramId());
+        allProgramIds.remove(Integer.valueOf(shaderComp.getProgramId()));
         uniformCache.remove(shaderComp.getProgramId());
         shaderComp.setProgramId(0);
         currentlyActiveProgramId = 0;
@@ -116,6 +121,10 @@ public class ShaderSystem implements Disposable {
 
     @Override
     public void dispose() {
+        for (int programId : allProgramIds) {
+            ShaderUtil.deleteProgram(programId);
+        }
+        allProgramIds.clear();
         uniformCache.clear();
         currentlyActiveProgramId = 0;
     }

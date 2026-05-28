@@ -80,6 +80,9 @@ public class MeshSystem implements Disposable {
 
     @Override
     public void dispose() {
+        for (Mesh mesh : meshPool.values()) {
+            MeshUtil.delete(mesh);
+        }
         meshPool.clear();
         rawMeshDataPool.clear();
         resourcePathToIdMap.clear();

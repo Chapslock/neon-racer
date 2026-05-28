@@ -72,6 +72,9 @@ public class TextureSystem implements Disposable {
 
     @Override
     public void dispose() {
+        for (Texture texture : texturePool.values()) {
+            TextureUtil.delete(texture);
+        }
         texturePool.clear();
         filePathToIdMap.clear();
     }
