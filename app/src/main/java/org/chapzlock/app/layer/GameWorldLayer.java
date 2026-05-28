@@ -62,8 +62,8 @@ public class GameWorldLayer implements Layer {
 
     @Override
     public void onInit() {
-        createEntities();
         systems.forEach(System::onInit);
+        createEntities();
     }
 
     private void createEntities() {

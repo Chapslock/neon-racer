@@ -6,7 +6,11 @@ import org.chapzlock.core.application.System;
 import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.Transform;
-import org.chapzlock.core.entity.EntityView;
+import org.chapzlock.core.event.ComponentAddedEvent;
+import org.chapzlock.core.event.ComponentRemovedEvent;
+import org.chapzlock.core.event.EventBus;
+import org.chapzlock.core.event.Subscription;
+import org.chapzlock.core.logging.Log;
 import org.chapzlock.core.physics.EntityMotionState;
 import org.chapzlock.core.physics.PhysicsCollisionUtil;
 import org.chapzlock.core.physics.PhysicsDebugRenderer;
@@ -22,9 +26,6 @@ import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration;
 import com.bulletphysics.dynamics.DiscreteDynamicsWorld;
 import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver;
 
-/**
- * Handles the physics simulation lifecycle — initialization, updates, and optional debug rendering.
- */
 public class PhysicsSystem implements System {
 
     private static final Vector3f DEFAULT_GRAVITY = new Vector3f(0f, -9.81f, 0f);
@@ -34,6 +35,7 @@ public class PhysicsSystem implements System {
     private static final int MAX_SUB_STEPS = 10;
 
     private final ComponentRegistry registry = ComponentRegistry.instance();
+    private final EventBus eventBus = EventBus.instance();
 
     private final CollisionConfiguration collisionConfig;
     private final CollisionDispatcher dispatcher;
@@ -44,19 +46,15 @@ public class PhysicsSystem implements System {
     private final PhysicsDebugger debugger;
     private final CameraSystem cameraSystem;
 
-    private boolean isDebugEnabled;
+    private final boolean isDebugEnabled;
 
-    /**
-     * Creates a physics system with default settings.
-     */
+    private Subscription componentAddedSub;
+    private Subscription componentRemovedSub;
+
     public PhysicsSystem() {
-        this(PhysicsSystemSpecs.builder()
-            .build());
+        this(PhysicsSystemSpecs.builder().build());
     }
 
-    /**
-     * Creates a physics system based on custom specifications.
-     */
     public PhysicsSystem(PhysicsSystemSpecs specs) {
         this.collisionConfig = new DefaultCollisionConfiguration();
         this.dispatcher = new CollisionDispatcher(collisionConfig);
@@ -67,6 +65,12 @@ public class PhysicsSystem implements System {
         this.debugger = new PhysicsDebugger();
         this.cameraSystem = new CameraSystem();
         this.isDebugEnabled = specs.isDebugEnabled();
+    }
+
+    @Override
+    public void onInit() {
+        setupPhysicsWorld();
+        subscribeToLifecycleEvents();
     }
 
     @Override
@@ -83,14 +87,9 @@ public class PhysicsSystem implements System {
     }
 
     @Override
-    public void onInit() {
-        setupPhysicsWorld();
-        registerEntities();
-    }
-
-    @Override
     public void onDestroy() {
-        //TODO: Implement me!
+        if (componentAddedSub != null) componentAddedSub.unsubscribe();
+        if (componentRemovedSub != null) componentRemovedSub.unsubscribe();
     }
 
     private void setupPhysicsWorld() {
@@ -98,29 +97,40 @@ public class PhysicsSystem implements System {
         dynamicsWorld.setDebugDrawer(debugger);
     }
 
-    private void registerEntities() {
-        registry.view(PhysicsBody.class, Transform.class)
-            .forEach(entity -> {
-                PhysicsBody body = entity.get(PhysicsBody.class);
-                synchronizeEntityTransform(entity, body);
-                addBodyToWorld(body);
-            });
-    }
+    private void subscribeToLifecycleEvents() {
+        componentAddedSub = eventBus.subscribe(ComponentAddedEvent.class, event -> {
+            if (event.componentType() != PhysicsBody.class) return false;
 
-    private void synchronizeEntityTransform(EntityView entity, PhysicsBody body) {
-        body.getRigidBody().setMotionState(new EntityMotionState(entity.get(Transform.class)));
-    }
+            Transform transform = registry.getComponent(event.entityId(), Transform.class);
+            if (transform == null) {
+                Log.warn("PhysicsBody added to entity " + event.entityId() + " without Transform. Skipping physics registration.");
+                return false;
+            }
 
-    private void addBodyToWorld(PhysicsBody body) {
-        dynamicsWorld.addRigidBody(body.getRigidBody());
+            PhysicsBody body = registry.getComponent(event.entityId(), PhysicsBody.class);
+            body.getRigidBody().setMotionState(new EntityMotionState(transform));
+            dynamicsWorld.addRigidBody(body.getRigidBody());
+            return false;
+        });
+
+        componentRemovedSub = eventBus.subscribe(ComponentRemovedEvent.class, event -> {
+            if (event.componentType() != PhysicsBody.class) return false;
+
+            PhysicsBody body = registry.getComponent(event.entityId(), PhysicsBody.class);
+            if (body != null) {
+                dynamicsWorld.removeRigidBody(body.getRigidBody());
+            }
+            return false;
+        });
     }
 
     private void renderDebugInfo() {
         dynamicsWorld.debugDrawWorld();
-        var camera = registry.view(Camera.class).getFirst().get(Camera.class);
+        var cameras = registry.view(Camera.class);
+        if (cameras.isEmpty()) return;
+        var camera = cameras.getFirst().get(Camera.class);
         var projectionMatrix = cameraSystem.calculateProjectionMatrix(camera);
         var viewMatrix = cameraSystem.calculateViewMatrix(camera);
         PhysicsDebugRenderer.drawLines(projectionMatrix, viewMatrix);
     }
-
 }
