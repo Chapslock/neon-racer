@@ -3,6 +3,7 @@ package org.chapzlock.core.ecs;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -34,6 +35,20 @@ public class ComponentRegistry {
      * Tracks which components each entity has (bitset per entity)
      */
     private final Int2ObjectOpenHashMap<BitSet> entityComponentMasks = new Int2ObjectOpenHashMap<>();
+
+    private final Map<BitSet, CachedQuery> queryCache = new HashMap<>();
+
+    private static class CachedQuery {
+        final BitSet mask;
+        List<Integer> entityIds;
+        boolean valid;
+
+        CachedQuery(BitSet mask) {
+            this.mask = mask;
+            this.entityIds = List.of();
+            this.valid = false;
+        }
+    }
 
     public ComponentRegistry(EventBus eventBus) {
         this.eventBus = eventBus;
@@ -77,6 +92,7 @@ public class ComponentRegistry {
         BitSet mask = entityComponentMasks.computeIfAbsent(entityId, e -> new BitSet());
         mask.set(typeId);
         eventBus.publish(new ComponentAddedEvent(entityId, component.getClass()));
+        invalidateCachesForType(typeId);
     }
 
     /**
@@ -96,6 +112,9 @@ public class ComponentRegistry {
         }
         for (T component : components) {
             eventBus.publish(new ComponentAddedEvent(entityId, component.getClass()));
+        }
+        for (T component : components) {
+            invalidateCachesForType(getOrRegisterTypeId(component.getClass()));
         }
     }
 
@@ -132,6 +151,7 @@ public class ComponentRegistry {
                 entityComponentMasks.remove(entityId); // cleanup if no components left
             }
         }
+        invalidateCachesForType(typeId);
     }
 
     /**
@@ -151,6 +171,7 @@ public class ComponentRegistry {
 
         entityComponentMasks.remove(entityId);
         eventBus.publish(new EntityDestroyedEvent(entityId));
+        invalidateAllCaches();
     }
 
     /**
@@ -162,34 +183,43 @@ public class ComponentRegistry {
             return Collections.emptyList();
         }
 
-        // Resolve type ids once (and bail out early if any requested component type doesn't exist)
         final int[] requiredTypeIds = new int[requiredComponents.length];
         for (int i = 0; i < requiredComponents.length; i++) {
             Integer typeId = typeToId.get(requiredComponents[i]);
             if (typeId == null) {
-                return Collections.emptyList(); // no such component registered
+                return Collections.emptyList();
             }
             requiredTypeIds[i] = typeId;
         }
 
-        List<EntityView> results = new ArrayList<>();
-        // Iterate entity -> mask entries
-        for (Entry<Integer, BitSet> entry : entityComponentMasks.entrySet()) {
-            int entityId = entry.getKey();
-            BitSet entityMask = entry.getValue();
+        BitSet queryMask = new BitSet();
+        for (int id : requiredTypeIds) {
+            queryMask.set(id);
+        }
 
-            // Check all required bits are present in the entity mask
-            boolean matches = true;
-            for (int typeId : requiredTypeIds) {
-                if (!entityMask.get(typeId)) { // BitSet.get is cheap and doesn't allocate
-                    matches = false;
-                    break;
+        CachedQuery cached = queryCache.computeIfAbsent(queryMask, CachedQuery::new);
+        if (!cached.valid) {
+            List<Integer> ids = new ArrayList<>();
+            for (Entry<Integer, BitSet> entry : entityComponentMasks.entrySet()) {
+                BitSet entityMask = entry.getValue();
+                boolean matches = true;
+                for (int typeId : requiredTypeIds) {
+                    if (!entityMask.get(typeId)) {
+                        matches = false;
+                        break;
+                    }
+                }
+                if (matches) {
+                    ids.add(entry.getKey());
                 }
             }
+            cached.entityIds = ids;
+            cached.valid = true;
+        }
 
-            if (matches) {
-                results.add(buildEntityView(entityId, requiredComponents, requiredTypeIds));
-            }
+        List<EntityView> results = new ArrayList<>(cached.entityIds.size());
+        for (int entityId : cached.entityIds) {
+            results.add(buildEntityView(entityId, requiredComponents, requiredTypeIds));
         }
         return results;
     }
@@ -213,5 +243,19 @@ public class ComponentRegistry {
             comps[i] = stores.get(requiredTypeIds[i]).get(entityId);
         }
         return EntityView.of(entityId, requiredComponents, comps);
+    }
+
+    private void invalidateCachesForType(int typeId) {
+        for (CachedQuery cached : queryCache.values()) {
+            if (cached.mask.get(typeId)) {
+                cached.valid = false;
+            }
+        }
+    }
+
+    private void invalidateAllCaches() {
+        for (CachedQuery cached : queryCache.values()) {
+            cached.valid = false;
+        }
     }
 }
