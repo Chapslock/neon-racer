@@ -3,5 +3,5 @@
 * support for text rendering
 * support for audio
 * support for particle systems
-* support for UI shaders
+* refactor existing systems
 * (Optional) support for networking

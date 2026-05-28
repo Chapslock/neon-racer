@@ -19,6 +19,7 @@ import org.chapzlock.core.component.Reflection;
 import org.chapzlock.core.component.Shader;
 import org.chapzlock.core.component.Sky;
 import org.chapzlock.core.component.Terrain;
+import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.entity.Entity;
 import org.chapzlock.core.files.FileUtils;
@@ -26,8 +27,10 @@ import org.chapzlock.core.geometry.RawMeshData;
 import org.chapzlock.core.geometry.RawMeshDataFactory;
 import org.chapzlock.core.graphics.material.EntityMaterialRenderer;
 import org.chapzlock.core.graphics.material.TerrainMaterialRenderer;
+import org.chapzlock.core.graphics.material.UiMaterialRenderer;
 import org.chapzlock.core.graphics.shader.EntityShaderProps;
 import org.chapzlock.core.graphics.shader.TerrainShaderProps;
+import org.chapzlock.core.graphics.shader.UiShaderProps;
 import org.chapzlock.core.physics.CollisionShapeFactory;
 import org.chapzlock.core.physics.PhysicsSpecs;
 import org.chapzlock.core.physics.PhysicsSystemSpecs;
@@ -54,6 +57,7 @@ public class GameWorldLayer implements Layer {
             .isDebugEnabled(true)
             .build()),
         new PlayerCameraFollowSystem()
+        //new CameraFreeRoamSystem()
     );
 
     @Override
@@ -74,7 +78,30 @@ public class GameWorldLayer implements Layer {
         int sky = Entity.create();
         registry.addComponent(sky, new Sky());
 
+        createUi();
+
         createTerrain();
+    }
+
+    private void createUi() {
+        int ui = Entity.create();
+
+        Texture texture = textureSystem.load("textures/speedometer.png");
+        Material material = Material.builder()
+            .shader(new Shader(
+                UiShaderProps.VERTEX_FILE,
+                UiShaderProps.FRAGMENT_FILE
+            ))
+            .textures(List.of(texture))
+            .build();
+        materialSystem.registerNewMaterial(material, new UiMaterialRenderer());
+
+        Mesh mesh = meshSystem.load(RawMeshDataFactory.createUi());
+        registry.addComponents(ui,
+            material,
+            mesh,
+            new Transform(new Vector3f(0, 0, 0), new Vector3f(0, 0, 0), 200f)
+        );
     }
 
     private void createPlayer() {

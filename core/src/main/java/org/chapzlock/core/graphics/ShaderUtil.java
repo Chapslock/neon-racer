@@ -19,6 +19,7 @@ import static org.lwjgl.opengl.GL20.glShaderSource;
 import static org.lwjgl.opengl.GL20.glUniform1f;
 import static org.lwjgl.opengl.GL20.glUniform1i;
 import static org.lwjgl.opengl.GL20.glUniform3f;
+import static org.lwjgl.opengl.GL20.glUniform4f;
 import static org.lwjgl.opengl.GL20.glUniformMatrix4fv;
 import static org.lwjgl.opengl.GL20.glUseProgram;
 
@@ -26,6 +27,7 @@ import java.nio.FloatBuffer;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.lwjgl.system.MemoryStack;
 
 import lombok.experimental.UtilityClass;
@@ -169,5 +171,9 @@ public class ShaderUtil {
             value.get(fb);
             glUniformMatrix4fv(uniformLocation, false, fb);
         }
+    }
+
+    public static void setUniform(int uniformLocation, Vector4f vector4f) {
+        glUniform4f(uniformLocation, vector4f.x, vector4f.y, vector4f.z, vector4f.w);
     }
 }

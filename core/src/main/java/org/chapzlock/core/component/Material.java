@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.chapzlock.core.application.Component;
+import org.joml.Vector4f;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,6 +27,8 @@ public final class Material implements Component {
         .reflectivity(.1f)
         .shineDamper(1f)
         .build();
+    @Builder.Default
+    private Vector4f tint = new Vector4f(1f, 1f, 1f, 1f);
 
     public Material(Shader shader, Texture texture) {
         this(shader, texture, null);

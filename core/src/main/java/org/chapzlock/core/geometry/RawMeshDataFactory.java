@@ -316,4 +316,39 @@ public class RawMeshDataFactory {
         normal.normalize();
         return normal;
     }
+
+    /**
+     * Creates a quad where positions range [0..1] in X and Y and Z=0.
+     * Texcoords cover full 0..1 range.
+     * Useful for declaring a UI mesh.
+     */
+    public static RawMeshData createUi() {
+        float[] positions = {
+            0f, 0f, 0f,   // 0 top-left
+            1f, 0f, 0f,   // 1 top-right
+            1f, 1f, 0f,   // 2 bottom-right
+            0f, 1f, 0f    // 3 bottom-left
+        };
+
+        float[] texCoords = {
+            0f, 1f, // top-left -> (0,1)
+            1f, 1f,
+            1f, 0f,
+            0f, 0f
+        };
+
+        float[] normals = {
+            0f, 0f, 1f,
+            0f, 0f, 1f,
+            0f, 0f, 1f,
+            0f, 0f, 1f
+        };
+
+        int[] indices = {
+            0, 1, 2,
+            2, 3, 0
+        };
+
+        return new RawMeshData(positions, texCoords, indices, normals);
+    }
 }

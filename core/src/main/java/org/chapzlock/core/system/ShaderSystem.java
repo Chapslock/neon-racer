@@ -11,6 +11,7 @@ import org.chapzlock.core.files.FileUtils;
 import org.chapzlock.core.graphics.ShaderUtil;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 /**
  * Caches shader programs and handles OpenGL calls on shaders
@@ -109,6 +110,10 @@ public class ShaderSystem {
 
     public void setUniform(Shader shader, String name, Matrix4f matrix) {
         ShaderUtil.setUniform(getUniformLocation(shader, name), matrix);
+    }
+
+    public void setUniform(Shader shader, String name, Vector4f vector4f) {
+        ShaderUtil.setUniform(getUniformLocation(shader, name), vector4f);
     }
 
     public static ShaderSystem instance() {
