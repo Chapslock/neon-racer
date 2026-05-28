@@ -43,7 +43,6 @@ public class Transform implements Component {
      * Cached transformation matrix reused to avoid allocations
      */
     private final Matrix4f transformationMatrix = new Matrix4f();
-    private final Vector3f tmpVec = new Vector3f();
     /**
      * Uniform scale
      */
@@ -246,28 +245,41 @@ public class Transform implements Component {
 
     /**
      * Forward vector in world space (canonical forward is +Z).
+     * Writes result into dest and returns it.
      */
-    public Vector3f getForwardVector() {
-        // canonical forward is (0,0,1)
-        tmpVec.set(0, 0, 1);
-
+    public Vector3f getForwardVector(Vector3f dest) {
+        dest.set(0, 0, 1);
         if (this.quatDirty) {
             this.quatFromEuler();
         }
-        // rotate forward by quaternion in-place (Quaternionf.transform(Vector3f))
-        this.rotationQuat.transform(tmpVec);
-        return tmpVec.normalize();
+        this.rotationQuat.transform(dest);
+        return dest.normalize();
+    }
+
+    /**
+     * Forward vector in world space (canonical forward is +Z).
+     */
+    public Vector3f getForwardVector() {
+        return getForwardVector(new Vector3f());
+    }
+
+    /**
+     * Right vector in world space (canonical right is +X).
+     * Writes result into dest and returns it.
+     */
+    public Vector3f getRightVector(Vector3f dest) {
+        dest.set(1, 0, 0);
+        if (this.quatDirty) {
+            this.quatFromEuler();
+        }
+        this.rotationQuat.transform(dest);
+        return dest.normalize();
     }
 
     /**
      * Right vector in world space (canonical right is +X).
      */
     public Vector3f getRightVector() {
-        tmpVec.set(1, 0, 0);
-        if (this.quatDirty) {
-            this.quatFromEuler();
-        }
-        this.rotationQuat.transform(tmpVec);
-        return tmpVec.normalize();
+        return getRightVector(new Vector3f());
     }
 }

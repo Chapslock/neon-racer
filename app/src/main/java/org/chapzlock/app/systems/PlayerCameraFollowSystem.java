@@ -42,7 +42,7 @@ public class PlayerCameraFollowSystem implements System {
         Transform playerT = playerEntity.get(Transform.class);
 
         Vector3f playerPos = playerT.getPosition();
-        Vector3f playerForward = new Vector3f(playerT.getForwardVector()).normalize();
+        Vector3f playerForward = playerT.getForwardVector(new Vector3f());
 
         // compute lateral offset properly: along the car's right vector
         Vector3f up = new Vector3f(0f, 1f, 0f);
