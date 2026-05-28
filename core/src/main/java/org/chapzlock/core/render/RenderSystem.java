@@ -10,6 +10,7 @@ import java.util.Optional;
 
 import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.ecs.GameSystem;
+import org.chapzlock.core.ecs.SystemPhase;
 import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.Color;
 import org.chapzlock.core.component.Material;
@@ -40,6 +41,11 @@ public class RenderSystem implements GameSystem {
         this.materialSystem = ctx.getMaterialSystem();
         GL11.glEnable(GL11.GL_CULL_FACE);
         GL11.glCullFace(GL11.GL_BACK);
+    }
+
+    @Override
+    public SystemPhase phase() {
+        return SystemPhase.RENDER;
     }
 
     @Override

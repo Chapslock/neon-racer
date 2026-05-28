@@ -4,6 +4,7 @@ import javax.vecmath.Vector3f;
 
 import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.ecs.GameSystem;
+import org.chapzlock.core.ecs.SystemPhase;
 import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.Transform;
@@ -70,6 +71,11 @@ public class PhysicsSystem implements GameSystem {
         this.cameraSystem = new CameraSystem(ctx.getWindow().getSpecification());
         setupPhysicsWorld();
         subscribeToLifecycleEvents();
+    }
+
+    @Override
+    public SystemPhase phase() {
+        return SystemPhase.PHYSICS;
     }
 
     @Override
