@@ -7,6 +7,8 @@ import org.chapzlock.core.application.EngineContext;
  */
 public interface GameSystem {
 
+    default SystemPhase phase() { return SystemPhase.LOGIC; }
+
     default void onInit(EngineContext ctx) {}
 
     default void onUpdate(float deltaTime) {}
