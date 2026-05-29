@@ -24,6 +24,8 @@ import org.chapzlock.core.physics.PhysicsSpecs;
 import org.chapzlock.core.render.EntityShaderProps;
 import org.chapzlock.core.render.TerrainShaderProps;
 import org.chapzlock.core.render.UiShaderProps;
+import org.chapzlock.core.input.InputMap;
+import org.chapzlock.core.input.Key;
 import org.chapzlock.core.scene.MaterialType;
 import org.chapzlock.core.scene.Scene;
 import org.joml.Vector3f;
@@ -31,7 +33,16 @@ import org.joml.Vector3f;
 public class RaceTrackScene {
 
     public static Scene create() {
+        InputMap inputMap = InputMap.builder()
+            .action("accelerate", Key.UP, Key.W)
+            .action("brake", Key.DOWN, Key.S)
+            .action("steer_left", Key.LEFT, Key.A)
+            .action("steer_right", Key.RIGHT, Key.D)
+            .action("quit", Key.ESCAPE)
+            .build();
+
         return Scene.builder("race-track")
+            .inputMap(inputMap)
             .entity("player", e -> e
                 .transform(0, 10, -5, 0, 0, 180)
                 .component(new PlayerInputComponent())

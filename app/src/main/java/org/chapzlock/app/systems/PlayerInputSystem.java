@@ -1,63 +1,48 @@
 package org.chapzlock.app.systems;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.chapzlock.app.component.PlayerInputComponent;
 import org.chapzlock.app.tags.PlayerTag;
 import org.chapzlock.core.application.EngineContext;
-import org.chapzlock.core.ecs.GameSystem;
-import org.chapzlock.core.ecs.EntityView;
-import org.chapzlock.core.event.EventBus;
-import org.chapzlock.core.event.Subscription;
-import org.chapzlock.core.input.keyboard.KeyPressedEvent;
-import org.chapzlock.core.input.keyboard.KeyReleasedEvent;
 import org.chapzlock.core.ecs.ComponentRegistry;
-import org.lwjgl.glfw.GLFW;
+import org.chapzlock.core.ecs.EntityView;
+import org.chapzlock.core.ecs.GameSystem;
+import org.chapzlock.core.ecs.SystemPhase;
+import org.chapzlock.core.input.InputMap;
+import org.chapzlock.core.window.Window;
+
+import static org.lwjgl.glfw.GLFW.glfwSetWindowShouldClose;
 
 public class PlayerInputSystem implements GameSystem {
 
     private ComponentRegistry registry;
-    private EventBus eventBus;
-    private final List<Subscription> subscriptions = new ArrayList<>();
+    private EngineContext context;
 
+    @Override
+    public SystemPhase phase() { return SystemPhase.INPUT; }
 
     @Override
     public void onInit(EngineContext ctx) {
+        this.context = ctx;
         this.registry = ctx.getRegistry();
-        this.eventBus = ctx.getEventBus();
-        this.subscriptions.add(eventBus.subscribe(KeyPressedEvent.class, this::handleKeyPress));
-        this.subscriptions.add(eventBus.subscribe(KeyReleasedEvent.class, this::handleKeyRelease));
     }
 
     @Override
-    public void onDestroy() {
-        this.subscriptions.forEach(Subscription::unsubscribe);
-    }
+    public void onUpdate(float deltaTime) {
+        InputMap input = context.getActiveInputMap();
+        if (input == null) return;
 
-    private boolean handleKeyPress(KeyPressedEvent event) {
-        for (EntityView e : registry.view(PlayerTag.class, PlayerInputComponent.class)) {
-            var input = e.get(PlayerInputComponent.class);
-            switch (event.key()) {
-                case GLFW.GLFW_KEY_UP -> input.setMovingForward(true);
-                case GLFW.GLFW_KEY_DOWN -> input.setMovingBackwards(true);
-                case GLFW.GLFW_KEY_LEFT -> input.setMovingLeft(true);
-                case GLFW.GLFW_KEY_RIGHT -> input.setMovingRight(true);
-            }
+        if (input.wasJustPressed("quit")) {
+            Window window = context.getWindow();
+            glfwSetWindowShouldClose(window.getId(), true);
+            return;
         }
-        return false;
-    }
 
-    private boolean handleKeyRelease(KeyReleasedEvent event) {
         for (EntityView e : registry.view(PlayerTag.class, PlayerInputComponent.class)) {
-            var input = e.get(PlayerInputComponent.class);
-            switch (event.keyCode()) {
-                case GLFW.GLFW_KEY_UP -> input.setMovingForward(false);
-                case GLFW.GLFW_KEY_DOWN -> input.setMovingBackwards(false);
-                case GLFW.GLFW_KEY_LEFT -> input.setMovingLeft(false);
-                case GLFW.GLFW_KEY_RIGHT -> input.setMovingRight(false);
-            }
+            var playerInput = e.get(PlayerInputComponent.class);
+            playerInput.setMovingForward(input.isPressed("accelerate"));
+            playerInput.setMovingBackwards(input.isPressed("brake"));
+            playerInput.setMovingLeft(input.isPressed("steer_left"));
+            playerInput.setMovingRight(input.isPressed("steer_right"));
         }
-        return false;
     }
 }
