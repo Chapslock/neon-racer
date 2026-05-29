@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.component.Mesh;
+import org.chapzlock.core.component.Material;
+import org.chapzlock.core.component.Shader;
+import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.Component;
 import org.chapzlock.core.ecs.ComponentRegistry;
@@ -11,6 +15,9 @@ import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.ecs.SystemPhase;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.event.Subscription;
+import org.chapzlock.core.render.MeshSystem;
+import org.chapzlock.core.render.ShaderSystem;
+import org.chapzlock.core.render.TextureSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -209,5 +216,42 @@ class SceneManagerTest {
         int logicIdx = active.indexOf(logicSys);
         int renderIdx = active.indexOf(renderSys);
         assertTrue(logicIdx < renderIdx, "LOGIC systems should come before RENDER");
+    }
+
+    @Test
+    void loadRetainsAssetsAndUnloadReleasesAssets() {
+        MeshSystem meshSystem = new MeshSystem();
+        TextureSystem textureSystem = new TextureSystem();
+        ShaderSystem shaderSystem = new ShaderSystem();
+        EventBus eb = new EventBus();
+        EngineContext assetCtx = new EngineContext(
+            new ComponentRegistry(eb), eb,
+            meshSystem, textureSystem, shaderSystem,
+            null, null, null, null
+        );
+        SceneManager sm = new SceneManager(assetCtx);
+
+        Mesh fakeMesh = Mesh.builder().id(42).build();
+        Texture fakeTexture = Texture.builder().id(7).build();
+        Shader fakeShader = new Shader("v.vert", "f.frag");
+        fakeShader.setProgramId(99);
+
+        Scene scene = new Scene("asset-test", List.of(
+            new EntityBlueprint("entity", List.of(
+                c -> new Component[]{ fakeMesh, new Material(fakeShader, fakeTexture) }
+            ))
+        ), List.of());
+
+        sm.loadImmediate(scene);
+
+        assertEquals(1, meshSystem.getRefCount(42));
+        assertEquals(1, textureSystem.getRefCount(7));
+        assertEquals(1, shaderSystem.getRefCount(99));
+
+        sm.loadImmediate(simpleScene("replace"));
+
+        assertEquals(0, meshSystem.getRefCount(42));
+        assertEquals(0, textureSystem.getRefCount(7));
+        assertEquals(0, shaderSystem.getRefCount(99));
     }
 }

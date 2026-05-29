@@ -4,7 +4,6 @@ import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.Component;
 import org.chapzlock.core.ecs.Tag;
-import org.chapzlock.core.physics.PhysicsSpecs;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -52,16 +51,6 @@ class EntityBlueprintBuilderTest {
         Component[] components = blueprint.getFactories().get(0).create(ctx);
 
         assertSame(transform, components[0]);
-    }
-
-    @Test
-    void physicsCreatesFactory() {
-        EntityBlueprintBuilder builder = new EntityBlueprintBuilder("test");
-        PhysicsSpecs specs = PhysicsSpecs.builder().mass(5f).build();
-        builder.physics(specs);
-        EntityBlueprint blueprint = builder.build();
-
-        assertEquals(1, blueprint.getFactories().size());
     }
 
     @Test

@@ -9,6 +9,9 @@ import java.util.Map;
 import java.util.Queue;
 
 import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.component.Material;
+import org.chapzlock.core.component.Mesh;
+import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.ecs.Component;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.Entity;
@@ -28,6 +31,7 @@ public class SceneManager {
     private Scene primaryScene;
     private final List<Scene> additiveScenes = new ArrayList<>();
     private final Map<Scene, List<Integer>> sceneEntities = new HashMap<>();
+    private final Map<Scene, SceneAssets> sceneAssets = new HashMap<>();
     private final Map<Scene, List<GameSystem>> sceneSystems = new HashMap<>();
     private final List<GameSystem> engineSystems = new ArrayList<>();
     private final Queue<Runnable> pendingTransitions = new ArrayDeque<>();
@@ -166,6 +170,7 @@ public class SceneManager {
 
     private void instantiateScene(Scene scene) {
         List<Integer> entityIds = new ArrayList<>();
+        SceneAssets assets = new SceneAssets();
         for (EntityBlueprint blueprint : scene.getEntities()) {
             try {
                 int entityId = Entity.create(registry);
@@ -174,6 +179,7 @@ public class SceneManager {
                     Component[] components = factory.create(context);
                     for (Component component : components) {
                         registry.addComponent(entityId, component);
+                        trackAsset(component, assets);
                     }
                 }
             } catch (Exception e) {
@@ -182,7 +188,9 @@ public class SceneManager {
                     " Ensure asset files exist in src/main/resources/ and paths are relative to the resources root.");
             }
         }
+        retainAll(assets);
         sceneEntities.put(scene, entityIds);
+        sceneAssets.put(scene, assets);
 
         List<GameSystem> systems = new ArrayList<>(scene.getSystems());
         List<GameSystem> failedSystems = new ArrayList<>();
@@ -217,6 +225,11 @@ public class SceneManager {
                 registry.destroyEntity(entityId);
             }
         }
+
+        SceneAssets assets = sceneAssets.remove(scene);
+        if (assets != null) {
+            releaseAll(assets);
+        }
     }
 
     private void rebuildActiveSystemsList() {
@@ -227,5 +240,53 @@ public class SceneManager {
         all.sort(Comparator.comparingInt(s -> s.phase().ordinal()));
         cachedActiveSystems = List.copyOf(all);
         activeSystemsDirty = false;
+    }
+
+    private void trackAsset(Component component, SceneAssets assets) {
+        if (component instanceof Mesh mesh) {
+            assets.meshIds.add(mesh.getId());
+        } else if (component instanceof Material material) {
+            for (Texture texture : material.getTextures()) {
+                assets.textureIds.add(texture.getId());
+            }
+            if (material.getBlendMap() != null) {
+                assets.textureIds.add(material.getBlendMap().getId());
+            }
+            if (material.getShader() != null && material.getShader().isCompiled()) {
+                assets.shaderProgramIds.add(material.getShader().getProgramId());
+            }
+        }
+    }
+
+    private void retainAll(SceneAssets assets) {
+        if (context.getMeshSystem() == null) return;
+        for (int id : assets.meshIds) {
+            context.getMeshSystem().retain(id);
+        }
+        for (int id : assets.textureIds) {
+            context.getTextureSystem().retain(id);
+        }
+        for (int id : assets.shaderProgramIds) {
+            context.getShaderSystem().retain(id);
+        }
+    }
+
+    private void releaseAll(SceneAssets assets) {
+        if (context.getMeshSystem() == null) return;
+        for (int id : assets.meshIds) {
+            context.getMeshSystem().release(id);
+        }
+        for (int id : assets.textureIds) {
+            context.getTextureSystem().release(id);
+        }
+        for (int id : assets.shaderProgramIds) {
+            context.getShaderSystem().release(id);
+        }
+    }
+
+    private static class SceneAssets {
+        final List<Integer> meshIds = new ArrayList<>();
+        final List<Integer> textureIds = new ArrayList<>();
+        final List<Integer> shaderProgramIds = new ArrayList<>();
     }
 }

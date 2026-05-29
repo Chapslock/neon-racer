@@ -8,7 +8,6 @@ import org.chapzlock.core.component.Shader;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.Component;
 import org.chapzlock.core.ecs.Tag;
-import org.chapzlock.core.physics.PhysicsSpecs;
 import org.joml.Vector3f;
 
 public class EntityBlueprintBuilder {
@@ -86,14 +85,6 @@ public class EntityBlueprintBuilder {
             }
             return new Component[]{ material };
         });
-        return this;
-    }
-
-    public EntityBlueprintBuilder physics(PhysicsSpecs specs) {
-        // PhysicsBody requires mesh data for collision shape creation.
-        // Complex physics setup should use the .component(factory) escape hatch.
-        // This stores the specs for future builder enhancement.
-        factories.add(ctx -> new Component[]{});
         return this;
     }
 
