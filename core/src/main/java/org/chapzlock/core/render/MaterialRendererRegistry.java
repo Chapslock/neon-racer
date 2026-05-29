@@ -1,8 +1,10 @@
 package org.chapzlock.core.render;
 
+import java.util.EnumMap;
 import java.util.Map;
 
 import org.chapzlock.core.component.Material;
+import org.chapzlock.core.scene.MaterialType;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
@@ -13,6 +15,7 @@ public class MaterialRendererRegistry {
 
     private final ShaderSystem shaderSystem;
     private final Map<Integer, MaterialRenderer> renderersByShaderId = new Int2ObjectOpenHashMap<>();
+    private final EnumMap<MaterialType, MaterialRenderer> defaultRenderers = new EnumMap<>(MaterialType.class);
 
     public MaterialRendererRegistry(ShaderSystem shaderSystem) {
         this.shaderSystem = shaderSystem;
@@ -48,5 +51,25 @@ public class MaterialRendererRegistry {
                     "\n Make sure you have implemented and registered renderer for this material");
         }
         return renderer;
+    }
+
+    /**
+     * Registers a default renderer for the given material type.
+     *
+     * @param type the material type
+     * @param renderer the default renderer for this material type
+     */
+    public void registerDefault(MaterialType type, MaterialRenderer renderer) {
+        defaultRenderers.put(type, renderer);
+    }
+
+    /**
+     * Retrieves the default renderer for the given material type.
+     *
+     * @param type the material type
+     * @return the default renderer, or null if none is registered
+     */
+    public MaterialRenderer getDefaultRenderer(MaterialType type) {
+        return defaultRenderers.get(type);
     }
 }
