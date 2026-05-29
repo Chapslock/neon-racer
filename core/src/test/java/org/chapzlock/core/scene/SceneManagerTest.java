@@ -1,0 +1,213 @@
+package org.chapzlock.core.scene;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.component.Transform;
+import org.chapzlock.core.ecs.Component;
+import org.chapzlock.core.ecs.ComponentRegistry;
+import org.chapzlock.core.ecs.GameSystem;
+import org.chapzlock.core.ecs.SystemPhase;
+import org.chapzlock.core.event.EventBus;
+import org.chapzlock.core.event.Subscription;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class SceneManagerTest {
+
+    private EngineContext ctx;
+    private SceneManager sceneManager;
+    private EventBus eventBus;
+    private List<Subscription> subscriptions;
+
+    @BeforeEach
+    void setUp() {
+        ctx = EngineContext.testContext();
+        eventBus = ctx.getEventBus();
+        sceneManager = new SceneManager(ctx);
+        subscriptions = new ArrayList<>();
+    }
+
+    @AfterEach
+    void tearDown() {
+        subscriptions.forEach(Subscription::unsubscribe);
+    }
+
+    private Scene simpleScene(String name) {
+        return new Scene(name, List.of(
+            new EntityBlueprint("entity1", List.of(
+                c -> new Component[]{ new Transform() }
+            ))
+        ), List.of());
+    }
+
+    @Test
+    void loadImmediateSetsPrimaryScene() {
+        Scene scene = simpleScene("test");
+        sceneManager.loadImmediate(scene);
+
+        assertSame(scene, sceneManager.getPrimaryScene());
+    }
+
+    @Test
+    void loadImmediateCreatesEntitiesInRegistry() {
+        Scene scene = simpleScene("test");
+        sceneManager.loadImmediate(scene);
+
+        ComponentRegistry registry = ctx.getRegistry();
+        List<?> transforms = registry.view(Transform.class);
+        assertEquals(1, transforms.size());
+    }
+
+    @Test
+    void loadImmediatePublishesSceneLoadedEvent() {
+        List<SceneLoadedEvent> events = new ArrayList<>();
+        subscriptions.add(eventBus.subscribe(SceneLoadedEvent.class, event -> {
+            events.add(event);
+            return false;
+        }));
+
+        sceneManager.loadImmediate(simpleScene("my-scene"));
+
+        assertEquals(1, events.size());
+        assertEquals("my-scene", events.get(0).sceneName());
+    }
+
+    @Test
+    void loadImmediateReplacesExistingPrimaryScene() {
+        sceneManager.loadImmediate(simpleScene("first"));
+        sceneManager.loadImmediate(simpleScene("second"));
+
+        assertEquals("second", sceneManager.getPrimaryScene().getName());
+        ComponentRegistry registry = ctx.getRegistry();
+        List<?> transforms = registry.view(Transform.class);
+        assertEquals(1, transforms.size());
+    }
+
+    @Test
+    void loadImmediatePublishesUnloadThenLoadEvents() {
+        sceneManager.loadImmediate(simpleScene("first"));
+
+        List<String> eventOrder = new ArrayList<>();
+        subscriptions.add(eventBus.subscribe(SceneUnloadedEvent.class, event -> {
+            eventOrder.add("unload:" + event.sceneName());
+            return false;
+        }));
+        subscriptions.add(eventBus.subscribe(SceneLoadedEvent.class, event -> {
+            eventOrder.add("load:" + event.sceneName());
+            return false;
+        }));
+
+        sceneManager.loadImmediate(simpleScene("second"));
+
+        assertEquals(List.of("unload:first", "load:second"), eventOrder);
+    }
+
+    @Test
+    void loadAdditiveDoesNotReplacePrimary() {
+        Scene primary = simpleScene("primary");
+        Scene additive = simpleScene("hud");
+
+        sceneManager.loadImmediate(primary);
+        sceneManager.loadAdditiveImmediate(additive);
+
+        assertSame(primary, sceneManager.getPrimaryScene());
+        assertEquals(2, sceneManager.getActiveScenes().size());
+    }
+
+    @Test
+    void unloadAdditiveRemovesOnlyItsEntities() {
+        Scene primary = simpleScene("primary");
+        Scene additive = simpleScene("hud");
+
+        sceneManager.loadImmediate(primary);
+        sceneManager.loadAdditiveImmediate(additive);
+
+        ComponentRegistry registry = ctx.getRegistry();
+        assertEquals(2, registry.view(Transform.class).size());
+
+        sceneManager.unloadImmediate(additive);
+
+        assertEquals(1, registry.view(Transform.class).size());
+        assertEquals(1, sceneManager.getActiveScenes().size());
+    }
+
+    @Test
+    void loadNullThrowsWithHelpfulMessage() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+            sceneManager.loadImmediate(null));
+        assertTrue(ex.getMessage().contains("Scene cannot be null"));
+    }
+
+    @Test
+    void deferredLoadExecutesOnProcessPendingTransitions() {
+        Scene scene = simpleScene("deferred");
+        sceneManager.load(scene);
+
+        assertNull(sceneManager.getPrimaryScene());
+
+        sceneManager.processPendingTransitions();
+
+        assertSame(scene, sceneManager.getPrimaryScene());
+    }
+
+    static class TrackingSystem implements GameSystem {
+        boolean initialized = false;
+        boolean destroyed = false;
+
+        @Override
+        public void onInit(EngineContext ctx) { initialized = true; }
+
+        @Override
+        public void onDestroy() { destroyed = true; }
+
+        @Override
+        public SystemPhase phase() { return SystemPhase.LOGIC; }
+    }
+
+    @Test
+    void sceneSystemsAreInitializedOnLoadAndDestroyedOnUnload() {
+        TrackingSystem system = new TrackingSystem();
+        Scene scene = new Scene("sys-test", List.of(), List.of(system));
+
+        sceneManager.loadImmediate(scene);
+        assertTrue(system.initialized);
+
+        sceneManager.loadImmediate(simpleScene("other"));
+        assertTrue(system.destroyed);
+    }
+
+    @Test
+    void getActiveSystemsIncludesEngineAndSceneSystems() {
+        GameSystem engineSys = new TrackingSystem();
+        TrackingSystem sceneSys = new TrackingSystem();
+
+        sceneManager.registerEngineSystems(List.of(engineSys));
+        Scene scene = new Scene("test", List.of(), List.of(sceneSys));
+        sceneManager.loadImmediate(scene);
+
+        List<GameSystem> active = sceneManager.getActiveSystems();
+        assertTrue(active.contains(engineSys));
+        assertTrue(active.contains(sceneSys));
+    }
+
+    @Test
+    void activeSystemsSortedByPhase() {
+        GameSystem renderSys = new GameSystem() {
+            @Override public SystemPhase phase() { return SystemPhase.RENDER; }
+        };
+        GameSystem logicSys = new GameSystem() {};
+
+        Scene scene = new Scene("test", List.of(), List.of(renderSys, logicSys));
+        sceneManager.loadImmediate(scene);
+
+        List<GameSystem> active = sceneManager.getActiveSystems();
+        int logicIdx = active.indexOf(logicSys);
+        int renderIdx = active.indexOf(renderSys);
+        assertTrue(logicIdx < renderIdx, "LOGIC systems should come before RENDER");
+    }
+}
