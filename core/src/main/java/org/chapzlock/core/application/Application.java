@@ -30,6 +30,8 @@ public class Application {
     @Getter
     private final ApplicationSpecification appSpec;
     private EngineContext context;
+    private Window window;
+    private SceneManager sceneManager;
     private boolean isRunning = false;
 
     private Application(ApplicationSpecification spec) {
@@ -38,10 +40,31 @@ public class Application {
     }
 
     public void run() {
+        createSubsystems();
+
+        List<GameSystem> engineSystems = appSpec.getEngineSystems();
+        sceneManager.registerEngineSystems(engineSystems);
+        engineSystems.forEach(system -> system.onInit(context));
+
+        if (appSpec.getInitialScene() != null) {
+            sceneManager.loadImmediate(appSpec.getInitialScene());
+        }
+
+        logActiveSystems(sceneManager.getActiveSystems());
+        mainLoop();
+
+        sceneManager.unloadAll();
+        engineSystems.forEach(GameSystem::onDestroy);
+        context.dispose();
+        window.destroy();
+        ApplicationUtil.terminate();
+    }
+
+    private void createSubsystems() {
         EventBus eventBus = new EventBus();
         ComponentRegistry registry = new ComponentRegistry(eventBus);
 
-        Window window = new Window(appSpec.getWindowSpec(), eventBus);
+        window = new Window(appSpec.getWindowSpec(), eventBus);
         window.create(0);
 
         ShaderSystem shaderSystem = new ShaderSystem();
@@ -56,22 +79,19 @@ public class Application {
             shaderSystem, materialSystem, materialRendererRegistry, cameraSystem, window
         );
 
-        registerDefaultMaterialRenderers(shaderSystem, textureSystem, cameraSystem,
-            materialRendererRegistry, appSpec.getWindowSpec());
+        WindowSpecification windowSpec = appSpec.getWindowSpec();
+        materialRendererRegistry.registerDefault(MaterialType.ENTITY,
+            new EntityMaterialRenderer(shaderSystem, textureSystem, cameraSystem));
+        materialRendererRegistry.registerDefault(MaterialType.TERRAIN,
+            new TerrainMaterialRenderer(shaderSystem, textureSystem, cameraSystem));
+        materialRendererRegistry.registerDefault(MaterialType.UI,
+            new UiMaterialRenderer(shaderSystem, textureSystem, cameraSystem, windowSpec));
 
-        SceneManager sceneManager = new SceneManager(context);
+        sceneManager = new SceneManager(context);
         context.setSceneManager(sceneManager);
+    }
 
-        List<GameSystem> engineSystems = appSpec.getEngineSystems();
-        sceneManager.registerEngineSystems(engineSystems);
-
-        engineSystems.forEach(system -> system.onInit(context));
-        logExecutionOrder(engineSystems);
-
-        if (appSpec.getInitialScene() != null) {
-            sceneManager.loadImmediate(appSpec.getInitialScene());
-        }
-
+    private void mainLoop() {
         isRunning = true;
         float lastTime = getTime();
 
@@ -103,28 +123,10 @@ public class Application {
             glfwSwapBuffers(window.getId());
             glfwPollEvents();
         }
-
-        sceneManager.unloadAll();
-        engineSystems.forEach(GameSystem::onDestroy);
-        context.dispose();
-        window.destroy();
-        ApplicationUtil.terminate();
     }
 
-    private void registerDefaultMaterialRenderers(
-            ShaderSystem shaderSystem, TextureSystem textureSystem,
-            CameraSystem cameraSystem, MaterialRendererRegistry registry,
-            WindowSpecification windowSpec) {
-        registry.registerDefault(MaterialType.ENTITY,
-            new EntityMaterialRenderer(shaderSystem, textureSystem, cameraSystem));
-        registry.registerDefault(MaterialType.TERRAIN,
-            new TerrainMaterialRenderer(shaderSystem, textureSystem, cameraSystem));
-        registry.registerDefault(MaterialType.UI,
-            new UiMaterialRenderer(shaderSystem, textureSystem, cameraSystem, windowSpec));
-    }
-
-    private void logExecutionOrder(List<GameSystem> systems) {
-        StringBuilder sb = new StringBuilder("Engine system execution order:\n");
+    private void logActiveSystems(List<GameSystem> systems) {
+        StringBuilder sb = new StringBuilder("Active system execution order:\n");
         for (GameSystem system : systems) {
             sb.append("  [").append(system.phase()).append("] ")
               .append(system.getClass().getSimpleName()).append("\n");
