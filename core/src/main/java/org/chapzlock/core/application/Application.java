@@ -52,7 +52,7 @@ public class Application {
 
         context = new EngineContext(
             registry, eventBus, meshSystem, textureSystem,
-            shaderSystem, materialSystem, materialRendererRegistry, window
+            shaderSystem, materialSystem, materialRendererRegistry, null, window
         );
 
         List<GameSystem> sortedSystems = collectAndSortSystems();
