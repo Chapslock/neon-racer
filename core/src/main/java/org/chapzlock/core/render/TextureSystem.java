@@ -7,6 +7,7 @@ import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.asset.FileUtils;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 /**
@@ -16,6 +17,7 @@ public class TextureSystem implements Disposable {
 
     private final Map<Integer, Texture> texturePool = new Int2ObjectOpenHashMap<>();
     private final Map<String, Integer> filePathToIdMap = new Object2IntOpenHashMap<>();
+    private final Int2IntOpenHashMap refCounts = new Int2IntOpenHashMap();
 
     public TextureSystem() {
     }
@@ -68,6 +70,28 @@ public class TextureSystem implements Disposable {
         }
         TextureUtil.delete(texture);
         texturePool.remove(texture.getId());
+    }
+
+    public void retain(int assetId) {
+        refCounts.put(assetId, refCounts.getOrDefault(assetId, 0) + 1);
+    }
+
+    public void release(int assetId) {
+        int count = refCounts.getOrDefault(assetId, 0) - 1;
+        if (count <= 0) {
+            refCounts.remove(assetId);
+            Texture texture = texturePool.remove(assetId);
+            if (texture != null) {
+                TextureUtil.delete(texture);
+                filePathToIdMap.values().removeIf(id -> id.equals(assetId));
+            }
+        } else {
+            refCounts.put(assetId, count);
+        }
+    }
+
+    public int getRefCount(int assetId) {
+        return refCounts.getOrDefault(assetId, 0);
     }
 
     @Override

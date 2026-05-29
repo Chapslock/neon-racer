@@ -15,6 +15,8 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+
 /**
  * Caches shader programs and handles OpenGL calls on shaders.
  */
@@ -26,6 +28,7 @@ public class ShaderSystem implements Disposable {
     private final Map<Integer, Map<String, Integer>> uniformCache = new HashMap<>();
     private final List<Integer> allProgramIds = new ArrayList<>();
     private int currentlyActiveProgramId = 0;
+    private final Int2IntOpenHashMap refCounts = new Int2IntOpenHashMap();
 
     public ShaderSystem() {
     }
@@ -117,6 +120,30 @@ public class ShaderSystem implements Disposable {
 
     public void setUniform(Shader shader, String name, Vector4f vector4f) {
         ShaderUtil.setUniform(getUniformLocation(shader, name), vector4f);
+    }
+
+    public void retain(int programId) {
+        refCounts.put(programId, refCounts.getOrDefault(programId, 0) + 1);
+    }
+
+    public void release(int programId) {
+        int count = refCounts.getOrDefault(programId, 0) - 1;
+        if (count <= 0) {
+            refCounts.remove(programId);
+            if (allProgramIds.remove(Integer.valueOf(programId))) {
+                ShaderUtil.deleteProgram(programId);
+            }
+            uniformCache.remove(programId);
+            if (currentlyActiveProgramId == programId) {
+                currentlyActiveProgramId = 0;
+            }
+        } else {
+            refCounts.put(programId, count);
+        }
+    }
+
+    public int getRefCount(int programId) {
+        return refCounts.getOrDefault(programId, 0);
     }
 
     @Override

@@ -8,6 +8,7 @@ import org.chapzlock.core.asset.FileUtils;
 import org.chapzlock.core.asset.RawMeshData;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 /**
@@ -19,6 +20,7 @@ public class MeshSystem implements Disposable {
     private final Map<Integer, RawMeshData> rawMeshDataPool = new Int2ObjectOpenHashMap<>();
     private final Map<String, Integer> resourcePathToIdMap = new Object2IntOpenHashMap<>();
     private final Map<RawMeshData, Integer> rawMeshDataToIdMap = new Object2IntOpenHashMap<>();
+    private final Int2IntOpenHashMap refCounts = new Int2IntOpenHashMap();
 
     public MeshSystem() {
     }
@@ -76,6 +78,30 @@ public class MeshSystem implements Disposable {
      */
     public RawMeshData getRawMeshById(int id) {
         return rawMeshDataPool.get(id);
+    }
+
+    public void retain(int assetId) {
+        refCounts.put(assetId, refCounts.getOrDefault(assetId, 0) + 1);
+    }
+
+    public void release(int assetId) {
+        int count = refCounts.getOrDefault(assetId, 0) - 1;
+        if (count <= 0) {
+            refCounts.remove(assetId);
+            Mesh mesh = meshPool.remove(assetId);
+            if (mesh != null) {
+                MeshUtil.delete(mesh);
+            }
+            rawMeshDataPool.remove(assetId);
+            resourcePathToIdMap.values().removeIf(id -> id.equals(assetId));
+            rawMeshDataToIdMap.values().removeIf(id -> id.equals(assetId));
+        } else {
+            refCounts.put(assetId, count);
+        }
+    }
+
+    public int getRefCount(int assetId) {
+        return refCounts.getOrDefault(assetId, 0);
     }
 
     @Override
