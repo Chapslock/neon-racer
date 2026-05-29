@@ -21,4 +21,8 @@ public class Scene {
         this.entities = List.copyOf(entities);
         this.systems = List.copyOf(systems);
     }
+
+    public static SceneBuilder builder(String name) {
+        return new SceneBuilder(name);
+    }
 }
