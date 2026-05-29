@@ -1,7 +1,6 @@
 package org.chapzlock.core.window;
 
 import static org.lwjgl.glfw.GLFW.GLFW_FALSE;
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE;
 import static org.lwjgl.glfw.GLFW.GLFW_PRESS;
 import static org.lwjgl.glfw.GLFW.GLFW_RELEASE;
 import static org.lwjgl.glfw.GLFW.GLFW_RESIZABLE;
@@ -21,7 +20,6 @@ import static org.lwjgl.glfw.GLFW.glfwSetMouseButtonCallback;
 import static org.lwjgl.glfw.GLFW.glfwSetScrollCallback;
 import static org.lwjgl.glfw.GLFW.glfwSetWindowCloseCallback;
 import static org.lwjgl.glfw.GLFW.glfwSetWindowPos;
-import static org.lwjgl.glfw.GLFW.glfwSetWindowShouldClose;
 import static org.lwjgl.glfw.GLFW.glfwShowWindow;
 import static org.lwjgl.glfw.GLFW.glfwSwapInterval;
 import static org.lwjgl.glfw.GLFW.glfwWindowHint;
@@ -117,9 +115,6 @@ public class Window {
      */
     private void initializeCallbacks() {
         glfwSetKeyCallback(id, (long window, int key, int scancode, int action, int mods) -> {
-            if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-                glfwSetWindowShouldClose(window, true);
-            }
             if (action == GLFW_PRESS) {
                 eventBus.publish(new KeyPressedEvent(key, mods));
             } else if (action == GLFW_RELEASE) {
