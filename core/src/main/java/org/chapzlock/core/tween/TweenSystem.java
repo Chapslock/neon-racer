@@ -4,15 +4,11 @@ import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.ecs.GameSystem;
 
 public class TweenSystem implements GameSystem {
-    private final TweenManager tweenManager = new TweenManager();
-
-    public TweenManager getTweenManager() {
-        return tweenManager;
-    }
+    private TweenManager tweenManager;
 
     @Override
     public void onInit(EngineContext ctx) {
-        // No initialization needed
+        this.tweenManager = ctx.getTweenManager();
     }
 
     @Override

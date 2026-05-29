@@ -9,6 +9,7 @@ import java.util.List;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.event.EventBus;
+import org.chapzlock.core.input.InputMap;
 import org.chapzlock.core.logging.Log;
 import org.chapzlock.core.render.CameraSystem;
 import org.chapzlock.core.render.EntityMaterialRenderer;
@@ -21,6 +22,7 @@ import org.chapzlock.core.render.TextureSystem;
 import org.chapzlock.core.render.UiMaterialRenderer;
 import org.chapzlock.core.scene.MaterialType;
 import org.chapzlock.core.scene.SceneManager;
+import org.chapzlock.core.tween.TweenManager;
 import org.chapzlock.core.window.Window;
 import org.chapzlock.core.window.WindowSpecification;
 
@@ -73,10 +75,13 @@ public class Application {
         MaterialRendererRegistry materialRendererRegistry = new MaterialRendererRegistry(shaderSystem);
         MaterialSystem materialSystem = new MaterialSystem(materialRendererRegistry);
         CameraSystem cameraSystem = new CameraSystem(appSpec.getWindowSpec());
+        Time time = new Time();
+        TweenManager tweenManager = new TweenManager();
 
         context = new EngineContext(
             registry, eventBus, meshSystem, textureSystem,
-            shaderSystem, materialSystem, materialRendererRegistry, cameraSystem, window
+            shaderSystem, materialSystem, materialRendererRegistry, cameraSystem, window,
+            time, tweenManager
         );
 
         WindowSpecification windowSpec = appSpec.getWindowSpec();
@@ -97,12 +102,20 @@ public class Application {
 
         while (isRunning) {
             float now = getTime();
-            float delta = now - lastTime;
+            float rawDelta = now - lastTime;
             lastTime = now;
 
             if (window.shouldClose()) {
                 stop();
                 break;
+            }
+
+            context.getTime().update(rawDelta);
+            float delta = context.getTime().getDelta();
+
+            InputMap activeInputMap = context.getActiveInputMap();
+            if (activeInputMap != null) {
+                activeInputMap.frameReset();
             }
 
             ApplicationUtil.clearAndPrepareWindowState();
