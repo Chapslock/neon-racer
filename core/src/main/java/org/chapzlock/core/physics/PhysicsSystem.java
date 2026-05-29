@@ -85,7 +85,7 @@ public class PhysicsSystem implements GameSystem {
     }
 
     @Override
-    public void onRender(float deltaTime) {
+    public void onDebugRender(float deltaTime) {
         if (isDebugEnabled) {
             renderDebugInfo();
         }
