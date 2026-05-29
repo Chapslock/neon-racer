@@ -5,6 +5,7 @@ import static org.lwjgl.glfw.GLFW.glfwPollEvents;
 import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import org.chapzlock.core.ecs.ComponentRegistry;
@@ -81,6 +82,9 @@ public class Application {
             for (GameSystem system : sortedSystems) {
                 system.onRender(delta);
             }
+            for (GameSystem system : sortedSystems) {
+                system.onDebugRender(delta);
+            }
 
             glfwSwapBuffers(window.getId());
             glfwPollEvents();
@@ -98,7 +102,7 @@ public class Application {
         for (Layer layer : layerStack) {
             all.addAll(layer.systems());
         }
-        all.sort((a, b) -> Integer.compare(a.phase().ordinal(), b.phase().ordinal()));
+        all.sort(Comparator.comparingInt(a -> a.phase().ordinal()));
         return all;
     }
 

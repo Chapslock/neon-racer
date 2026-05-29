@@ -15,6 +15,8 @@ public interface GameSystem {
 
     default void onRender(float deltaTime) {}
 
+    default void onDebugRender(float deltaTime) {}
+
     default void onDestroy() {}
 
 }
