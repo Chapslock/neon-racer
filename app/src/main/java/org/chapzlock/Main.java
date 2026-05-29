@@ -1,20 +1,31 @@
 package org.chapzlock;
 
-import org.chapzlock.app.layer.GameWorldLayer;
+import java.util.List;
+
+import org.chapzlock.app.scene.RaceTrackScene;
 import org.chapzlock.core.application.Application;
 import org.chapzlock.core.application.ApplicationSpecification;
+import org.chapzlock.core.physics.PhysicsSystem;
+import org.chapzlock.core.physics.PhysicsSystemSpecs;
+import org.chapzlock.core.render.RenderSystem;
 import org.chapzlock.core.window.WindowSpecification;
 
 public class Main {
-
     public static void main(String[] args) {
-        var appSpec = ApplicationSpecification.builder()
-            .windowSpec(WindowSpecification.builder()
-                .build())
-            .build();
-        Application application = Application.create(appSpec);
-        application.pushLayer(new GameWorldLayer());
-        application.run();
+        Application app = Application.create(
+            ApplicationSpecification.builder()
+                .windowSpec(WindowSpecification.builder()
+                    .title("Neon Racer")
+                    .width(1280)
+                    .height(720)
+                    .build())
+                .engineSystems(List.of(
+                    new PhysicsSystem(PhysicsSystemSpecs.builder()
+                        .isDebugEnabled(true)
+                        .build()),
+                    new RenderSystem()))
+                .initialScene(RaceTrackScene.create())
+                .build());
+        app.run();
     }
-
 }
