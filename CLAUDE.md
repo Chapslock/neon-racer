@@ -24,7 +24,8 @@ Two Gradle modules (Kotlin DSL):
 ### Core Packages
 
 - `ecs/` — GameSystem, SystemPhase, Component, Tag, Entity, EntityView, ComponentRegistry, ComponentStore
-- `application/` — Application, Layer, EngineContext, Disposable, ApplicationUtil
+- `application/` — Application, EngineContext, ApplicationSpecification, Disposable, ApplicationUtil
+- `scene/` — Scene, SceneManager, SceneBuilder, EntityBlueprint, EntityBlueprintBuilder, ComponentFactory, MaterialType, SceneLoadedEvent, SceneUnloadedEvent
 - `render/` — RenderSystem, CameraSystem, MaterialSystem, MeshSystem, TextureSystem, ShaderSystem, MaterialRendererRegistry, MaterialRenderer impls, ShaderProps, GL utilities
 - `component/` — All data components (Camera, Transform, Mesh, Material, PhysicsBody, etc.)
 - `physics/` — PhysicsSystem and all physics utilities
@@ -46,21 +47,29 @@ Entities are plain integer IDs (`Entity.create(registry)`). Components are marke
 
 `EngineContext` is a plain object created by `Application` that holds all engine subsystems. No singletons exist — all dependencies flow through the context.
 
-**Contents:** ComponentRegistry, EventBus, MeshSystem, TextureSystem, ShaderSystem, MaterialSystem, MaterialRendererRegistry, Window.
+**Contents:** ComponentRegistry, EventBus, MeshSystem, TextureSystem, ShaderSystem, MaterialSystem, MaterialRendererRegistry, CameraSystem, Window, SceneManager.
 
-**Lifecycle:** Application creates the context at startup, passes it to layers via `onInit(EngineContext ctx)`, layers pass it to systems, and Application calls `ctx.dispose()` on shutdown.
+**Lifecycle:** Application creates the context at startup, passes it to systems and SceneManager. Application calls `ctx.dispose()` on shutdown.
 
 **Testing:** `EngineContext.testContext()` creates a minimal context with fresh ComponentRegistry + EventBus (GPU systems null) for unit tests.
 
+### Scene System
+
+A `Scene` is an immutable blueprint describing entities (via `EntityBlueprint` + `ComponentFactory` lambdas) and game-logic systems. Scenes are built via a fluent builder: `Scene.builder("name").entity("x", e -> e.mesh(...).texture(...)).systems(...).build()`.
+
+`SceneManager` manages scene lifecycle: one primary scene plus zero or more additive scenes. Engine systems (PhysicsSystem, RenderSystem) are always active; scene systems are added/removed with their scene. `getActiveSystems()` returns engine + scene systems sorted by phase.
+
+**Transitions:** `loadImmediate(scene)` for initial load (synchronous). `load(scene)` queues a deferred transition (old scene unloaded, new scene instantiated at end-of-frame via `processPendingTransitions()`). `loadAdditive(scene)` adds a persistent overlay scene. `unload(scene)` removes an additive scene.
+
+**Asset ownership:** GPU asset systems (MeshSystem, TextureSystem, ShaderSystem) use reference counting (`retain()`/`release()`). SceneManager retains assets when instantiating a scene and releases them on unload. Shared assets (same path across scenes) survive until all referencing scenes are unloaded.
+
+**Material defaults:** `MaterialType` enum (ENTITY, TERRAIN, UI) maps to pre-registered `MaterialRenderer` instances via `MaterialRendererRegistry.registerDefault()`. The scene builder auto-selects the appropriate default based on entity setup (e.g., `.mesh() + .texture()` → ENTITY).
+
 ### Application Lifecycle
 
-`Application.create(spec)` builds the application. `run()` creates the `EngineContext`, collects systems from all layers, sorts them by `SystemPhase` (INPUT → LOGIC → PHYSICS → RENDER, stable sort preserves declaration order within a phase), and enters the main loop.
+`Application.create(spec)` builds the application. `ApplicationSpecification` declares `engineSystems` (always-active infrastructure) and `initialScene` (first scene to load). `run()` creates `EngineContext`, registers default material renderers, creates `SceneManager`, inits engine systems, then loads the initial scene.
 
-Layers are declarative: `systems()` returns the list of systems, `onInit(ctx)` sets up entities. The engine drives system lifecycle (init, update, render, destroy) — layers do not forward calls manually.
-
-**Init order:** Systems are initialized first (so they can subscribe to lifecycle events), then layers (which create entities that fire those events).
-
-**Main loop order per frame:** `onUpdate(delta)` on all sorted systems, then `onRender(delta)` on all sorted systems.
+**Main loop order per frame:** `onUpdate(delta)` → `onRender(delta)` → `onDebugRender(delta)` on all active systems (sorted by SystemPhase), then `sceneManager.processPendingTransitions()`.
 
 ### SystemPhase
 
@@ -85,7 +94,7 @@ JBullet (Bullet physics Java port). `PhysicsSystem` owns a `DiscreteDynamicsWorl
 
 ### Resource Cleanup
 
-GPU systems (MeshSystem, TextureSystem, ShaderSystem) implement `Disposable`. They track all allocated OpenGL resources and free them in `dispose()`. `EngineContext.dispose()` cascades to all disposable subsystems on shutdown.
+GPU systems (MeshSystem, TextureSystem, ShaderSystem) implement `Disposable`. They track all allocated OpenGL resources and free them in `dispose()`. `EngineContext.dispose()` cascades to all disposable subsystems on shutdown. Reference counting (`retain()`/`release()`) handles per-scene asset ownership during transitions; `dispose()` frees everything unconditionally at shutdown.
 
 ## Tech Stack
 
