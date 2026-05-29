@@ -3,6 +3,7 @@ package org.chapzlock.core.scene;
 import java.util.List;
 
 import org.chapzlock.core.ecs.GameSystem;
+import org.chapzlock.core.input.InputMap;
 
 import lombok.Getter;
 
@@ -11,8 +12,9 @@ public class Scene {
     private final String name;
     private final List<EntityBlueprint> entities;
     private final List<GameSystem> systems;
+    private final InputMap inputMap;
 
-    public Scene(String name, List<EntityBlueprint> entities, List<GameSystem> systems) {
+    public Scene(String name, List<EntityBlueprint> entities, List<GameSystem> systems, InputMap inputMap) {
         if (name == null) {
             throw new IllegalArgumentException(
                 "Scene name cannot be null. Pass a name to identify the scene in logs and error messages.");
@@ -20,6 +22,7 @@ public class Scene {
         this.name = name;
         this.entities = List.copyOf(entities);
         this.systems = List.copyOf(systems);
+        this.inputMap = inputMap;
     }
 
     public static SceneBuilder builder(String name) {

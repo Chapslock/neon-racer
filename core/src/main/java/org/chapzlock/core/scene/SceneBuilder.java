@@ -10,6 +10,7 @@ import org.chapzlock.core.component.PointLight;
 import org.chapzlock.core.component.Sky;
 import org.chapzlock.core.ecs.Component;
 import org.chapzlock.core.ecs.GameSystem;
+import org.chapzlock.core.input.InputMap;
 import org.joml.Vector3f;
 
 public class SceneBuilder {
@@ -17,6 +18,7 @@ public class SceneBuilder {
     private final String name;
     private final List<EntityBlueprint> entities = new ArrayList<>();
     private final List<GameSystem> systems = new ArrayList<>();
+    private InputMap inputMap;
 
     public SceneBuilder(String name) {
         this.name = name;
@@ -59,7 +61,12 @@ public class SceneBuilder {
         return this;
     }
 
+    public SceneBuilder inputMap(InputMap inputMap) {
+        this.inputMap = inputMap;
+        return this;
+    }
+
     public Scene build() {
-        return new Scene(name, entities, systems);
+        return new Scene(name, entities, systems, inputMap);
     }
 }

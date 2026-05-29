@@ -17,6 +17,7 @@ import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.Entity;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.event.EventBus;
+import org.chapzlock.core.input.InputMap;
 import org.chapzlock.core.logging.Log;
 
 import lombok.Getter;
@@ -207,6 +208,12 @@ public class SceneManager {
         systems.removeAll(failedSystems);
         sceneSystems.put(scene, systems);
 
+        InputMap inputMap = scene.getInputMap();
+        if (inputMap != null) {
+            inputMap.activate(eventBus);
+            context.setActiveInputMap(inputMap);
+        }
+
         if (scene.getEntities().isEmpty()) {
             Log.warn("Scene \"" + scene.getName() + "\" has no entities. " +
                 "Did you forget to add .entity() calls to the builder?");
@@ -214,6 +221,14 @@ public class SceneManager {
     }
 
     private void teardownScene(Scene scene) {
+        InputMap inputMap = scene.getInputMap();
+        if (inputMap != null) {
+            inputMap.deactivate();
+            if (context.getActiveInputMap() == inputMap) {
+                context.setActiveInputMap(null);
+            }
+        }
+
         List<GameSystem> systems = sceneSystems.remove(scene);
         if (systems != null) {
             systems.forEach(GameSystem::onDestroy);

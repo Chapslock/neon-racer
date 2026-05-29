@@ -49,7 +49,7 @@ class SceneManagerTest {
             new EntityBlueprint("entity1", List.of(
                 c -> new Component[]{ new Transform() }
             ))
-        ), List.of());
+        ), List.of(), null);
     }
 
     @Test
@@ -179,7 +179,7 @@ class SceneManagerTest {
     @Test
     void sceneSystemsAreInitializedOnLoadAndDestroyedOnUnload() {
         TrackingSystem system = new TrackingSystem();
-        Scene scene = new Scene("sys-test", List.of(), List.of(system));
+        Scene scene = new Scene("sys-test", List.of(), List.of(system), null);
 
         sceneManager.loadImmediate(scene);
         assertTrue(system.initialized);
@@ -194,7 +194,7 @@ class SceneManagerTest {
         TrackingSystem sceneSys = new TrackingSystem();
 
         sceneManager.registerEngineSystems(List.of(engineSys));
-        Scene scene = new Scene("test", List.of(), List.of(sceneSys));
+        Scene scene = new Scene("test", List.of(), List.of(sceneSys), null);
         sceneManager.loadImmediate(scene);
 
         List<GameSystem> active = sceneManager.getActiveSystems();
@@ -209,7 +209,7 @@ class SceneManagerTest {
         };
         GameSystem logicSys = new GameSystem() {};
 
-        Scene scene = new Scene("test", List.of(), List.of(renderSys, logicSys));
+        Scene scene = new Scene("test", List.of(), List.of(renderSys, logicSys), null);
         sceneManager.loadImmediate(scene);
 
         List<GameSystem> active = sceneManager.getActiveSystems();
@@ -242,7 +242,7 @@ class SceneManagerTest {
             new EntityBlueprint("entity", List.of(
                 c -> new Component[]{ fakeMesh, new Material(fakeShader, fakeTexture) }
             ))
-        ), List.of());
+        ), List.of(), null);
 
         sm.loadImmediate(scene);
 
