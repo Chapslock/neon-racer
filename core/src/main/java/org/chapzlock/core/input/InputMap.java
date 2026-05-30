@@ -86,8 +86,8 @@ public class InputMap {
     }
 
     private boolean handleKeyPressed(KeyPressedEvent event) {
-        pressedKeys.add(event.key());
-        justPressedKeys.add(event.key());
+        pressedKeys.add(event.keyCode());
+        justPressedKeys.add(event.keyCode());
         return false;
     }
 

@@ -98,7 +98,7 @@ public class CameraFreeRoamSystem implements GameSystem {
     }
 
     private boolean onKeyPressed(KeyPressedEvent event) {
-        int key = event.key();
+        int key = event.keyCode();
         switch (key) {
             case GLFW.GLFW_KEY_W -> movingForward = true;
             case GLFW.GLFW_KEY_S -> movingBackwards = true;

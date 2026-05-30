@@ -5,7 +5,7 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class Log {
     public static void info(String s) {
-        System.out.println(s);
+        System.out.println("[INFO] " + s);
     }
 
     public static void warn(String s) {

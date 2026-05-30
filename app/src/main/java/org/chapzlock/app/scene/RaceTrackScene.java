@@ -33,16 +33,15 @@ import org.joml.Vector3f;
 public class RaceTrackScene {
 
     public static Scene create() {
-        InputMap inputMap = InputMap.builder()
-            .action("accelerate", Key.UP, Key.W)
-            .action("brake", Key.DOWN, Key.S)
-            .action("steer_left", Key.LEFT, Key.A)
-            .action("steer_right", Key.RIGHT, Key.D)
-            .action("quit", Key.ESCAPE)
-            .build();
 
         return Scene.builder("race-track")
-            .inputMap(inputMap)
+            .inputMap(InputMap.builder()
+                .action("accelerate", Key.UP, Key.W)
+                .action("brake", Key.DOWN, Key.S)
+                .action("steer_left", Key.LEFT, Key.A)
+                .action("steer_right", Key.RIGHT, Key.D)
+                .action("quit", Key.ESCAPE)
+                .build())
             .entity("player", e -> e
                 .transform(0, 10, -5, 0, 0, 180)
                 .component(new PlayerInputComponent())
