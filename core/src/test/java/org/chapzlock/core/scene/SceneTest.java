@@ -41,6 +41,6 @@ class SceneTest {
     @Test
     void sceneNullNameThrows() {
         assertThrows(IllegalArgumentException.class, () ->
-            new Scene(null, List.of(), List.of(), null, 0.007f, 1.5f));
+            new Scene(null, List.of(), List.of(), null));
     }
 }

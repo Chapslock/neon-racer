@@ -49,7 +49,7 @@ class SceneManagerTest {
             new EntityBlueprintBuilder("entity1")
                 .transform(Transform.at(0, 0, 0))
                 .build()
-        ), List.of(), null, 0.007f, 1.5f);
+        ), List.of(), null);
     }
 
     @Test
@@ -179,7 +179,7 @@ class SceneManagerTest {
     @Test
     void sceneSystemsAreInitializedOnLoadAndDestroyedOnUnload() {
         TrackingSystem system = new TrackingSystem();
-        Scene scene = new Scene("sys-test", List.of(), List.of(system), null, 0.007f, 1.5f);
+        Scene scene = new Scene("sys-test", List.of(), List.of(system), null);
 
         sceneManager.loadImmediate(scene);
         assertTrue(system.initialized);
@@ -194,7 +194,7 @@ class SceneManagerTest {
         TrackingSystem sceneSys = new TrackingSystem();
 
         sceneManager.registerEngineSystems(List.of(engineSys));
-        Scene scene = new Scene("test", List.of(), List.of(sceneSys), null, 0.007f, 1.5f);
+        Scene scene = new Scene("test", List.of(), List.of(sceneSys), null);
         sceneManager.loadImmediate(scene);
 
         List<GameSystem> active = sceneManager.getActiveSystems();
@@ -209,7 +209,7 @@ class SceneManagerTest {
         };
         GameSystem logicSys = new GameSystem() {};
 
-        Scene scene = new Scene("test", List.of(), List.of(renderSys, logicSys), null, 0.007f, 1.5f);
+        Scene scene = new Scene("test", List.of(), List.of(renderSys, logicSys), null);
         sceneManager.loadImmediate(scene);
 
         List<GameSystem> active = sceneManager.getActiveSystems();
@@ -244,7 +244,7 @@ class SceneManagerTest {
             new EntityBlueprintBuilder("entity")
                 .component(fakeMesh, new Material(fakeShader, fakeTexture))
                 .build()
-        ), List.of(), null, 0.007f, 1.5f);
+        ), List.of(), null);
 
         sm.loadImmediate(scene);
 
@@ -269,7 +269,7 @@ class SceneManagerTest {
                 .transform(Transform.at(1, 1, 1))
                 .model(ModelDescriptor.builder().mesh("nonexistent.obj").build())
                 .build()
-        ), List.of(), null, 0.007f, 1.5f);
+        ), List.of(), null);
 
         sceneManager.loadImmediate(scene);
 
