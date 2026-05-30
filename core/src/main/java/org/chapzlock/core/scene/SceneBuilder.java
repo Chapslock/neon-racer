@@ -51,25 +51,25 @@ public class SceneBuilder {
 
     /** Adds a point light at the given position with the specified color. */
     public SceneBuilder pointLight(float x, float y, float z, Color color) {
-        entities.add(new EntityBlueprint("point-light", List.of(
-            ctx -> new Component[]{ new PointLight(new Vector3f(x, y, z), color) }
-        )));
+        // Temporary: creates a blueprint with the new signature, passes component directly
+        entities.add(new EntityBlueprint("point-light", null, null, null, null, null,
+            List.of(), List.of(new PointLight(new Vector3f(x, y, z), color))));
         return this;
     }
 
     /** Adds a camera entity at the given position. */
     public SceneBuilder camera(float x, float y, float z) {
-        entities.add(new EntityBlueprint("camera", List.of(
-            ctx -> new Component[]{ new Camera(new Vector3f(x, y, z)) }
-        )));
+        // Temporary: creates a blueprint with the new signature, passes component directly
+        entities.add(new EntityBlueprint("camera", null, null, null, null, null,
+            List.of(), List.of(new Camera(new Vector3f(x, y, z)))));
         return this;
     }
 
     /** Adds a sky entity (background color). */
     public SceneBuilder sky() {
-        entities.add(new EntityBlueprint("sky", List.of(
-            ctx -> new Component[]{ new Sky() }
-        )));
+        // Temporary: creates a blueprint with the new signature, passes component directly
+        entities.add(new EntityBlueprint("sky", null, null, null, null, null,
+            List.of(), List.of(new Sky())));
         return this;
     }
 

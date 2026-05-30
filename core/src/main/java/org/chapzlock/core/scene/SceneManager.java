@@ -226,12 +226,18 @@ public class SceneManager {
         for (EntityBlueprint blueprint : scene.getEntities()) {
             int entityId = Entity.create(registry);
             try {
+                // Legacy path: factories (deprecated, will be removed in Task 10)
                 for (ComponentFactory factory : blueprint.getFactories()) {
                     Component[] components = factory.create(context);
                     for (Component component : components) {
                         registry.addComponent(entityId, component);
                         trackAsset(component, assets);
                     }
+                }
+                // New path: direct components from blueprint
+                for (Component component : blueprint.getComponents()) {
+                    registry.addComponent(entityId, component);
+                    trackAsset(component, assets);
                 }
                 entityIds.add(entityId);
                 Log.debug("  Entity \"" + blueprint.getName() + "\" created (id=" + entityId + ")");
