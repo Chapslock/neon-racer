@@ -8,7 +8,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * Internal representation of an OpenGL texture.
+ * GPU resource handle for a texture (OpenGL texture ID).
+ *
+ * <p>Created by {@link org.chapzlock.core.render.TextureSystem#load(String)}.
+ * Reference-counted — retained on scene load, released on scene unload.
  */
 @Getter
 @Builder

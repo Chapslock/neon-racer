@@ -24,6 +24,12 @@ import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration;
 import com.bulletphysics.dynamics.DiscreteDynamicsWorld;
 import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver;
 
+/**
+ * Bullet physics integration for rigid body simulation.
+ *
+ * <p>Automatically manages entities with {@link PhysicsBody} + {@link Transform} components.
+ * Synchronizes transforms with physics world each frame. Runs at fixed 60Hz timestep with sub-stepping.
+ */
 public class PhysicsSystem implements GameSystem {
 
     private static final Vector3f DEFAULT_GRAVITY = new Vector3f(0f, -9.81f, 0f);

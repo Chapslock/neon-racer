@@ -4,7 +4,10 @@ import lombok.Builder;
 import lombok.Getter;
 
 /**
- * Used to configure physics properties
+ * Configuration for a rigid body's physical properties.
+ *
+ * <p>Used when creating {@link org.chapzlock.core.component.PhysicsBody}.
+ * A mass of 0 indicates a static object (infinite mass).
  */
 @Builder
 @Getter

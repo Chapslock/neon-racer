@@ -11,7 +11,10 @@ import lombok.Builder;
 import lombok.Getter;
 
 /**
- * A generic material component
+ * Material component pairing a shader with textures and rendering properties.
+ *
+ * <p>Each material type (ENTITY, TERRAIN, UI) has a corresponding {@link org.chapzlock.core.render.MaterialRenderer}
+ * that knows how to bind uniforms and textures.
  */
 @Getter
 @Builder

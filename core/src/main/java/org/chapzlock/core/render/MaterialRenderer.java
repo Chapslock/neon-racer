@@ -7,8 +7,10 @@ import org.chapzlock.core.component.Sky;
 import org.chapzlock.core.ecs.EntityView;
 
 /**
- * After creating a new material you need to provide instructions for the render system to render it
- * An implementation of this class is required to render a material correctly.
+ * Interface for rendering entities with a specific material type.
+ *
+ * <p>Implementations bind uniforms and textures for their material type.
+ * Register via {@link MaterialSystem#register(org.chapzlock.core.component.Material, MaterialRenderer)}.
  */
 public interface MaterialRenderer {
     /**

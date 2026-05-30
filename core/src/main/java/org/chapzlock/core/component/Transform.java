@@ -12,13 +12,14 @@ import lombok.Setter;
 
 
 /**
- * Transform that keeps both Euler angles (degrees) and a quaternion in sync.
- * <p>
- * - Euler (degrees) is the convenience API for gameplay code.
- * - Quaternion is used internally by engine/physics for stable rotations.
- * <p>
- * Synchronization is lazy: changing one representation marks the other dirty and
- * converts only when that representation is read.
+ * Position, rotation, and scale of an entity.
+ *
+ * <p>Rotation is stored in both Euler angles (degrees, for gameplay code) and quaternion
+ * (for engine/physics). Synchronization is lazy — converting only when the other
+ * representation is accessed.
+ *
+ * <p>Use {@code getRotationEuler()} and {@code setRotationEuler()} for gameplay code.
+ * The quaternion is used internally by physics and rendering.
  */
 @Getter
 @Setter

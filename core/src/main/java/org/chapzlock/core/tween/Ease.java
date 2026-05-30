@@ -1,5 +1,10 @@
 package org.chapzlock.core.tween;
 
+/**
+ * Easing functions for tweens.
+ *
+ * <p>Transform linear 0..1 progress to accelerated/decelerated curves.
+ */
 public enum Ease {
     LINEAR,
     QUAD_IN,
@@ -12,6 +17,12 @@ public enum Ease {
     SINE_OUT,
     SINE_IN_OUT;
 
+    /**
+     * Applies the easing function to a linear progress value.
+     *
+     * @param t linear progress (0..1)
+     * @return eased progress (0..1)
+     */
     public float apply(float t) {
         return switch (this) {
             case LINEAR -> t;

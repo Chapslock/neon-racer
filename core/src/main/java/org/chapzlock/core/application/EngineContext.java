@@ -16,6 +16,16 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * Container for all engine subsystems.
+ *
+ * <p>Created by {@link Application} at startup and passed to systems via {@code onInit()}.
+ * Contains: {@code ComponentRegistry}, {@code EventBus}, {@code Window}, GPU systems
+ * ({@code MeshSystem}, {@code TextureSystem}, {@code ShaderSystem}, {@code MaterialSystem}),
+ * {@code CameraSystem}, {@code Time}, {@code TweenManager}, {@code SceneManager}, {@code InputMap}.
+ *
+ * <p>For unit tests, use {@link #testContext()} to create a minimal context with no GPU subsystems.
+ */
 @Getter
 @Builder
 public class EngineContext implements Disposable {
@@ -34,6 +44,11 @@ public class EngineContext implements Disposable {
     @Setter
     private InputMap activeInputMap;
 
+    /**
+     * Creates a minimal context for unit tests (no GPU systems).
+     *
+     * @return a test context with {@code ComponentRegistry}, {@code EventBus}, {@code Time}, and {@code TweenManager}
+     */
     public static EngineContext testContext() {
         EventBus eventBus = new EventBus();
         return EngineContext.builder()

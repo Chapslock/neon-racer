@@ -11,7 +11,10 @@ import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 /**
- * Caches and handles OpenGL calls on textures.
+ * Loads, caches, and manages GPU texture resources.
+ *
+ * <p>Textures are reference-counted — use {@link #retain(org.chapzlock.core.component.Texture)} and
+ * {@link #release(org.chapzlock.core.component.Texture)} to manage lifetimes across scenes.
  */
 public class TextureSystem implements Disposable {
 

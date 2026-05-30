@@ -8,8 +8,10 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Data-only shader component: stores source paths and program id once compiled.
+ * Shader component storing GLSL source paths and compiled program ID.
  *
+ * <p>Created by specifying vertex and fragment shader paths.
+ * Compiled by {@link org.chapzlock.core.render.ShaderSystem}.
  */
 @Builder
 @Getter
@@ -26,6 +28,7 @@ public class Shader implements Component {
         this.programId = 0;
     }
 
+    /** Returns true if the shader has been compiled (programId != 0). */
     public boolean isCompiled() {
         return programId != 0;
     }

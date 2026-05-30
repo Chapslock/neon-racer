@@ -12,7 +12,12 @@ import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
 import lombok.Getter;
 
 /**
- * This component makes the entity eligible for physics simulation.
+ * Rigid body component for physics simulation.
+ *
+ * <p>Makes an entity eligible for physics simulation (JBullet/Bullet).
+ * Requires a {@link CollisionShape} and {@link PhysicsSpecs} (mass, friction, restitution, damping).
+ *
+ * <p>Automatically registered with {@link org.chapzlock.core.physics.PhysicsSystem} when added to an entity with a {@link Transform}.
  */
 @Getter
 public class PhysicsBody implements Component {

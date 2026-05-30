@@ -12,7 +12,10 @@ import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 /**
- * Caches and handles OpenGL calls on Meshes.
+ * Loads, caches, and manages GPU mesh resources.
+ *
+ * <p>Meshes are reference-counted — use {@link #retain(org.chapzlock.core.component.Mesh)} and
+ * {@link #release(org.chapzlock.core.component.Mesh)} to manage lifetimes across scenes.
  */
 public class MeshSystem implements Disposable {
 

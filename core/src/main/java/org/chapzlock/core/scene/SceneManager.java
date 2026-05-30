@@ -24,6 +24,23 @@ import org.chapzlock.core.logging.Log;
 
 import lombok.Getter;
 
+/**
+ * Manages scene lifecycle: loading, unloading, and transitions.
+ *
+ * <p>Supports one primary scene plus zero or more additive scenes.
+ * Engine systems (PhysicsSystem, RenderSystem) are always active;
+ * scene systems are added/removed with their scene.
+ *
+ * <p>Transitions:
+ * <ul>
+ *   <li>{@code load(scene)} — queue deferred transition (old scene unloaded, new scene instantiated at end-of-frame)</li>
+ *   <li>{@code loadAdditive(scene)} — add a persistent overlay scene</li>
+ *   <li>{@code unload(scene)} — remove an additive scene</li>
+ * </ul>
+ *
+ * <p>GPU assets (meshes, textures, shaders) use reference counting.
+ * Shared assets survive until all referencing scenes are unloaded.
+ */
 public class SceneManager {
 
     private final EngineContext context;
@@ -53,6 +70,12 @@ public class SceneManager {
         activeSystemsDirty = true;
     }
 
+    /**
+     * Queues a deferred scene transition. The old scene is unloaded and the new scene
+     * is loaded at end-of-frame via {@link #processPendingTransitions()}.
+     *
+     * @param scene the scene to load
+     */
     public void load(Scene scene) {
         if (scene == null) {
             throw new IllegalArgumentException(
@@ -61,6 +84,12 @@ public class SceneManager {
         pendingTransitions.add(() -> doLoad(scene));
     }
 
+    /**
+     * Queues loading an additive scene. Additive scenes layer on top of the primary scene.
+     * Use for HUD, pause menus, or debug overlays.
+     *
+     * @param scene the scene to load additively
+     */
     public void loadAdditive(Scene scene) {
         if (scene == null) {
             throw new IllegalArgumentException(
@@ -69,6 +98,11 @@ public class SceneManager {
         pendingTransitions.add(() -> doLoadAdditive(scene));
     }
 
+    /**
+     * Queues unloading a scene (primary or additive).
+     *
+     * @param scene the scene to unload
+     */
     public void unload(Scene scene) {
         pendingTransitions.add(() -> doUnload(scene));
     }
@@ -93,12 +127,20 @@ public class SceneManager {
         doUnload(scene);
     }
 
+    /**
+     * Processes all queued scene transitions. Called by the main loop at end-of-frame.
+     */
     public void processPendingTransitions() {
         while (!pendingTransitions.isEmpty()) {
             pendingTransitions.poll().run();
         }
     }
 
+    /**
+     * Returns all active scenes (primary + additive).
+     *
+     * @return list of active scenes
+     */
     public List<Scene> getActiveScenes() {
         List<Scene> active = new ArrayList<>();
         if (primaryScene != null) {
@@ -108,6 +150,11 @@ public class SceneManager {
         return active;
     }
 
+    /**
+     * Returns all active systems (engine + scene systems), sorted by phase.
+     *
+     * @return list of active systems
+     */
     public List<GameSystem> getActiveSystems() {
         if (activeSystemsDirty || cachedActiveSystems == null) {
             rebuildActiveSystemsList();

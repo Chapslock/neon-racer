@@ -7,6 +7,19 @@ import org.chapzlock.core.input.InputMap;
 
 import lombok.Getter;
 
+/**
+ * Immutable blueprint describing entities, systems, and input bindings for a scene.
+ *
+ * <p>Scenes are built via a fluent builder:
+ * <pre>{@code
+ * Scene.builder("MainMenu")
+ *     .camera(0, 5, 10)
+ *     .entity("player", e -> e.model("player.obj").transform(0, 0, 0))
+ *     .systems(new PlayerControllerSystem())
+ *     .inputMap(myInputMap)
+ *     .build();
+ * }</pre>
+ */
 @Getter
 public class Scene {
     private final String name;
@@ -25,6 +38,12 @@ public class Scene {
         this.inputMap = inputMap;
     }
 
+    /**
+     * Creates a new scene builder.
+     *
+     * @param name scene name (used in logs and events)
+     * @return a new scene builder
+     */
     public static SceneBuilder builder(String name) {
         return new SceneBuilder(name);
     }

@@ -12,7 +12,12 @@ import org.joml.Vector3f;
 import lombok.Getter;
 import lombok.Setter;
 
-
+/**
+ * Camera component defining position, rotation, and projection parameters.
+ *
+ * <p>Rotation uses degrees (x = pitch, y = yaw, z = roll).
+ * Use {@code lookAt(target)} to point the camera at a world position.
+ */
 public class Camera implements Component {
     @Getter
     @Setter

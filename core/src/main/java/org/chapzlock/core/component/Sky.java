@@ -4,6 +4,12 @@ import org.chapzlock.core.ecs.Component;
 
 import lombok.Getter;
 
+/**
+ * Sky component defining background color and fog parameters.
+ *
+ * <p>Only one Sky component should exist per scene.
+ * Controls background clear color and distance fog rendering.
+ */
 @Getter
 public class Sky implements Component {
     private Color color = new Color(153, 255, 255);

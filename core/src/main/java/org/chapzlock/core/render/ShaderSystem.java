@@ -18,7 +18,10 @@ import org.joml.Vector4f;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 
 /**
- * Caches shader programs and handles OpenGL calls on shaders.
+ * Compiles, links, and manages shader programs.
+ *
+ * <p>Shaders are reference-counted — use {@link #retain(org.chapzlock.core.component.Shader)} and
+ * {@link #release(org.chapzlock.core.component.Shader)} to manage lifetimes across scenes.
  */
 public class ShaderSystem implements Disposable {
 

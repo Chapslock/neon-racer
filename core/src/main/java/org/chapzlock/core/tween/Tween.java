@@ -2,6 +2,12 @@ package org.chapzlock.core.tween;
 
 import java.util.function.Consumer;
 
+/**
+ * A single animation (tween) with easing.
+ *
+ * <p>Created by {@link TweenManager#create(float, Ease, Consumer)}.
+ * Use {@link #onComplete(Runnable)} to register a completion callback.
+ */
 public class Tween {
     private final float duration;
     private final Ease ease;
@@ -17,11 +23,13 @@ public class Tween {
         this.progressCallback = progressCallback;
     }
 
+    /** Registers a callback to run when the tween completes. */
     public Tween onComplete(Runnable callback) {
         this.onCompleteCallback = callback;
         return this;
     }
 
+    /** Cancels the tween (stops updating, won't call onComplete). */
     public void cancel() {
         this.cancelled = true;
     }

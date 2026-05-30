@@ -8,7 +8,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * An internal representation of an OpenGL mesh
+ * GPU resource handle for a mesh (vertex buffers + VAO).
+ *
+ * <p>Created by {@link org.chapzlock.core.render.MeshSystem#load(String)}.
+ * Reference-counted — retained on scene load, released on scene unload.
  */
 @Getter
 @Builder

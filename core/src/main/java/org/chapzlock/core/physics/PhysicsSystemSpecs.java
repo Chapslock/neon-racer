@@ -4,7 +4,9 @@ import lombok.Builder;
 import lombok.Getter;
 
 /**
- * Used for providing a custom configuration for the Physics system
+ * Global configuration for the physics system.
+ *
+ * <p>Currently only controls debug rendering.
  */
 @Builder
 @Getter

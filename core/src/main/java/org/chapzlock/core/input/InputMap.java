@@ -12,6 +12,27 @@ import org.chapzlock.core.input.keyboard.KeyPressedEvent;
 import org.chapzlock.core.input.keyboard.KeyReleasedEvent;
 import org.chapzlock.core.logging.Log;
 
+/**
+ * Input mapping system for actions and axes.
+ *
+ * <p>Actions are discrete (pressed/released). Axes are continuous (-1 to +1).
+ * Build via {@link InputMapBuilder}, activate via {@link #activate(EventBus)} (typically in scene load),
+ * deactivate via {@link #deactivate()} (typically in scene unload).
+ *
+ * <p>Example:
+ * <pre>{@code
+ * InputMap inputMap = InputMap.builder()
+ *     .action("jump", Key.SPACE)
+ *     .axis("move", Key.A, Key.D)
+ *     .build();
+ * inputMap.activate(ctx.getEventBus());
+ *
+ * if (inputMap.wasJustPressed("jump")) {
+ *     // Handle jump
+ * }
+ * float move = inputMap.getAxis("move");
+ * }</pre>
+ */
 public class InputMap {
     private final Map<String, List<Key>> actionBindings;
     private final Map<String, Key[]> axisBindings;
@@ -27,16 +48,25 @@ public class InputMap {
         this.axisBindings = axisBindings;
     }
 
+    /** Creates a new input map builder. */
     public static InputMapBuilder builder() {
         return new InputMapBuilder();
     }
 
+    /**
+     * Activates this input map, subscribing to key events. Called by {@link org.chapzlock.core.scene.SceneManager} on scene load.
+     *
+     * @param eventBus the event bus
+     */
     public void activate(EventBus eventBus) {
         subscriptions.add(eventBus.subscribe(KeyPressedEvent.class, this::handleKeyPressed));
         subscriptions.add(eventBus.subscribe(KeyReleasedEvent.class, this::handleKeyReleased));
         Log.debug("InputMap activated with actions: " + actionBindings.keySet() + ", axes: " + axisBindings.keySet());
     }
 
+    /**
+     * Deactivates this input map, unsubscribing from key events. Called by {@link org.chapzlock.core.scene.SceneManager} on scene unload.
+     */
     public void deactivate() {
         subscriptions.forEach(Subscription::unsubscribe);
         subscriptions.clear();

@@ -41,8 +41,10 @@ import org.lwjgl.opengl.GLCapabilities;
 
 
 /**
- * A single GLFW window, wrapping native handles and callbacks.
- * Rendering logic (clearing, swapping, etc.) is handled by the Application.
+ * GLFW window wrapper with input event callbacks.
+ *
+ * <p>Created by {@link org.chapzlock.core.application.Application}. Publishes input events
+ * (key, mouse button, mouse move, mouse scroll) to {@link EventBus}.
  */
 public class Window {
 

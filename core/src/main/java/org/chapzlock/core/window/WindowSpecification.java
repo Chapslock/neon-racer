@@ -5,7 +5,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Properties for windows
+ * Configuration for a GLFW window.
+ *
+ * <p>Fields: {@code title}, {@code width}, {@code height}, {@code isResizable}, {@code isVSyncEnabled}.
  */
 @Builder
 @Getter
@@ -22,6 +24,7 @@ public class WindowSpecification {
     @Builder.Default
     private boolean isVSyncEnabled = true;
 
+    /** Returns the window aspect ratio (width / height). */
     public float getAspectRatio() {
         return (float) width / (float) height;
     }

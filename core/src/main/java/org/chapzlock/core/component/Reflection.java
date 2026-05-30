@@ -6,7 +6,9 @@ import lombok.Builder;
 import lombok.Getter;
 
 /**
- * Defines reflection properties for a material
+ * Reflection properties for specular lighting.
+ *
+ * <p>Controls shininess and reflectivity of a material's specular highlights.
  */
 @Builder
 @Getter

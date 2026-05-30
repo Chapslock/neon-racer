@@ -24,7 +24,10 @@ import org.chapzlock.core.ecs.ComponentRegistry;
 import org.lwjgl.opengl.GL11;
 
 /**
- * The core render system
+ * Batches and renders entities with Mesh + Material components.
+ *
+ * <p>Entities are grouped by material to minimize shader switches.
+ * Requires {@link Transform}, {@link Mesh}, and {@link Material} components.
  */
 public class RenderSystem implements GameSystem {
 

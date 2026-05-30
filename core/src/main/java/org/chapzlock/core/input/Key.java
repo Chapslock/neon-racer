@@ -2,6 +2,9 @@ package org.chapzlock.core.input;
 
 import static org.lwjgl.glfw.GLFW.*;
 
+/**
+ * Keyboard key enum wrapping GLFW key codes.
+ */
 public enum Key {
     A(GLFW_KEY_A), B(GLFW_KEY_B), C(GLFW_KEY_C), D(GLFW_KEY_D),
     E(GLFW_KEY_E), F(GLFW_KEY_F), G(GLFW_KEY_G), H(GLFW_KEY_H),
@@ -34,6 +37,7 @@ public enum Key {
         this.glfwCode = glfwCode;
     }
 
+    /** Returns the GLFW key code. */
     public int getGlfwCode() {
         return glfwCode;
     }

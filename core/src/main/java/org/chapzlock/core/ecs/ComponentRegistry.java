@@ -20,8 +20,24 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 /**
- * Central registry for all the components and entities tied to them.
- * Mainly used in Systems to execute logic.
+ * Central registry for all components and entities.
+ *
+ * <p>Stores components in typed maps and provides fast archetype queries via bitset masks.
+ * Query results are cached and invalidated on component mutations — {@link #view(Class[])}
+ * is O(1) on stable frames.
+ *
+ * <p>Example:
+ * <pre>{@code
+ * int entity = Entity.create(registry);
+ * registry.addComponent(entity, new Transform());
+ * registry.addComponent(entity, new Mesh("model.obj"));
+ *
+ * for (EntityView e : registry.view(Transform.class, Mesh.class)) {
+ *     Transform t = e.get(Transform.class);
+ *     Mesh m = e.get(Mesh.class);
+ *     // process entity
+ * }
+ * }</pre>
  */
 public class ComponentRegistry {
 
@@ -176,6 +192,12 @@ public class ComponentRegistry {
 
     /**
      * Queries entities that have ALL required components.
+     *
+     * <p>Results are cached and invalidated on component mutations.
+     * Safe to call every frame — O(1) when no entities changed.
+     *
+     * @param requiredComponents component types to query
+     * @return list of entity views matching all required components
      */
     @SafeVarargs
     public final List<EntityView> view(Class<? extends Component>... requiredComponents) {

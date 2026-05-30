@@ -6,6 +6,11 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
+/**
+ * Calculates projection and view matrices for the camera.
+ *
+ * <p>Caches matrices to avoid recalculation when camera settings haven't changed.
+ */
 public class CameraSystem {
 
     private final WindowSpecification windowSpec;

@@ -27,6 +27,19 @@ import org.chapzlock.core.window.WindowSpecification;
 
 import lombok.Getter;
 
+/**
+ * Entry point for the game engine. Creates subsystems and runs the main loop.
+ *
+ * <p>Usage:
+ * <pre>{@code
+ * Application.create(ApplicationSpecification.builder()
+ *     .windowSpec(WindowSpecification.builder().title("Game").width(1280).height(720).build())
+ *     .engineSystems(List.of(new PhysicsSystem(), new RenderSystem()))
+ *     .initialScene(myScene)
+ *     .build())
+ * .run();
+ * }</pre>
+ */
 public class Application {
     @Getter
     private final ApplicationSpecification appSpec;
@@ -40,6 +53,9 @@ public class Application {
         ApplicationUtil.init();
     }
 
+    /**
+     * Starts the application and enters the main loop. Blocks until the window is closed.
+     */
     public void run() {
         createSubsystems();
 
@@ -156,6 +172,11 @@ public class Application {
         Log.info(sb.toString());
     }
 
+    /**
+     * Returns GLFW time in seconds since application start.
+     *
+     * @return elapsed time in seconds
+     */
     public static float getTime() {
         return (float) glfwGetTime();
     }
@@ -164,6 +185,12 @@ public class Application {
         isRunning = false;
     }
 
+    /**
+     * Creates a new application instance.
+     *
+     * @param spec application configuration
+     * @return a new application instance
+     */
     public static Application create(ApplicationSpecification spec) {
         return new Application(spec);
     }
