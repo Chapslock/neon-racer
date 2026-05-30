@@ -7,14 +7,11 @@ import org.chapzlock.app.systems.PlayerCameraFollowSystem;
 import org.chapzlock.app.systems.PlayerInputSystem;
 import org.chapzlock.app.systems.PlayerMovementSystem;
 import org.chapzlock.app.tags.PlayerTag;
-import org.chapzlock.core.component.ModelDescriptor;
-import org.chapzlock.core.component.PhysicsDescriptor;
-import org.chapzlock.core.component.SpriteDescriptor;
-import org.chapzlock.core.component.TerrainDescriptor;
-import org.chapzlock.core.component.Transform;
+import org.chapzlock.core.component.*;
 import org.chapzlock.core.input.InputMap;
 import org.chapzlock.core.input.Key;
 import org.chapzlock.core.scene.Scene;
+import org.joml.Vector3f;
 
 public class RaceTrackScene {
 
@@ -25,6 +22,14 @@ public class RaceTrackScene {
                 .axis("throttle", Key.S, Key.W)
                 .axis("steer", Key.A, Key.D)
                 .build())
+            .directionalLight(DirectionalLight.builder()
+                .direction(new Vector3f(-0.2f, -1f, -0.3f))
+                .build())
+            .pointLight(PointLight.builder()
+                .position(new Vector3f(-5, 300, -10))
+                .build())
+            .fog(Fog.builder().build())
+            .ambient(AmbientLight.builder().build())
             .entity("player", e -> e
                 .transform(Transform.at(0, 10, -5, 0, 0, 180))
                 .model(ModelDescriptor.builder()
@@ -51,7 +56,6 @@ public class RaceTrackScene {
             .entity("speedometer", e -> e
                 .transform(Transform.at(0, 0, 0, 0, 0, 0, 200))
                 .sprite(SpriteDescriptor.of("textures/speedometer.png")))
-            .pointLight(-5, 300, -10)
             .camera(0, 5, 10)
             .sky()
             .systems(
