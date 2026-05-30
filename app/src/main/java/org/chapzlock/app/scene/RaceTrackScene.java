@@ -45,7 +45,7 @@ public class RaceTrackScene {
             .entity("player", e -> e
                 .transform(0, 10, -5, 0, 0, 180)
                 .component(new PlayerInputComponent())
-                .tag(PlayerTag.class)
+                .tag(new PlayerTag())
                 .component(ctx -> {
                     var meshSystem = ctx.getMeshSystem();
                     var textureSystem = ctx.getTextureSystem();

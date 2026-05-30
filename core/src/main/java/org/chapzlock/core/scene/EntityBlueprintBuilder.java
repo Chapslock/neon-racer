@@ -40,15 +40,8 @@ public class EntityBlueprintBuilder {
         return this;
     }
 
-    public EntityBlueprintBuilder tag(Class<? extends Tag> tagClass) {
-        factories.add(ctx -> {
-            try {
-                return new Component[]{ tagClass.getDeclaredConstructor().newInstance() };
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to instantiate tag: " + tagClass.getSimpleName() +
-                    ". Ensure it has a no-arg constructor.", e);
-            }
-        });
+    public EntityBlueprintBuilder tag(Tag tagInstance) {
+        factories.add(ctx -> new Component[]{ tagInstance });
         return this;
     }
 

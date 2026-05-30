@@ -31,7 +31,7 @@ class EntityBlueprintBuilderTest {
     @Test
     void tagBuildsCorrectComponent() {
         EntityBlueprintBuilder builder = new EntityBlueprintBuilder("test");
-        builder.tag(TestTag.class);
+        builder.tag(new TestTag());
         EntityBlueprint blueprint = builder.build();
 
         EngineContext ctx = EngineContext.testContext();
@@ -64,7 +64,7 @@ class EntityBlueprintBuilderTest {
     void multipleCallsAccumulateFactories() {
         EntityBlueprintBuilder builder = new EntityBlueprintBuilder("test");
         builder.transform(0, 0, 0);
-        builder.tag(TestTag.class);
+        builder.tag(new TestTag());
         EntityBlueprint blueprint = builder.build();
 
         assertEquals(2, blueprint.getFactories().size());
