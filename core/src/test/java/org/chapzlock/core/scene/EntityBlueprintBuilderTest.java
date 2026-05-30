@@ -93,4 +93,16 @@ class EntityBlueprintBuilderTest {
 
         assertEquals(0, components.length);
     }
+
+    @Test
+    void modelWithNullSystemsReturnsEmpty() {
+        EntityBlueprintBuilder builder = new EntityBlueprintBuilder("test");
+        builder.model("obj/car.obj", "textures/car.png");
+        EntityBlueprint blueprint = builder.build();
+
+        EngineContext ctx = EngineContext.testContext();
+        Component[] components = blueprint.getFactories().get(0).create(ctx);
+
+        assertEquals(0, components.length);
+    }
 }

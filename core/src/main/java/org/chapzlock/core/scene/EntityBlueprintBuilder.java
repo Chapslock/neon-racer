@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.chapzlock.core.component.Material;
+import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.Shader;
+import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.Component;
 import org.chapzlock.core.ecs.Tag;
@@ -83,6 +85,27 @@ public class EntityBlueprintBuilder {
                 ctx.getMaterialSystem().register(material, MaterialType.ENTITY);
             }
             return new Component[]{ material };
+        });
+        return this;
+    }
+
+    public EntityBlueprintBuilder model(String meshPath, String texturePath) {
+        return model(meshPath, texturePath, MaterialType.ENTITY);
+    }
+
+    public EntityBlueprintBuilder model(String meshPath, String texturePath, MaterialType type) {
+        factories.add(ctx -> {
+            if (ctx.getMeshSystem() == null || ctx.getTextureSystem() == null) {
+                return new Component[]{};
+            }
+            Mesh mesh = ctx.getMeshSystem().load(meshPath);
+            Texture texture = ctx.getTextureSystem().load(texturePath);
+            Shader shader = new Shader(type.getVertexPath(), type.getFragmentPath());
+            Material material = new Material(shader, texture);
+            if (ctx.getMaterialSystem() != null) {
+                ctx.getMaterialSystem().register(material, type);
+            }
+            return new Component[]{ mesh, material };
         });
         return this;
     }
