@@ -25,6 +25,8 @@ public class SceneBuilder {
     private final List<EntityBlueprint> entities = new ArrayList<>();
     private final List<GameSystem> systems = new ArrayList<>();
     private InputMap inputMap;
+    private float fogDensity = 0.007f;
+    private float fogGradient = 1.5f;
 
     public SceneBuilder(String name) {
         this.name = name;
@@ -89,8 +91,18 @@ public class SceneBuilder {
         return this;
     }
 
+    /**
+     * Configures fog for the scene. When not called, defaults to
+     * density=0.007 and gradient=1.5.
+     */
+    public SceneBuilder fog(float density, float gradient) {
+        this.fogDensity = density;
+        this.fogGradient = gradient;
+        return this;
+    }
+
     /** Builds the scene. */
     public Scene build() {
-        return new Scene(name, entities, systems, inputMap);
+        return new Scene(name, entities, systems, inputMap, fogDensity, fogGradient);
     }
 }

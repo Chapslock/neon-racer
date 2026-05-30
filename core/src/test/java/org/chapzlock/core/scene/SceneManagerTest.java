@@ -49,7 +49,7 @@ class SceneManagerTest {
             new EntityBlueprint("entity1", List.of(
                 c -> new Component[]{ new Transform() }
             ))
-        ), List.of(), null);
+        ), List.of(), null, 0.007f, 1.5f);
     }
 
     @Test
@@ -179,7 +179,7 @@ class SceneManagerTest {
     @Test
     void sceneSystemsAreInitializedOnLoadAndDestroyedOnUnload() {
         TrackingSystem system = new TrackingSystem();
-        Scene scene = new Scene("sys-test", List.of(), List.of(system), null);
+        Scene scene = new Scene("sys-test", List.of(), List.of(system), null, 0.007f, 1.5f);
 
         sceneManager.loadImmediate(scene);
         assertTrue(system.initialized);
@@ -194,7 +194,7 @@ class SceneManagerTest {
         TrackingSystem sceneSys = new TrackingSystem();
 
         sceneManager.registerEngineSystems(List.of(engineSys));
-        Scene scene = new Scene("test", List.of(), List.of(sceneSys), null);
+        Scene scene = new Scene("test", List.of(), List.of(sceneSys), null, 0.007f, 1.5f);
         sceneManager.loadImmediate(scene);
 
         List<GameSystem> active = sceneManager.getActiveSystems();
@@ -209,7 +209,7 @@ class SceneManagerTest {
         };
         GameSystem logicSys = new GameSystem() {};
 
-        Scene scene = new Scene("test", List.of(), List.of(renderSys, logicSys), null);
+        Scene scene = new Scene("test", List.of(), List.of(renderSys, logicSys), null, 0.007f, 1.5f);
         sceneManager.loadImmediate(scene);
 
         List<GameSystem> active = sceneManager.getActiveSystems();
@@ -244,7 +244,7 @@ class SceneManagerTest {
             new EntityBlueprint("entity", List.of(
                 c -> new Component[]{ fakeMesh, new Material(fakeShader, fakeTexture) }
             ))
-        ), List.of(), null);
+        ), List.of(), null, 0.007f, 1.5f);
 
         sm.loadImmediate(scene);
 
@@ -268,7 +268,7 @@ class SceneManagerTest {
             new EntityBlueprint("bad", List.of(
                 c -> { throw new RuntimeException("asset not found"); }
             ))
-        ), List.of(), null);
+        ), List.of(), null, 0.007f, 1.5f);
 
         sceneManager.loadImmediate(scene);
 

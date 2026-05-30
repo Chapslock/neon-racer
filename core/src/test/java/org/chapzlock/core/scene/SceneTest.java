@@ -24,7 +24,9 @@ class SceneTest {
                 ctx -> new Component[]{ new Transform() }
             ))),
             List.of(system),
-            null
+            null,
+            0.007f,
+            1.5f
         );
 
         assertEquals("test-scene", scene.getName());
@@ -36,7 +38,7 @@ class SceneTest {
 
     @Test
     void sceneIsImmutable() {
-        Scene scene = new Scene("empty", List.of(), List.of(), null);
+        Scene scene = new Scene("empty", List.of(), List.of(), null, 0.007f, 1.5f);
 
         assertThrows(UnsupportedOperationException.class, () ->
             scene.getEntities().add(new EntityBlueprint("x", List.of())));
@@ -60,6 +62,6 @@ class SceneTest {
     @Test
     void sceneNullNameThrows() {
         assertThrows(IllegalArgumentException.class, () ->
-            new Scene(null, List.of(), List.of(), null));
+            new Scene(null, List.of(), List.of(), null, 0.007f, 1.5f));
     }
 }

@@ -1,12 +1,9 @@
 package org.chapzlock.core.scene;
 
-import java.util.List;
-
-import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.PointLight;
 import org.chapzlock.core.component.Sky;
-import org.chapzlock.core.ecs.Component;
+import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.GameSystem;
 import org.junit.jupiter.api.Test;
 
@@ -25,8 +22,8 @@ class SceneBuilderTest {
     @Test
     void builderAddsEntitiesViaConsumer() {
         Scene scene = Scene.builder("test")
-            .entity("player", e -> e.transform(1, 2, 3))
-            .entity("enemy", e -> e.transform(4, 5, 6))
+            .entity("player", e -> e.transform(Transform.at(1, 2, 3)))
+            .entity("enemy", e -> e.transform(Transform.at(4, 5, 6)))
             .build();
 
         assertEquals(2, scene.getEntities().size());
@@ -53,11 +50,7 @@ class SceneBuilderTest {
 
         assertEquals(1, scene.getEntities().size());
         assertEquals("point-light", scene.getEntities().get(0).getName());
-
-        EngineContext ctx = EngineContext.testContext();
-        List<ComponentFactory> factories = scene.getEntities().get(0).getFactories();
-        Component[] components = factories.get(0).create(ctx);
-        assertInstanceOf(PointLight.class, components[0]);
+        assertInstanceOf(PointLight.class, scene.getEntities().get(0).getComponents().get(0));
     }
 
     @Test
@@ -68,10 +61,7 @@ class SceneBuilderTest {
 
         assertEquals(1, scene.getEntities().size());
         assertEquals("camera", scene.getEntities().get(0).getName());
-
-        EngineContext ctx = EngineContext.testContext();
-        Component[] components = scene.getEntities().get(0).getFactories().get(0).create(ctx);
-        assertInstanceOf(Camera.class, components[0]);
+        assertInstanceOf(Camera.class, scene.getEntities().get(0).getComponents().get(0));
     }
 
     @Test
@@ -82,10 +72,21 @@ class SceneBuilderTest {
 
         assertEquals(1, scene.getEntities().size());
         assertEquals("sky", scene.getEntities().get(0).getName());
+        assertInstanceOf(Sky.class, scene.getEntities().get(0).getComponents().get(0));
+    }
 
-        EngineContext ctx = EngineContext.testContext();
-        Component[] components = scene.getEntities().get(0).getFactories().get(0).create(ctx);
-        assertInstanceOf(Sky.class, components[0]);
+    @Test
+    void fogDefaultValues() {
+        Scene scene = Scene.builder("test").build();
+        assertEquals(0.007f, scene.getFogDensity(), 0.0001f);
+        assertEquals(1.5f, scene.getFogGradient(), 0.0001f);
+    }
+
+    @Test
+    void fogCustomValues() {
+        Scene scene = Scene.builder("test").fog(0.01f, 2.0f).build();
+        assertEquals(0.01f, scene.getFogDensity(), 0.0001f);
+        assertEquals(2.0f, scene.getFogGradient(), 0.0001f);
     }
 
     @Test

@@ -26,8 +26,11 @@ public class Scene {
     private final List<EntityBlueprint> entities;
     private final List<GameSystem> systems;
     private final InputMap inputMap;
+    private final float fogDensity;
+    private final float fogGradient;
 
-    public Scene(String name, List<EntityBlueprint> entities, List<GameSystem> systems, InputMap inputMap) {
+    public Scene(String name, List<EntityBlueprint> entities, List<GameSystem> systems,
+                 InputMap inputMap, float fogDensity, float fogGradient) {
         if (name == null) {
             throw new IllegalArgumentException(
                 "Scene name cannot be null. Pass a name to identify the scene in logs and error messages.");
@@ -36,6 +39,8 @@ public class Scene {
         this.entities = List.copyOf(entities);
         this.systems = List.copyOf(systems);
         this.inputMap = inputMap;
+        this.fogDensity = fogDensity;
+        this.fogGradient = fogGradient;
     }
 
     /**
