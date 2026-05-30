@@ -34,6 +34,7 @@ public class InputMap {
     public void activate(EventBus eventBus) {
         subscriptions.add(eventBus.subscribe(KeyPressedEvent.class, this::handleKeyPressed));
         subscriptions.add(eventBus.subscribe(KeyReleasedEvent.class, this::handleKeyReleased));
+        Log.debug("InputMap activated with actions: " + actionBindings.keySet() + ", axes: " + axisBindings.keySet());
     }
 
     public void deactivate() {
@@ -42,6 +43,7 @@ public class InputMap {
         pressedKeys.clear();
         justPressedKeys.clear();
         justReleasedKeys.clear();
+        Log.debug("InputMap deactivated");
     }
 
     public void frameReset() {

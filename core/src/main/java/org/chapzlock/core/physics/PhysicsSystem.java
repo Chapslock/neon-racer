@@ -115,6 +115,7 @@ public class PhysicsSystem implements GameSystem {
             PhysicsBody body = registry.getComponent(event.entityId(), PhysicsBody.class);
             body.getRigidBody().setMotionState(new EntityMotionState(transform));
             dynamicsWorld.addRigidBody(body.getRigidBody());
+            Log.debug("Physics body registered: entity=" + event.entityId() + " mass=" + body.getMass());
             return false;
         });
 
@@ -124,6 +125,7 @@ public class PhysicsSystem implements GameSystem {
             PhysicsBody body = registry.getComponent(event.entityId(), PhysicsBody.class);
             if (body != null) {
                 dynamicsWorld.removeRigidBody(body.getRigidBody());
+                Log.debug("Physics body removed: entity=" + event.entityId());
             }
             return false;
         });

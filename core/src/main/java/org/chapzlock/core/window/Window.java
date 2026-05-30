@@ -34,6 +34,7 @@ import org.chapzlock.core.input.mouse.MouseButtonPressedEvent;
 import org.chapzlock.core.input.mouse.MouseButtonReleasedEvent;
 import org.chapzlock.core.input.mouse.MouseMovedEvent;
 import org.chapzlock.core.input.mouse.MouseScrolledEvent;
+import org.chapzlock.core.logging.Log;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GLCapabilities;
@@ -104,6 +105,7 @@ public class Window {
         initializeCallbacks();
 
         glfwShowWindow(id);
+        Log.debug("GLFW window shown: \"" + specs.getTitle() + "\"");
     }
 
     public void makeContextCurrent() {

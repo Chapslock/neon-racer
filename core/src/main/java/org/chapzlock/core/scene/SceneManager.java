@@ -11,7 +11,9 @@ import java.util.Queue;
 import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.component.Material;
 import org.chapzlock.core.component.Mesh;
+import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.Texture;
+import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.Component;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.Entity;
@@ -126,6 +128,7 @@ public class SceneManager {
     }
 
     private void doLoad(Scene scene) {
+        Log.debug("Loading scene \"" + scene.getName() + "\" (" + scene.getEntities().size() + " entities, " + scene.getSystems().size() + " systems)");
         if (primaryScene != null) {
             teardownScene(primaryScene);
             eventBus.publish(new SceneUnloadedEvent(primaryScene.getName()));
@@ -137,6 +140,7 @@ public class SceneManager {
     }
 
     private void doLoadAdditive(Scene scene) {
+        Log.debug("Loading additive scene \"" + scene.getName() + "\"");
         for (Scene existing : additiveScenes) {
             if (existing.getName().equals(scene.getName())) {
                 Log.warn("Scene \"" + scene.getName() + "\" is already loaded as additive. " +
@@ -183,6 +187,7 @@ public class SceneManager {
                     }
                 }
                 entityIds.add(entityId);
+                Log.debug("  Entity \"" + blueprint.getName() + "\" created (id=" + entityId + ")");
             } catch (Exception e) {
                 registry.destroyEntity(entityId);
                 Log.error("Scene \"" + scene.getName() + "\", entity \"" + blueprint.getName() +
@@ -193,6 +198,23 @@ public class SceneManager {
         retainAll(assets);
         sceneEntities.put(scene, entityIds);
         sceneAssets.put(scene, assets);
+
+        for (int entityId : entityIds) {
+            boolean hasMesh = registry.getComponent(entityId, Mesh.class) != null;
+            boolean hasMaterial = registry.getComponent(entityId, Material.class) != null;
+            boolean hasTransform = registry.getComponent(entityId, Transform.class) != null;
+            boolean hasPhysicsBody = registry.getComponent(entityId, PhysicsBody.class) != null;
+
+            if (hasMaterial && !hasMesh) {
+                Log.warn("Entity " + entityId + " has Material but no Mesh — it won't be rendered.");
+            }
+            if (hasMesh && !hasTransform) {
+                Log.warn("Entity " + entityId + " has Mesh but no Transform — it won't be rendered.");
+            }
+            if (hasPhysicsBody && !hasTransform) {
+                Log.warn("Entity " + entityId + " has PhysicsBody but no Transform — physics registration will be skipped.");
+            }
+        }
 
         List<GameSystem> systems = new ArrayList<>(scene.getSystems());
         List<GameSystem> failedSystems = new ArrayList<>();
@@ -222,6 +244,7 @@ public class SceneManager {
     }
 
     private void teardownScene(Scene scene) {
+        Log.debug("Tearing down scene \"" + scene.getName() + "\"");
         InputMap inputMap = scene.getInputMap();
         if (inputMap != null) {
             inputMap.deactivate();

@@ -67,6 +67,7 @@ public class Application {
 
         window = new Window(appSpec.getWindowSpec(), eventBus);
         window.create(0);
+        Log.debug("Window created: " + appSpec.getWindowSpec().getWidth() + "x" + appSpec.getWindowSpec().getHeight());
 
         ShaderSystem shaderSystem = new ShaderSystem();
         TextureSystem textureSystem = new TextureSystem();
@@ -97,11 +98,14 @@ public class Application {
         materialSystem.registerDefault(MaterialType.UI,
             new UiMaterialRenderer(shaderSystem, textureSystem, cameraSystem, windowSpec));
 
+        Log.debug("Subsystems initialized: MeshSystem, TextureSystem, ShaderSystem, MaterialSystem, CameraSystem");
+
         sceneManager = new SceneManager(context);
         context.setSceneManager(sceneManager);
     }
 
     private void mainLoop() {
+        Log.debug("Main loop started");
         isRunning = true;
         float lastTime = getTime();
 
