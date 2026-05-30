@@ -44,8 +44,8 @@ public class EntityMaterialRenderer implements MaterialRenderer {
         shaderSystem.setUniform(shader, UNIFORM_PROJECTION_MATRIX, ctx.getProjectionMatrix());
 
         if (ctx.getPointLight() != null) {
-            shaderSystem.setUniform(shader, UNIFORM_LIGHT_POSITION, ctx.getPointLight().position());
-            shaderSystem.setUniform(shader, UNIFORM_LIGHT_COLOR, ctx.getPointLight().color().toVector3f());
+            shaderSystem.setUniform(shader, UNIFORM_LIGHT_POSITION, ctx.getPointLight().getPosition());
+            shaderSystem.setUniform(shader, UNIFORM_LIGHT_COLOR, ctx.getPointLight().getColor().toVector3f());
         }
     }
 

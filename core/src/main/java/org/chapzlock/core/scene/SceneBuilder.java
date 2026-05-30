@@ -55,7 +55,7 @@ public class SceneBuilder {
     public SceneBuilder pointLight(float x, float y, float z, Color color) {
         // Temporary: creates a blueprint with the new signature, passes component directly
         entities.add(new EntityBlueprint("point-light", null, null, null, null, null,
-            List.of(), List.of(new PointLight(new Vector3f(x, y, z), color))));
+            List.of(), List.of(PointLight.builder().position(new Vector3f(x, y, z)).color(color).build())));
         return this;
     }
 
