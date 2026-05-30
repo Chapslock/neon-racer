@@ -4,12 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.chapzlock.core.application.EngineContext;
-import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.Material;
+import org.chapzlock.core.component.Mesh;
+import org.chapzlock.core.component.ModelDescriptor;
 import org.chapzlock.core.component.Shader;
 import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.component.Transform;
-import org.chapzlock.core.ecs.Component;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.ecs.SystemPhase;
@@ -46,9 +46,9 @@ class SceneManagerTest {
 
     private Scene simpleScene(String name) {
         return new Scene(name, List.of(
-            new EntityBlueprint("entity1", List.of(
-                c -> new Component[]{ new Transform() }
-            ))
+            new EntityBlueprintBuilder("entity1")
+                .transform(Transform.at(0, 0, 0))
+                .build()
         ), List.of(), null, 0.007f, 1.5f);
     }
 
@@ -241,9 +241,9 @@ class SceneManagerTest {
         fakeShader.setProgramId(99);
 
         Scene scene = new Scene("asset-test", List.of(
-            new EntityBlueprint("entity", List.of(
-                c -> new Component[]{ fakeMesh, new Material(fakeShader, fakeTexture) }
-            ))
+            new EntityBlueprintBuilder("entity")
+                .component(fakeMesh, new Material(fakeShader, fakeTexture))
+                .build()
         ), List.of(), null, 0.007f, 1.5f);
 
         sm.loadImmediate(scene);
@@ -262,12 +262,13 @@ class SceneManagerTest {
     @Test
     void failedEntityInstantiationDoesNotLeavePartialEntity() {
         Scene scene = new Scene("bad-entity", List.of(
-            new EntityBlueprint("good", List.of(
-                c -> new Component[]{ new Transform() }
-            )),
-            new EntityBlueprint("bad", List.of(
-                c -> { throw new RuntimeException("asset not found"); }
-            ))
+            new EntityBlueprintBuilder("good")
+                .transform(Transform.at(0, 0, 0))
+                .build(),
+            new EntityBlueprintBuilder("bad")
+                .transform(Transform.at(1, 1, 1))
+                .model(ModelDescriptor.builder().mesh("nonexistent.obj").build())
+                .build()
         ), List.of(), null, 0.007f, 1.5f);
 
         sceneManager.loadImmediate(scene);

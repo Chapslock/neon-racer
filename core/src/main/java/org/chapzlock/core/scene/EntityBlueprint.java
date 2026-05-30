@@ -43,26 +43,4 @@ public final class EntityBlueprint {
         this.tags = List.copyOf(tags);
         this.components = List.copyOf(components);
     }
-
-    @Deprecated
-    private List<ComponentFactory> legacyFactories = List.of();
-
-    /**
-     * @deprecated Use EntityBlueprintBuilder instead.
-     */
-    @Deprecated
-    public EntityBlueprint(String name, List<ComponentFactory> factories) {
-        this(name, null, null, null, null, null, List.of(), List.of());
-        this.legacyFactories = List.copyOf(factories);
-    }
-
-    /** @deprecated Use descriptor fields instead. */
-    @Deprecated
-    public List<ComponentFactory> getFactories() {
-        return legacyFactories;
-    }
-
-    void setLegacyFactories(List<ComponentFactory> factories) {
-        this.legacyFactories = List.copyOf(factories);
-    }
 }

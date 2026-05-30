@@ -11,6 +11,7 @@ import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.Component;
 import org.chapzlock.core.ecs.Tag;
 
+
 /**
  * Fluent builder for configuring entity blueprints.
  *
@@ -38,8 +39,6 @@ public class EntityBlueprintBuilder {
     private PhysicsDescriptor physicsDescriptor;
     private final List<Tag> tags = new ArrayList<>();
     private final List<Component> components = new ArrayList<>();
-    @Deprecated
-    private final List<ComponentFactory> legacyFactories = new ArrayList<>();
 
     public EntityBlueprintBuilder(String name) {
         this.name = name;
@@ -51,34 +50,7 @@ public class EntityBlueprintBuilder {
         return this;
     }
 
-    /**
-     * @deprecated Use transform(Transform.at(x, y, z)) instead.
-     */
-    @Deprecated
-    public EntityBlueprintBuilder transform(float x, float y, float z) {
-        this.transform = Transform.at(x, y, z);
-        return this;
-    }
-
-    /**
-     * @deprecated Use transform(Transform.at(x, y, z, rotX, rotY, rotZ)) instead.
-     */
-    @Deprecated
-    public EntityBlueprintBuilder transform(float x, float y, float z, float rotX, float rotY, float rotZ) {
-        this.transform = Transform.at(x, y, z, rotX, rotY, rotZ);
-        return this;
-    }
-
-    /**
-     * @deprecated Use transform(Transform.at(x, y, z, rotX, rotY, rotZ, scale)) instead.
-     */
-    @Deprecated
-    public EntityBlueprintBuilder transform(float x, float y, float z, float rotX, float rotY, float rotZ, float scale) {
-        this.transform = Transform.at(x, y, z, rotX, rotY, rotZ, scale);
-        return this;
-    }
-
-    /** Declares a 3D model to load for this entity. */
+/** Declares a 3D model to load for this entity. */
     public EntityBlueprintBuilder model(ModelDescriptor descriptor) {
         this.modelDescriptor = descriptor;
         return this;
@@ -114,28 +86,15 @@ public class EntityBlueprintBuilder {
         return this;
     }
 
-    /**
-     * @deprecated Use descriptor methods (model, terrain, sprite, physics) instead.
-     */
-    @Deprecated
-    public EntityBlueprintBuilder component(ComponentFactory factory) {
-        this.legacyFactories.add(factory);
-        return this;
-    }
-
-    /**
+/**
      * Validates configuration and produces an immutable EntityBlueprint.
      *
      * @throws IllegalStateException if configuration is invalid
      */
     public EntityBlueprint build() {
         validate();
-        EntityBlueprint bp = new EntityBlueprint(name, transform, modelDescriptor, terrainDescriptor,
+        return new EntityBlueprint(name, transform, modelDescriptor, terrainDescriptor,
             spriteDescriptor, physicsDescriptor, tags, components);
-        if (!legacyFactories.isEmpty()) {
-            bp.setLegacyFactories(legacyFactories);
-        }
-        return bp;
     }
 
     private void validate() {
