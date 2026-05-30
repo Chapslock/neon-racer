@@ -227,7 +227,7 @@ class SceneManagerTest {
         EngineContext assetCtx = new EngineContext(
             new ComponentRegistry(eb), eb,
             meshSystem, textureSystem, shaderSystem,
-            null, null, null, null,
+            null, null, null,
             new org.chapzlock.core.application.Time(),
             new org.chapzlock.core.tween.TweenManager()
         );

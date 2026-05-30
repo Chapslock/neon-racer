@@ -1,36 +1,55 @@
 package org.chapzlock.core.render;
 
+import java.util.EnumMap;
+import java.util.Map;
+
 import org.chapzlock.core.component.Material;
+import org.chapzlock.core.scene.MaterialType;
+
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 public class MaterialSystem {
 
-    private final MaterialRendererRegistry registry;
+    private final ShaderSystem shaderSystem;
+    private final Map<Integer, MaterialRenderer> renderersByShaderId = new Int2ObjectOpenHashMap<>();
+    private final EnumMap<MaterialType, MaterialRenderer> defaultRenderers = new EnumMap<>(MaterialType.class);
 
-    public MaterialSystem(MaterialRendererRegistry registry) {
-        this.registry = registry;
+    public MaterialSystem(ShaderSystem shaderSystem) {
+        this.shaderSystem = shaderSystem;
     }
 
-    /**
-     * Registers a material with a renderer.
-     * This renderer defines how the material should be rendered.
-     * Every new material declaration needs to be registered with a MaterialRenderer
-     * implementation
-     *
-     * @param material
-     * @param renderer
-     * @return registered material
-     */
-    public Material registerNewMaterial(Material material, MaterialRenderer renderer) {
-        registry.register(material, renderer);
-        return material;
+    public void register(Material material, MaterialRenderer renderer) {
+        if (!material.getShader().isCompiled()) {
+            shaderSystem.compileAndLink(material.getShader());
+        }
+        renderersByShaderId.put(material.getShader().getProgramId(), renderer);
     }
 
-    /**
-     * Fetches the renderer associated with the material
-     * @param material
-     * @return MaterialRenderer for the material instance
-     */
+    public void register(Material material, MaterialType type) {
+        MaterialRenderer renderer = defaultRenderers.get(type);
+        if (renderer == null) {
+            throw new IllegalStateException("No default renderer registered for MaterialType." + type +
+                ". Ensure Application has started and registered defaults.");
+        }
+        register(material, renderer);
+    }
+
     public MaterialRenderer getRenderer(Material material) {
-        return registry.getRenderer(material);
+        var renderer = renderersByShaderId.get(material.getShader().getProgramId());
+        if (renderer == null) {
+            throw new IllegalStateException(
+                "No renderer registered for shaders: " + material.getShader().getVertexPath() +
+                    " and " + material.getShader().getFragmentPath() +
+                    ". Call materialSystem.register(material, type) before rendering.");
+        }
+        return renderer;
+    }
+
+    public void registerDefault(MaterialType type, MaterialRenderer renderer) {
+        defaultRenderers.put(type, renderer);
+    }
+
+    public MaterialRenderer getDefaultRenderer(MaterialType type) {
+        return defaultRenderers.get(type);
     }
 }

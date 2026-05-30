@@ -79,9 +79,8 @@ public class EntityBlueprintBuilder {
             var texture = ctx.getTextureSystem().load(filePath);
             var shader = new Shader(MaterialType.ENTITY.getVertexPath(), MaterialType.ENTITY.getFragmentPath());
             var material = new Material(shader, texture);
-            var defaultRenderer = ctx.getMaterialRendererRegistry().getDefaultRenderer(MaterialType.ENTITY);
-            if (defaultRenderer != null) {
-                ctx.getMaterialSystem().registerNewMaterial(material, defaultRenderer);
+            if (ctx.getMaterialSystem() != null) {
+                ctx.getMaterialSystem().register(material, MaterialType.ENTITY);
             }
             return new Component[]{ material };
         });

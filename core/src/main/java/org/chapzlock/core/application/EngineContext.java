@@ -4,7 +4,6 @@ import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.input.InputMap;
 import org.chapzlock.core.render.CameraSystem;
-import org.chapzlock.core.render.MaterialRendererRegistry;
 import org.chapzlock.core.render.MaterialSystem;
 import org.chapzlock.core.render.MeshSystem;
 import org.chapzlock.core.render.ShaderSystem;
@@ -24,7 +23,6 @@ public class EngineContext implements Disposable {
     private final TextureSystem textureSystem;
     private final ShaderSystem shaderSystem;
     private final MaterialSystem materialSystem;
-    private final MaterialRendererRegistry materialRendererRegistry;
     private final CameraSystem cameraSystem;
     private final Window window;
     private final Time time;
@@ -41,7 +39,6 @@ public class EngineContext implements Disposable {
             TextureSystem textureSystem,
             ShaderSystem shaderSystem,
             MaterialSystem materialSystem,
-            MaterialRendererRegistry materialRendererRegistry,
             CameraSystem cameraSystem,
             Window window,
             Time time,
@@ -52,7 +49,6 @@ public class EngineContext implements Disposable {
         this.textureSystem = textureSystem;
         this.shaderSystem = shaderSystem;
         this.materialSystem = materialSystem;
-        this.materialRendererRegistry = materialRendererRegistry;
         this.cameraSystem = cameraSystem;
         this.window = window;
         this.time = time;
@@ -64,7 +60,7 @@ public class EngineContext implements Disposable {
         return new EngineContext(
             new ComponentRegistry(eventBus),
             eventBus,
-            null, null, null, null, null, null, null,
+            null, null, null, null, null, null,
             new Time(),
             new TweenManager()
         );

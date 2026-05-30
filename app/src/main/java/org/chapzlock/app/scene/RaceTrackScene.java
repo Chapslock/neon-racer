@@ -50,7 +50,6 @@ public class RaceTrackScene {
                     var meshSystem = ctx.getMeshSystem();
                     var textureSystem = ctx.getTextureSystem();
                     var materialSystem = ctx.getMaterialSystem();
-                    var rendererRegistry = ctx.getMaterialRendererRegistry();
 
                     Mesh mesh = meshSystem.load("obj/funcar.obj");
                     Texture texture = textureSystem.load("textures/funcar.png");
@@ -58,7 +57,7 @@ public class RaceTrackScene {
                         new Shader(EntityShaderProps.VERTEX_FILE, EntityShaderProps.FRAGMENT_FILE),
                         texture,
                         Reflection.builder().reflectivity(.5f).shineDamper(1f).build());
-                    materialSystem.registerNewMaterial(material, rendererRegistry.getDefaultRenderer(MaterialType.ENTITY));
+                    materialSystem.register(material, MaterialType.ENTITY);
 
                     PhysicsBody physicsBody = new PhysicsBody(
                         CollisionShapeFactory.createConvexHullShape(meshSystem.getRawMeshById(mesh.getId())),
@@ -72,7 +71,6 @@ public class RaceTrackScene {
                     var meshSystem = ctx.getMeshSystem();
                     var textureSystem = ctx.getTextureSystem();
                     var materialSystem = ctx.getMaterialSystem();
-                    var rendererRegistry = ctx.getMaterialRendererRegistry();
 
                     Terrain terrainProps = Terrain.builder().maxHeight(40).build();
                     Material terrainMaterial = Material.builder()
@@ -83,7 +81,7 @@ public class RaceTrackScene {
                         .blendMap(textureSystem.load("textures/terrain/blendMap.png"))
                         .shader(new Shader(TerrainShaderProps.VERTEX_FILE, TerrainShaderProps.FRAGMENT_FILE))
                         .build();
-                    materialSystem.registerNewMaterial(terrainMaterial, rendererRegistry.getDefaultRenderer(MaterialType.TERRAIN));
+                    materialSystem.register(terrainMaterial, MaterialType.TERRAIN);
 
                     RawMeshData rawMeshData = RawMeshDataFactory.generateTerrainFromHeightMap(
                         FileUtils.loadBufferedImage("textures/terrain/heightmap.png"),
@@ -102,14 +100,13 @@ public class RaceTrackScene {
                     var meshSystem = ctx.getMeshSystem();
                     var textureSystem = ctx.getTextureSystem();
                     var materialSystem = ctx.getMaterialSystem();
-                    var rendererRegistry = ctx.getMaterialRendererRegistry();
 
                     Texture texture = textureSystem.load("textures/speedometer.png");
                     Material material = Material.builder()
                         .shader(new Shader(UiShaderProps.VERTEX_FILE, UiShaderProps.FRAGMENT_FILE))
                         .textures(List.of(texture))
                         .build();
-                    materialSystem.registerNewMaterial(material, rendererRegistry.getDefaultRenderer(MaterialType.UI));
+                    materialSystem.register(material, MaterialType.UI);
 
                     Mesh mesh = meshSystem.load(RawMeshDataFactory.createUi());
                     return new Component[]{ material, mesh };

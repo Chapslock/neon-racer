@@ -13,7 +13,6 @@ import org.chapzlock.core.input.InputMap;
 import org.chapzlock.core.logging.Log;
 import org.chapzlock.core.render.CameraSystem;
 import org.chapzlock.core.render.EntityMaterialRenderer;
-import org.chapzlock.core.render.MaterialRendererRegistry;
 import org.chapzlock.core.render.MaterialSystem;
 import org.chapzlock.core.render.MeshSystem;
 import org.chapzlock.core.render.ShaderSystem;
@@ -72,24 +71,23 @@ public class Application {
         ShaderSystem shaderSystem = new ShaderSystem();
         TextureSystem textureSystem = new TextureSystem();
         MeshSystem meshSystem = new MeshSystem();
-        MaterialRendererRegistry materialRendererRegistry = new MaterialRendererRegistry(shaderSystem);
-        MaterialSystem materialSystem = new MaterialSystem(materialRendererRegistry);
+        MaterialSystem materialSystem = new MaterialSystem(shaderSystem);
         CameraSystem cameraSystem = new CameraSystem(appSpec.getWindowSpec());
         Time time = new Time();
         TweenManager tweenManager = new TweenManager();
 
         context = new EngineContext(
             registry, eventBus, meshSystem, textureSystem,
-            shaderSystem, materialSystem, materialRendererRegistry, cameraSystem, window,
+            shaderSystem, materialSystem, cameraSystem, window,
             time, tweenManager
         );
 
         WindowSpecification windowSpec = appSpec.getWindowSpec();
-        materialRendererRegistry.registerDefault(MaterialType.ENTITY,
+        materialSystem.registerDefault(MaterialType.ENTITY,
             new EntityMaterialRenderer(shaderSystem, textureSystem, cameraSystem));
-        materialRendererRegistry.registerDefault(MaterialType.TERRAIN,
+        materialSystem.registerDefault(MaterialType.TERRAIN,
             new TerrainMaterialRenderer(shaderSystem, textureSystem, cameraSystem));
-        materialRendererRegistry.registerDefault(MaterialType.UI,
+        materialSystem.registerDefault(MaterialType.UI,
             new UiMaterialRenderer(shaderSystem, textureSystem, cameraSystem, windowSpec));
 
         sceneManager = new SceneManager(context);
