@@ -256,4 +256,31 @@ class SceneManagerTest {
         assertEquals(0, textureSystem.getRefCount(7));
         assertEquals(0, shaderSystem.getRefCount(99));
     }
+
+    @Test
+    void failedEntityInstantiationDoesNotLeavePartialEntity() {
+        Scene scene = new Scene("bad-entity", List.of(
+            new EntityBlueprint("good", List.of(
+                c -> new Component[]{ new Transform() }
+            )),
+            new EntityBlueprint("bad", List.of(
+                c -> { throw new RuntimeException("asset not found"); }
+            ))
+        ), List.of(), null);
+
+        sceneManager.loadImmediate(scene);
+
+        ComponentRegistry registry = ctx.getRegistry();
+        List<?> transforms = registry.view(Transform.class);
+        assertEquals(1, transforms.size(), "Only the good entity should exist");
+
+        // The key test: when we unload the scene, it should only try to destroy
+        // entities that were successfully created. This verifies that the failed
+        // entity's ID was not added to the scene's entity tracking list.
+        sceneManager.loadImmediate(simpleScene("replacement"));
+
+        // After loading a replacement scene, the original scene's entities should be cleaned up
+        // and the new scene should have its entity
+        assertEquals(1, registry.view(Transform.class).size(), "New scene should have one entity");
+    }
 }

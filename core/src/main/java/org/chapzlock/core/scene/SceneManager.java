@@ -173,9 +173,8 @@ public class SceneManager {
         List<Integer> entityIds = new ArrayList<>();
         SceneAssets assets = new SceneAssets();
         for (EntityBlueprint blueprint : scene.getEntities()) {
+            int entityId = Entity.create(registry);
             try {
-                int entityId = Entity.create(registry);
-                entityIds.add(entityId);
                 for (ComponentFactory factory : blueprint.getFactories()) {
                     Component[] components = factory.create(context);
                     for (Component component : components) {
@@ -183,7 +182,9 @@ public class SceneManager {
                         trackAsset(component, assets);
                     }
                 }
+                entityIds.add(entityId);
             } catch (Exception e) {
+                registry.destroyEntity(entityId);
                 Log.error("Scene \"" + scene.getName() + "\", entity \"" + blueprint.getName() +
                     "\": Failed to instantiate. " + e.getMessage() +
                     " Ensure asset files exist in src/main/resources/ and paths are relative to the resources root.");
