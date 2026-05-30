@@ -5,6 +5,7 @@ import java.util.List;
 import org.chapzlock.app.scene.RaceTrackScene;
 import org.chapzlock.core.application.Application;
 import org.chapzlock.core.application.ApplicationSpecification;
+import org.chapzlock.core.logging.Log;
 import org.chapzlock.core.physics.PhysicsSystem;
 import org.chapzlock.core.physics.PhysicsSystemSpecs;
 import org.chapzlock.core.render.RenderSystem;
@@ -13,6 +14,7 @@ import org.chapzlock.core.window.WindowSpecification;
 
 public class Main {
     public static void main(String[] args) {
+        Log.setDebugEnabled(true);
         Application app = Application.create(
             ApplicationSpecification.builder()
                 .windowSpec(WindowSpecification.builder()

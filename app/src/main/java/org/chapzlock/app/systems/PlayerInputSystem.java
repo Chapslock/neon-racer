@@ -39,10 +39,8 @@ public class PlayerInputSystem implements GameSystem {
 
         for (EntityView e : registry.view(PlayerTag.class, PlayerInputComponent.class)) {
             var playerInput = e.get(PlayerInputComponent.class);
-            playerInput.setMovingForward(input.isPressed("accelerate"));
-            playerInput.setMovingBackwards(input.isPressed("brake"));
-            playerInput.setMovingLeft(input.isPressed("steer_left"));
-            playerInput.setMovingRight(input.isPressed("steer_right"));
+            playerInput.setThrottle(input.getAxis("throttle"));
+            playerInput.setSteer(input.getAxis("steer"));
         }
     }
 }

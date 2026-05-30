@@ -17,30 +17,25 @@ import org.chapzlock.core.component.Reflection;
 import org.chapzlock.core.component.Shader;
 import org.chapzlock.core.component.Terrain;
 import org.chapzlock.core.component.Texture;
-import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.Component;
+import org.chapzlock.core.input.InputMap;
+import org.chapzlock.core.input.Key;
 import org.chapzlock.core.physics.CollisionShapeFactory;
 import org.chapzlock.core.physics.PhysicsSpecs;
 import org.chapzlock.core.render.EntityShaderProps;
 import org.chapzlock.core.render.TerrainShaderProps;
 import org.chapzlock.core.render.UiShaderProps;
-import org.chapzlock.core.input.InputMap;
-import org.chapzlock.core.input.Key;
 import org.chapzlock.core.scene.MaterialType;
 import org.chapzlock.core.scene.Scene;
-import org.joml.Vector3f;
 
 public class RaceTrackScene {
 
     public static Scene create() {
-
         return Scene.builder("race-track")
             .inputMap(InputMap.builder()
-                .action("accelerate", Key.UP, Key.W)
-                .action("brake", Key.DOWN, Key.S)
-                .action("steer_left", Key.LEFT, Key.A)
-                .action("steer_right", Key.RIGHT, Key.D)
                 .action("quit", Key.ESCAPE)
+                .axis("throttle", Key.S, Key.W)
+                .axis("steer", Key.A, Key.D)
                 .build())
             .entity("player", e -> e
                 .transform(0, 10, -5, 0, 0, 180)
