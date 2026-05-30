@@ -76,11 +76,18 @@ public class Application {
         Time time = new Time();
         TweenManager tweenManager = new TweenManager();
 
-        context = new EngineContext(
-            registry, eventBus, meshSystem, textureSystem,
-            shaderSystem, materialSystem, cameraSystem, window,
-            time, tweenManager
-        );
+        context = EngineContext.builder()
+            .registry(registry)
+            .eventBus(eventBus)
+            .meshSystem(meshSystem)
+            .textureSystem(textureSystem)
+            .shaderSystem(shaderSystem)
+            .materialSystem(materialSystem)
+            .cameraSystem(cameraSystem)
+            .window(window)
+            .time(time)
+            .tweenManager(tweenManager)
+            .build();
 
         WindowSpecification windowSpec = appSpec.getWindowSpec();
         materialSystem.registerDefault(MaterialType.ENTITY,

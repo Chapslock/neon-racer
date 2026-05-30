@@ -224,13 +224,15 @@ class SceneManagerTest {
         TextureSystem textureSystem = new TextureSystem();
         ShaderSystem shaderSystem = new ShaderSystem();
         EventBus eb = new EventBus();
-        EngineContext assetCtx = new EngineContext(
-            new ComponentRegistry(eb), eb,
-            meshSystem, textureSystem, shaderSystem,
-            null, null, null,
-            new org.chapzlock.core.application.Time(),
-            new org.chapzlock.core.tween.TweenManager()
-        );
+        EngineContext assetCtx = EngineContext.builder()
+            .registry(new ComponentRegistry(eb))
+            .eventBus(eb)
+            .meshSystem(meshSystem)
+            .textureSystem(textureSystem)
+            .shaderSystem(shaderSystem)
+            .time(new org.chapzlock.core.application.Time())
+            .tweenManager(new org.chapzlock.core.tween.TweenManager())
+            .build();
         SceneManager sm = new SceneManager(assetCtx);
 
         Mesh fakeMesh = Mesh.builder().id(42).build();

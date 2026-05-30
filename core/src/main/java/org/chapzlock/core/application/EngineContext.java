@@ -12,10 +12,12 @@ import org.chapzlock.core.scene.SceneManager;
 import org.chapzlock.core.tween.TweenManager;
 import org.chapzlock.core.window.Window;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
+@Builder
 public class EngineContext implements Disposable {
     private final ComponentRegistry registry;
     private final EventBus eventBus;
@@ -32,38 +34,14 @@ public class EngineContext implements Disposable {
     @Setter
     private InputMap activeInputMap;
 
-    public EngineContext(
-            ComponentRegistry registry,
-            EventBus eventBus,
-            MeshSystem meshSystem,
-            TextureSystem textureSystem,
-            ShaderSystem shaderSystem,
-            MaterialSystem materialSystem,
-            CameraSystem cameraSystem,
-            Window window,
-            Time time,
-            TweenManager tweenManager) {
-        this.registry = registry;
-        this.eventBus = eventBus;
-        this.meshSystem = meshSystem;
-        this.textureSystem = textureSystem;
-        this.shaderSystem = shaderSystem;
-        this.materialSystem = materialSystem;
-        this.cameraSystem = cameraSystem;
-        this.window = window;
-        this.time = time;
-        this.tweenManager = tweenManager;
-    }
-
     public static EngineContext testContext() {
         EventBus eventBus = new EventBus();
-        return new EngineContext(
-            new ComponentRegistry(eventBus),
-            eventBus,
-            null, null, null, null, null, null,
-            new Time(),
-            new TweenManager()
-        );
+        return EngineContext.builder()
+            .registry(new ComponentRegistry(eventBus))
+            .eventBus(eventBus)
+            .time(new Time())
+            .tweenManager(new TweenManager())
+            .build();
     }
 
     @Override
