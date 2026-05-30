@@ -143,8 +143,7 @@ public final class EventBus {
                         return true;
                     }
                 } catch (Exception ex) {
-                    // prefer a logger overload that accepts the throwable if available
-                    Log.error("EventBus listener failed for " + event.getClass().getSimpleName() + ". Error: " + ex);
+                    Log.error("EventBus listener failed for " + event.getClass().getSimpleName(), ex);
                 }
             }
         }
