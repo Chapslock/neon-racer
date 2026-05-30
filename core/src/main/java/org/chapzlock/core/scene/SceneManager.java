@@ -221,6 +221,7 @@ public class SceneManager {
     }
 
     private void instantiateScene(Scene scene) {
+        DescriptorResolver resolver = new DescriptorResolver(context);
         List<Integer> entityIds = new ArrayList<>();
         SceneAssets assets = new SceneAssets();
         for (EntityBlueprint blueprint : scene.getEntities()) {
@@ -234,8 +235,9 @@ public class SceneManager {
                         trackAsset(component, assets);
                     }
                 }
-                // New path: direct components from blueprint
-                for (Component component : blueprint.getComponents()) {
+                // New path: descriptor resolution
+                List<Component> resolved = resolver.resolve(blueprint);
+                for (Component component : resolved) {
                     registry.addComponent(entityId, component);
                     trackAsset(component, assets);
                 }
