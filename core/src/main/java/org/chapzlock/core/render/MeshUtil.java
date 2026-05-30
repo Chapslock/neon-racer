@@ -94,25 +94,12 @@ public class MeshUtil {
     }
 
     /**
-     * Binds VAO and renders triangles
-     *
-     * @param mesh
+     * Binds VAO and renders triangles. Vertex attribute state is stored
+     * in the VAO (enabled during bindMeshDataToGpu), so only bind/draw/unbind is needed.
      */
     public static void render(Mesh mesh) {
         glBindVertexArray(mesh.getVaoId());
-        glEnableVertexAttribArray(0); // positions
-        glEnableVertexAttribArray(1); // texCoords
-        if (mesh.getNormalsVboId() != null) {
-            glEnableVertexAttribArray(2); //normals
-        }
         glDrawElements(GL_TRIANGLES, mesh.getVertexCount(), GL_UNSIGNED_INT, 0);
-
-
-        glDisableVertexAttribArray(0);
-        glDisableVertexAttribArray(1);
-        if (mesh.getNormalsVboId() != null) {
-            glDisableVertexAttribArray(2);
-        }
         glBindVertexArray(0);
     }
 
