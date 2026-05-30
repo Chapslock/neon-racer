@@ -68,7 +68,7 @@ public class PhysicsSystem implements GameSystem {
     public void onInit(EngineContext ctx) {
         this.registry = ctx.getRegistry();
         this.eventBus = ctx.getEventBus();
-        this.cameraSystem = new CameraSystem(ctx.getWindow().getSpecification());
+        this.cameraSystem = ctx.getCameraSystem();
         setupPhysicsWorld();
         subscribeToLifecycleEvents();
     }
