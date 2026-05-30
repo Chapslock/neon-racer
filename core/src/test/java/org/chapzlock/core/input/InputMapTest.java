@@ -132,4 +132,22 @@ class InputMapTest {
         eventBus.publish(new KeyPressedEvent(GLFW_KEY_SPACE, 0));
         assertTrue(inputMap.isPressed("jump"));
     }
+
+    @Test
+    void unknownActionLogsWarningOnce() {
+        var originalOut = System.out;
+        var outContent = new java.io.ByteArrayOutputStream();
+        System.setOut(new java.io.PrintStream(outContent));
+
+        try {
+            inputMap.isPressed("typo_action");
+            inputMap.isPressed("typo_action");
+            String output = outContent.toString();
+            assertEquals(1, output.split("\\[WARN\\]").length - 1,
+                "Warning should fire exactly once per unregistered action");
+            assertTrue(output.contains("typo_action"));
+        } finally {
+            System.setOut(originalOut);
+        }
+    }
 }

@@ -10,6 +10,7 @@ import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.event.Subscription;
 import org.chapzlock.core.input.keyboard.KeyPressedEvent;
 import org.chapzlock.core.input.keyboard.KeyReleasedEvent;
+import org.chapzlock.core.logging.Log;
 
 public class InputMap {
     private final Map<String, List<Key>> actionBindings;
@@ -19,6 +20,7 @@ public class InputMap {
     private final Set<Integer> justPressedKeys = new HashSet<>();
     private final Set<Integer> justReleasedKeys = new HashSet<>();
     private final List<Subscription> subscriptions = new ArrayList<>();
+    private final Set<String> warnedActions = new HashSet<>();
 
     InputMap(Map<String, List<Key>> actionBindings, Map<String, Key[]> axisBindings) {
         this.actionBindings = actionBindings;
@@ -48,8 +50,8 @@ public class InputMap {
     }
 
     public boolean isPressed(String action) {
+        if (isUnregisteredAction(action)) return false;
         List<Key> keys = actionBindings.get(action);
-        if (keys == null) return false;
         for (Key key : keys) {
             if (pressedKeys.contains(key.getGlfwCode())) return true;
         }
@@ -57,8 +59,8 @@ public class InputMap {
     }
 
     public boolean wasJustPressed(String action) {
+        if (isUnregisteredAction(action)) return false;
         List<Key> keys = actionBindings.get(action);
-        if (keys == null) return false;
         for (Key key : keys) {
             if (justPressedKeys.contains(key.getGlfwCode())) return true;
         }
@@ -66,8 +68,8 @@ public class InputMap {
     }
 
     public boolean wasJustReleased(String action) {
+        if (isUnregisteredAction(action)) return false;
         List<Key> keys = actionBindings.get(action);
-        if (keys == null) return false;
         for (Key key : keys) {
             if (justReleasedKeys.contains(key.getGlfwCode())) return true;
         }
@@ -75,14 +77,32 @@ public class InputMap {
     }
 
     public float getAxis(String axisName) {
+        if (isUnregisteredAxis(axisName)) return 0f;
         Key[] keys = axisBindings.get(axisName);
-        if (keys == null) return 0f;
         boolean neg = pressedKeys.contains(keys[0].getGlfwCode());
         boolean pos = pressedKeys.contains(keys[1].getGlfwCode());
         if (neg && pos) return 0f;
         if (neg) return -1f;
         if (pos) return 1f;
         return 0f;
+    }
+
+    private boolean isUnregisteredAction(String action) {
+        if (actionBindings.containsKey(action)) return false;
+        if (warnedActions.add(action)) {
+            Log.warn("InputMap: queried unregistered action \"" + action +
+                "\". Registered actions: " + actionBindings.keySet());
+        }
+        return true;
+    }
+
+    private boolean isUnregisteredAxis(String axisName) {
+        if (axisBindings.containsKey(axisName)) return false;
+        if (warnedActions.add(axisName)) {
+            Log.warn("InputMap: queried unregistered axis \"" + axisName +
+                "\". Registered axes: " + axisBindings.keySet());
+        }
+        return true;
     }
 
     private boolean handleKeyPressed(KeyPressedEvent event) {
