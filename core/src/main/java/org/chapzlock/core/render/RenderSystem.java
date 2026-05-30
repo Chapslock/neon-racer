@@ -1,47 +1,36 @@
 package org.chapzlock.core.render;
 
-import static org.lwjgl.opengl.GL11.glClearColor;
+import static org.lwjgl.opengl.GL11.GL_BACK;
+import static org.lwjgl.opengl.GL11.GL_CULL_FACE;
+import static org.lwjgl.opengl.GL11.glCullFace;
+import static org.lwjgl.opengl.GL11.glEnable;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.ecs.SystemPhase;
-import org.chapzlock.core.component.Color;
-import org.chapzlock.core.component.Material;
-import org.chapzlock.core.component.Mesh;
-import org.chapzlock.core.component.Sky;
-import org.chapzlock.core.component.Transform;
-import org.chapzlock.core.ecs.EntityView;
-import org.chapzlock.core.ecs.ComponentRegistry;
-import org.lwjgl.opengl.GL11;
 
 /**
- * Batches and renders entities with Mesh + Material components.
+ * Orchestrates the rendering pipeline by executing registered RenderPasses in order.
  *
- * <p>Entities are grouped by material to minimize shader switches.
- * Requires {@link Transform}, {@link Mesh}, and {@link Material} components.
+ * <p>Each frame: populates RenderContext with per-frame state (camera, lights),
+ * then iterates passes in order — each pass collects its visible entities and
+ * issues draw calls independently.</p>
  */
 public class RenderSystem implements GameSystem {
 
-    private ComponentRegistry registry;
-    private MeshSystem meshSystem;
-    private MaterialSystem materialSystem;
+    private List<RenderPass> passes;
     private RenderContext renderContext;
-
-    private final Map<Material, List<EntityView>> renderQueue = new HashMap<>();
 
     @Override
     public void onInit(EngineContext ctx) {
-        this.registry = ctx.getRegistry();
-        this.meshSystem = ctx.getMeshSystem();
-        this.materialSystem = ctx.getMaterialSystem();
-        this.renderContext = new RenderContext(ctx);
-        GL11.glEnable(GL11.GL_CULL_FACE);
-        GL11.glCullFace(GL11.GL_BACK);
+        renderContext = new RenderContext(ctx);
+        passes = List.of(new OpaquePass(), new UiPass());
+        passes.forEach(p -> p.init(ctx));
+
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
     }
 
     @Override
@@ -54,36 +43,9 @@ public class RenderSystem implements GameSystem {
         if (!renderContext.beginFrame()) {
             return;
         }
-
-        registry.view(Mesh.class, Material.class, Transform.class)
-            .forEach(this::submitToRenderQueue);
-
-        renderSky(renderContext.getSky());
-
-        for (var batch : renderQueue.entrySet()) {
-            Material material = batch.getKey();
-            List<EntityView> renderables = batch.getValue();
-            MaterialRenderer materialRenderer = materialSystem.getRenderer(material);
-            materialRenderer.apply(renderContext, material);
-            for (EntityView entity : renderables) {
-                materialRenderer.prepareEntity(renderContext, entity);
-                meshSystem.render(entity.get(Mesh.class));
-            }
-            materialRenderer.unapply();
-        }
-
-        renderQueue.clear();
-    }
-
-    private void renderSky(Sky sky) {
-        if (sky != null) {
-            Color color = sky.getColor();
-            glClearColor(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha());
+        for (RenderPass pass : passes) {
+            pass.collectVisibles(renderContext);
+            pass.execute(renderContext);
         }
     }
-
-    private void submitToRenderQueue(EntityView entity) {
-        this.renderQueue.computeIfAbsent(entity.get(Material.class), m -> new ArrayList<>()).add(entity);
-    }
-
 }
