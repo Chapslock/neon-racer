@@ -1,58 +1,48 @@
 package org.chapzlock.core.render;
 
-import static org.chapzlock.core.render.TerrainShaderProps.UNIFORM_LIGHT_COLOR;
-import static org.chapzlock.core.render.TerrainShaderProps.UNIFORM_LIGHT_POSITION;
-import static org.chapzlock.core.render.TerrainShaderProps.UNIFORM_PROJECTION_MATRIX;
-import static org.chapzlock.core.render.TerrainShaderProps.UNIFORM_REFLECTIVITY;
-import static org.chapzlock.core.render.TerrainShaderProps.UNIFORM_SHINE_DAMPER;
-import static org.chapzlock.core.render.TerrainShaderProps.UNIFORM_TEXTURE_0;
-import static org.chapzlock.core.render.TerrainShaderProps.UNIFORM_TEXTURE_1;
-import static org.chapzlock.core.render.TerrainShaderProps.UNIFORM_TEXTURE_2;
-import static org.chapzlock.core.render.TerrainShaderProps.UNIFORM_TEXTURE_BLEND_MAP;
-import static org.chapzlock.core.render.TerrainShaderProps.UNIFORM_TRANSFORMATION_MATRIX;
-import static org.chapzlock.core.render.TerrainShaderProps.UNIFORM_VIEW_MATRIX;
+import static org.chapzlock.core.render.TerrainShaderProps.*;
 
-import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.Material;
-import org.chapzlock.core.component.PointLight;
 import org.chapzlock.core.component.Shader;
-import org.chapzlock.core.component.Sky;
 import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.EntityView;
 
+/**
+ * Renders terrain with multi-texture blending.
+ */
 public class TerrainMaterialRenderer implements MaterialRenderer {
+
     private final ShaderSystem shaderSystem;
     private final TextureSystem textureSystem;
-    private final CameraSystem cameraSystem;
 
-    public TerrainMaterialRenderer(ShaderSystem shaderSystem, TextureSystem textureSystem, CameraSystem cameraSystem) {
+    public TerrainMaterialRenderer(ShaderSystem shaderSystem, TextureSystem textureSystem) {
         this.shaderSystem = shaderSystem;
         this.textureSystem = textureSystem;
-        this.cameraSystem = cameraSystem;
     }
 
     @Override
-    public void apply(Material material, Camera camera, PointLight light, Sky sky) {
+    public void apply(RenderContext ctx, Material material) {
         Shader shader = material.getShader();
         shaderSystem.use(shader);
 
         bindTextures(material, shader);
         bindBlendMap(material, shader);
 
-        if (sky != null) {
-            shaderSystem.setUniform(shader, TerrainShaderProps.UNIFORM_SKY_COLOR, sky.getColor().toVector3f());
-            shaderSystem.setUniform(shader, TerrainShaderProps.UNIFORM_FOG_DENSITY, sky.getFogDensity());
-            shaderSystem.setUniform(shader, TerrainShaderProps.UNIFORM_FOG_GRADIENT, sky.getFogGradient());
+        if (ctx.getSky() != null) {
+            shaderSystem.setUniform(shader, UNIFORM_SKY_COLOR, ctx.getSky().getColor().toVector3f());
         }
+        shaderSystem.setUniform(shader, UNIFORM_FOG_DENSITY, ctx.getFogDensity());
+        shaderSystem.setUniform(shader, UNIFORM_FOG_GRADIENT, ctx.getFogGradient());
 
         shaderSystem.setUniform(shader, UNIFORM_SHINE_DAMPER, material.getReflection().getShineDamper());
         shaderSystem.setUniform(shader, UNIFORM_REFLECTIVITY, material.getReflection().getReflectivity());
-        shaderSystem.setUniform(shader, UNIFORM_VIEW_MATRIX, cameraSystem.calculateViewMatrix(camera));
-        shaderSystem.setUniform(shader, UNIFORM_PROJECTION_MATRIX, cameraSystem.calculateProjectionMatrix(camera));
-        if (light != null) {
-            shaderSystem.setUniform(shader, UNIFORM_LIGHT_POSITION, light.position());
-            shaderSystem.setUniform(shader, UNIFORM_LIGHT_COLOR, light.color().toVector3f());
+        shaderSystem.setUniform(shader, UNIFORM_VIEW_MATRIX, ctx.getViewMatrix());
+        shaderSystem.setUniform(shader, UNIFORM_PROJECTION_MATRIX, ctx.getProjectionMatrix());
+
+        if (ctx.getPointLight() != null) {
+            shaderSystem.setUniform(shader, UNIFORM_LIGHT_POSITION, ctx.getPointLight().position());
+            shaderSystem.setUniform(shader, UNIFORM_LIGHT_COLOR, ctx.getPointLight().color().toVector3f());
         }
     }
 
@@ -74,17 +64,13 @@ public class TerrainMaterialRenderer implements MaterialRenderer {
     }
 
     @Override
-    public void prepareEntity(EntityView entity, Material material) {
-        shaderSystem.setUniform(material.getShader(), UNIFORM_TRANSFORMATION_MATRIX, entity.get(Transform.class)
-            .getTransformationMatrix());
+    public void prepareEntity(RenderContext ctx, EntityView entity) {
+        shaderSystem.setUniform(entity.get(Material.class).getShader(),
+            UNIFORM_TRANSFORMATION_MATRIX, entity.get(Transform.class).getTransformationMatrix());
     }
 
     @Override
-    public void unapply(Material material) {
-        Texture texture = material.getFirstTexture();
-        if (texture != null) {
-            textureSystem.unbind(texture);
-        }
+    public void unapply() {
         shaderSystem.clearProgram();
     }
 }

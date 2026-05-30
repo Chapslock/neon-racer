@@ -108,11 +108,11 @@ public class Application {
 
         WindowSpecification windowSpec = appSpec.getWindowSpec();
         materialSystem.registerDefault(MaterialType.ENTITY,
-            new EntityMaterialRenderer(shaderSystem, textureSystem, cameraSystem));
+            new EntityMaterialRenderer(shaderSystem, textureSystem));
         materialSystem.registerDefault(MaterialType.TERRAIN,
-            new TerrainMaterialRenderer(shaderSystem, textureSystem, cameraSystem));
+            new TerrainMaterialRenderer(shaderSystem, textureSystem));
         materialSystem.registerDefault(MaterialType.UI,
-            new UiMaterialRenderer(shaderSystem, textureSystem, cameraSystem, windowSpec));
+            new UiMaterialRenderer(shaderSystem, textureSystem, windowSpec));
 
         Log.debug("Subsystems initialized: MeshSystem, TextureSystem, ShaderSystem, MaterialSystem, CameraSystem");
 
