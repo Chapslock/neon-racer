@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.chapzlock.core.component.*;
 import org.chapzlock.core.ecs.EntityView;
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 /**
@@ -75,8 +76,15 @@ public class EntityMaterialRenderer implements MaterialRenderer {
 
     @Override
     public void prepareEntity(RenderContext ctx, EntityView entity) {
+        // Prefer WorldTransform (computed by TransformSystem for hierarchy support).
+        // Falls back to Transform's local matrix for entities without WorldTransform.
+        WorldTransform worldTransform = ctx.getRegistry().getComponent(entity.getId(), WorldTransform.class);
+        Matrix4f modelMatrix = worldTransform != null
+            ? worldTransform.getWorldMatrix()
+            : entity.get(Transform.class).getTransformationMatrix();
+
         shaderSystem.setUniform(entity.get(Material.class).getShader(),
-            UNIFORM_TRANSFORMATION_MATRIX, entity.get(Transform.class).getTransformationMatrix());
+            UNIFORM_TRANSFORMATION_MATRIX, modelMatrix);
     }
 
     @Override
