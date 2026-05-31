@@ -43,6 +43,17 @@ public class TextureSystem implements Disposable {
     }
 
     /**
+     * Load a texture from memory (for embedded GLB textures).
+     *
+     * @param imageBytes raw PNG/JPEG bytes from GLB binary chunk
+     * @param cacheKey unique identifier for caching (e.g., "embedded:model.glb:tex0")
+     * @return texture bound to GPU
+     */
+    public Texture loadFromMemory(java.nio.ByteBuffer imageBytes, String cacheKey) {
+        throw new UnsupportedOperationException("Not yet implemented — will be added in embedded texture support task");
+    }
+
+    /**
      * Binds a texture for rendering
      *
      * @param texture

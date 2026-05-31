@@ -350,13 +350,14 @@ public class GltfLoader {
         for (MaterialModel mat : model.getMaterialModels()) {
             MaterialModelV2 matV2 = (MaterialModelV2) mat;
 
-            // Extract texture paths (null if no texture assigned)
-            String baseColorTex = resolveTexturePath(matV2.getBaseColorTexture(), baseDir);
-            String metallicRoughnessTex = resolveTexturePath(
-                matV2.getMetallicRoughnessTexture(), baseDir);
-            String normalTex = resolveTexturePath(matV2.getNormalTexture(), baseDir);
-            String occlusionTex = resolveTexturePath(matV2.getOcclusionTexture(), baseDir);
-            String emissiveTex = resolveTexturePath(matV2.getEmissiveTexture(), baseDir);
+            // Extract texture references (null if no texture assigned)
+            int texIndex = 0;
+            GltfTextureRef baseColorTex = resolveTextureRef(matV2.getBaseColorTexture(), baseDir, sourcePath, texIndex++);
+            GltfTextureRef metallicRoughnessTex = resolveTextureRef(
+                matV2.getMetallicRoughnessTexture(), baseDir, sourcePath, texIndex++);
+            GltfTextureRef normalTex = resolveTextureRef(matV2.getNormalTexture(), baseDir, sourcePath, texIndex++);
+            GltfTextureRef occlusionTex = resolveTextureRef(matV2.getOcclusionTexture(), baseDir, sourcePath, texIndex++);
+            GltfTextureRef emissiveTex = resolveTextureRef(matV2.getEmissiveTexture(), baseDir, sourcePath, texIndex++);
 
             // Extract factors (with defaults matching glTF spec)
             float[] bcf = matV2.getBaseColorFactor() != null
@@ -392,7 +393,7 @@ public class GltfLoader {
     }
 
     /**
-     * Resolves a texture's image path relative to the glTF file's directory.
+     * Resolves a texture reference (file-based or embedded) from a glTF texture model.
      *
      * <p>In glTF, textures reference images, and images have a URI pointing to the actual
      * image file. For separate .gltf files, this URI is relative to the .gltf file.
@@ -400,15 +401,23 @@ public class GltfLoader {
      *
      * @param texture the texture model (may be null if no texture assigned)
      * @param baseDir the directory containing the glTF file (for resolving relative paths)
-     * @return resolved path, or null if no texture/image/URI
+     * @param sourcePath the original file path (used to build unique cache keys for embedded textures)
+     * @param textureIndex the texture's index within this material (for unique cache keys)
+     * @return texture reference, or null if no texture/image
      */
-    private String resolveTexturePath(TextureModel texture, String baseDir) {
+    private GltfTextureRef resolveTextureRef(TextureModel texture, String baseDir, String sourcePath, int textureIndex) {
         if (texture == null) return null;
         ImageModel image = texture.getImageModel();
         if (image == null) return null;
         String uri = image.getUri();
-        if (uri == null) return null; // embedded texture (in GLB) — handle via image data later
-        return baseDir + uri;
+        if (uri != null) {
+            return GltfTextureRef.fromPath(baseDir + uri);
+        }
+        // Embedded texture: extract raw image bytes from GLB binary chunk
+        ByteBuffer imageData = image.getImageData();
+        if (imageData == null) return null;
+        String cacheKey = "embedded:" + sourcePath + ":tex" + textureIndex;
+        return GltfTextureRef.fromMemory(imageData, cacheKey);
     }
 
     /**

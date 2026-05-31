@@ -29,22 +29,22 @@ import org.joml.Vector4f;
 public record GltfMaterialData(
     /** Material name from glTF (for debugging/identification). */
     String name,
-    /** Path to base color texture (relative to glTF file), or null if none. */
-    String baseColorTexturePath,
+    /** Reference to base color texture (file or embedded), or null if none. */
+    GltfTextureRef baseColorTexture,
     /** RGBA factor multiplied with base color texture. Default: (1,1,1,1) = white/opaque. */
     Vector4f baseColorFactor,
-    /** Path to metallic-roughness texture, or null. Blue=metallic, Green=roughness. */
-    String metallicRoughnessTexturePath,
+    /** Reference to metallic-roughness texture, or null. Blue=metallic, Green=roughness. */
+    GltfTextureRef metallicRoughnessTexture,
     /** Metallic factor (0-1). Multiplied with texture blue channel if present. */
     float metallicFactor,
     /** Roughness factor (0-1). Multiplied with texture green channel if present. */
     float roughnessFactor,
-    /** Path to tangent-space normal map texture, or null. */
-    String normalTexturePath,
-    /** Path to ambient occlusion texture (R channel only), or null. */
-    String occlusionTexturePath,
-    /** Path to emissive texture (RGB), or null. */
-    String emissiveTexturePath,
+    /** Reference to tangent-space normal map texture, or null. */
+    GltfTextureRef normalTexture,
+    /** Reference to ambient occlusion texture (R channel only), or null. */
+    GltfTextureRef occlusionTexture,
+    /** Reference to emissive texture (RGB), or null. */
+    GltfTextureRef emissiveTexture,
     /** RGB emissive factor multiplied with emissive texture. Default: (0,0,0) = no glow. */
     Vector3f emissiveFactor,
     /** Alpha mode: "OPAQUE", "MASK", or "BLEND". */

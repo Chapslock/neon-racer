@@ -9,6 +9,7 @@ import org.chapzlock.core.asset.gltf.GltfAsset;
 import org.chapzlock.core.asset.gltf.GltfMaterialData;
 import org.chapzlock.core.asset.gltf.GltfMeshData;
 import org.chapzlock.core.asset.gltf.GltfNodeData;
+import org.chapzlock.core.asset.gltf.GltfTextureRef;
 import org.chapzlock.core.component.AlphaMode;
 import org.chapzlock.core.component.Hierarchy;
 import org.chapzlock.core.component.Mesh;
@@ -267,8 +268,9 @@ public class GltfSceneInstantiator {
      * Converts glTF material data into a PbrMaterial component.
      *
      * <p>Maps all glTF PBR properties (factors, textures, alpha mode) to the engine's
-     * PbrMaterial builder. Textures are loaded from their file paths via TextureSystem.
-     * If a texture path is null, that texture slot is left empty and the shader will use
+     * PbrMaterial builder. Textures are loaded via TextureSystem, dispatching on whether
+     * the texture is file-based (external URI) or memory-based (embedded in GLB).
+     * If a texture reference is null, that texture slot is left empty and the shader will use
      * the scalar/vector factor uniformly.
      *
      * @param shader the compiled PBR shader to attach to this material
@@ -285,33 +287,28 @@ public class GltfSceneInstantiator {
             .alphaCutoff(data.alphaCutoff())
             .doubleSided(data.doubleSided());
 
-        // Parse alpha mode string (glTF uses strings) to our enum
         builder.alphaMode(switch (data.alphaMode()) {
             case "MASK" -> AlphaMode.MASK;
             case "BLEND" -> AlphaMode.BLEND;
             default -> AlphaMode.OPAQUE;
         });
 
-        // Load textures from file paths if specified.
-        // Each texture is uploaded to the GPU and cached by TextureSystem.
         if (textureSystem != null) {
-            if (data.baseColorTexturePath() != null) {
-                builder.baseColorMap(textureSystem.load(data.baseColorTexturePath()));
-            }
-            if (data.metallicRoughnessTexturePath() != null) {
-                builder.metallicRoughnessMap(textureSystem.load(data.metallicRoughnessTexturePath()));
-            }
-            if (data.normalTexturePath() != null) {
-                builder.normalMap(textureSystem.load(data.normalTexturePath()));
-            }
-            if (data.occlusionTexturePath() != null) {
-                builder.occlusionMap(textureSystem.load(data.occlusionTexturePath()));
-            }
-            if (data.emissiveTexturePath() != null) {
-                builder.emissiveMap(textureSystem.load(data.emissiveTexturePath()));
-            }
+            loadTextureRef(data.baseColorTexture(), builder::baseColorMap);
+            loadTextureRef(data.metallicRoughnessTexture(), builder::metallicRoughnessMap);
+            loadTextureRef(data.normalTexture(), builder::normalMap);
+            loadTextureRef(data.occlusionTexture(), builder::occlusionMap);
+            loadTextureRef(data.emissiveTexture(), builder::emissiveMap);
         }
 
         return builder.build();
+    }
+
+    private void loadTextureRef(org.chapzlock.core.asset.gltf.GltfTextureRef ref, java.util.function.Consumer<Texture> setter) {
+        if (ref == null) return;
+        Texture tex = ref.isEmbedded()
+            ? textureSystem.loadFromMemory(ref.imageBytes(), ref.cacheKey())
+            : textureSystem.load(ref.filePath());
+        setter.accept(tex);
     }
 }
