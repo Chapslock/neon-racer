@@ -10,7 +10,6 @@ import java.util.Queue;
 
 import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.asset.gltf.GltfAsset;
-import org.chapzlock.core.asset.gltf.GltfLoader;
 import org.chapzlock.core.component.Material;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.PhysicsBody;
@@ -157,8 +156,7 @@ public class SceneManager {
      */
     public GltfInstance loadGltf(String resourcePath) {
         Log.debug("Loading glTF: " + resourcePath);
-        GltfLoader loader = new GltfLoader();
-        GltfAsset asset = loader.load(resourcePath);
+        GltfAsset asset = context.getGltfAssetRegistry().getOrLoad(resourcePath);
         GltfSceneInstantiator instantiator = new GltfSceneInstantiator(context);
         return instantiator.instantiate(asset);
     }

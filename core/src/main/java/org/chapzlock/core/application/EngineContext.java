@@ -1,5 +1,6 @@
 package org.chapzlock.core.application;
 
+import org.chapzlock.core.asset.gltf.GltfAssetRegistry;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.input.InputMap;
@@ -39,6 +40,7 @@ public class EngineContext implements Disposable {
     private final Window window;
     private final Time time;
     private final TweenManager tweenManager;
+    private final GltfAssetRegistry gltfAssetRegistry;
     @Setter
     private SceneManager sceneManager;
     @Setter
@@ -56,6 +58,7 @@ public class EngineContext implements Disposable {
             .eventBus(eventBus)
             .time(new Time())
             .tweenManager(new TweenManager())
+            .gltfAssetRegistry(new GltfAssetRegistry())
             .build();
     }
 

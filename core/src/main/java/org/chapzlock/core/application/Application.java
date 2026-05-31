@@ -6,6 +6,7 @@ import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
 
 import java.util.List;
 
+import org.chapzlock.core.asset.gltf.GltfAssetRegistry;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.event.EventBus;
@@ -91,6 +92,7 @@ public class Application {
         CameraSystem cameraSystem = new CameraSystem(appSpec.getWindowSpec());
         Time time = new Time();
         TweenManager tweenManager = new TweenManager();
+        GltfAssetRegistry gltfAssetRegistry = new GltfAssetRegistry();
 
         context = EngineContext.builder()
             .registry(registry)
@@ -103,6 +105,7 @@ public class Application {
             .window(window)
             .time(time)
             .tweenManager(tweenManager)
+            .gltfAssetRegistry(gltfAssetRegistry)
             .build();
 
         WindowSpecification windowSpec = appSpec.getWindowSpec();
