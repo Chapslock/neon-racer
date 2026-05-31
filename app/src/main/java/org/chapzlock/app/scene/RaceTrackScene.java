@@ -15,7 +15,7 @@ public class RaceTrackScene {
 
     public static Scene create() {
         return Scene.builder("race-track")
-            .fromGltf("models/funcar.glb")
+            .fromGltf("glb/forest-scene.glb")
             .inputMap(InputMap.builder()
                 .action("quit", Key.ESCAPE)
                 .axis("throttle", Key.S, Key.W)
