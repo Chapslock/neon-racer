@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Queue;
 
 import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.asset.gltf.GltfAsset;
+import org.chapzlock.core.asset.gltf.GltfLoader;
 import org.chapzlock.core.component.Material;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.PhysicsBody;
@@ -128,6 +130,68 @@ public class SceneManager {
     }
 
     /**
+     * Loads an entire glTF file as entities in the current scene context.
+     *
+     * <p>This creates entities for every node in the glTF file, uploads meshes to the GPU,
+     * creates PBR materials, and sets up the parent-child hierarchy. Returns a handle for
+     * looking up entities by their glTF node names (as set in Blender or other DCC tools).
+     *
+     * <p><strong>When to use:</strong> Call this when you want to spawn a 3D model at runtime
+     * without making it part of a scene's blueprint. For example, spawning a car prefab when
+     * a player joins, or loading level geometry during a cutscene.
+     *
+     * <p><strong>Usage example:</strong>
+     * <pre>{@code
+     * GltfInstance track = sceneManager.loadGltf("models/track.glb");
+     * int player = track.entity("Player");      // Look up by Blender node name
+     * int camera = track.entity("MainCamera");  // Another named node
+     * }</pre>
+     *
+     * <p><strong>Asset lifecycle:</strong> Meshes, textures, and shaders loaded by this method
+     * are managed by the GPU systems' reference counting. They will be released when the
+     * entities are destroyed (typically when the scene is unloaded).
+     *
+     * @param resourcePath path relative to the resources root (e.g., "models/track.glb")
+     * @return a {@link GltfInstance} handle for name-based entity lookup
+     * @throws org.chapzlock.core.asset.gltf.GltfLoadException if the file cannot be loaded or parsed
+     */
+    public GltfInstance loadGltf(String resourcePath) {
+        Log.debug("Loading glTF: " + resourcePath);
+        GltfLoader loader = new GltfLoader();
+        GltfAsset asset = loader.load(resourcePath);
+        GltfSceneInstantiator instantiator = new GltfSceneInstantiator(context);
+        return instantiator.instantiate(asset);
+    }
+
+    /**
+     * Loads a glTF file as a prefab and returns the root entity ID.
+     *
+     * <p>This is a convenience method that wraps {@link #loadGltf(String)} for simpler use
+     * cases where you only need the root entity and don't need name-based lookup. The root
+     * entity represents the top of the glTF node hierarchy — moving it will move the entire
+     * loaded model.
+     *
+     * <p><strong>When to use:</strong> Use this when you need to load a model and only
+     * interact with it as a single entity (e.g., a static prop, a collectible, a projectile).
+     * If you need to access individual named nodes inside the model, use
+     * {@link #loadGltf(String)} instead.
+     *
+     * <p><strong>Usage example:</strong>
+     * <pre>{@code
+     * int carEntity = sceneManager.instantiateGltf("models/car.glb");
+     * Transform t = registry.getComponent(carEntity, Transform.class);
+     * t.setPosition(spawnPoint);
+     * }</pre>
+     *
+     * @param resourcePath path relative to the resources root (e.g., "models/car.glb")
+     * @return the root entity ID of the instantiated glTF scene
+     * @throws org.chapzlock.core.asset.gltf.GltfLoadException if the file cannot be loaded or parsed
+     */
+    public int instantiateGltf(String resourcePath) {
+        return loadGltf(resourcePath).rootEntity();
+    }
+
+    /**
      * Processes all queued scene transitions. Called by the main loop at end-of-frame.
      */
     public void processPendingTransitions() {
@@ -224,6 +288,22 @@ public class SceneManager {
         DescriptorResolver resolver = new DescriptorResolver(context);
         List<Integer> entityIds = new ArrayList<>();
         SceneAssets assets = new SceneAssets();
+
+        // If the scene has a glTF base, load it first.
+        // The glTF nodes become entities alongside the programmatic blueprints.
+        if (scene.getGltfPath() != null) {
+            Log.debug("  Loading glTF base: " + scene.getGltfPath());
+            GltfInstance gltfInstance = loadGltf(scene.getGltfPath());
+            // Track all glTF entity IDs so they are destroyed when the scene is unloaded
+            for (int entityId : gltfInstance.allEntities().values()) {
+                entityIds.add(entityId);
+            }
+            // Also include the root entity if it wasn't already captured by name
+            if (!entityIds.contains(gltfInstance.rootEntity())) {
+                entityIds.add(gltfInstance.rootEntity());
+            }
+        }
+
         for (EntityBlueprint blueprint : scene.getEntities()) {
             int entityId = Entity.create(registry);
             try {

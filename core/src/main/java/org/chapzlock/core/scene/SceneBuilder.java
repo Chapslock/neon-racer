@@ -11,6 +11,24 @@ import org.joml.Vector3f;
 
 /**
  * Fluent builder for creating scenes.
+ *
+ * <p>This builder provides a declarative way to define what a scene contains: entities,
+ * systems, input bindings, and optionally a glTF file as the scene's 3D base.
+ *
+ * <p><strong>Usage example:</strong>
+ * <pre>{@code
+ * Scene race = Scene.builder("race-track")
+ *     .fromGltf("models/track.glb")           // Load a 3D model as the base
+ *     .entity("HUD", e -> e.sprite(...))      // Add programmatic entities
+ *     .directionalLight(new DirectionalLight(...))
+ *     .systems(new PlayerSystem(), new AISystem())
+ *     .inputMap(raceInputs)
+ *     .build();
+ * }</pre>
+ *
+ * <p><strong>glTF integration:</strong> When {@link #fromGltf(String)} is called, the built
+ * Scene carries the path so that SceneManager can load the glTF nodes alongside the
+ * programmatic entities during scene instantiation.
  */
 public class SceneBuilder {
 
@@ -18,6 +36,12 @@ public class SceneBuilder {
     private final List<EntityBlueprint> entities = new ArrayList<>();
     private final List<GameSystem> systems = new ArrayList<>();
     private InputMap inputMap;
+
+    /**
+     * Optional path to a glTF/GLB file that provides additional entities for this scene.
+     * Set via {@link #fromGltf(String)}. Null means no glTF base.
+     */
+    private String gltfPath;
 
     public SceneBuilder(String name) {
         this.name = name;
@@ -82,7 +106,57 @@ public class SceneBuilder {
         return this;
     }
 
+    /**
+     * Marks this scene as loading from a glTF file as its 3D base.
+     *
+     * <p>When the scene is instantiated by the SceneManager, the glTF file will be loaded
+     * and its nodes will be created as entities alongside any entities defined via
+     * {@link #entity(String, Consumer)}. This allows combining a glTF world/level with
+     * programmatic entities like HUD elements, triggers, or cameras.
+     *
+     * <p><strong>How it works:</strong> The built Scene stores the path, and the SceneManager
+     * detects it during instantiation. The glTF nodes are loaded first, then the programmatic
+     * entity blueprints are instantiated on top.
+     *
+     * <p><strong>Usage example:</strong>
+     * <pre>{@code
+     * Scene.builder("race")
+     *     .fromGltf("models/track.glb")
+     *     .entity("HUD", e -> e.sprite(...))  // Additional programmatic entities
+     *     .systems(new PlayerSystem())
+     *     .build();
+     * }</pre>
+     *
+     * @param resourcePath path to the glTF/GLB file relative to the resources root
+     *                     (e.g., "models/track.glb")
+     * @return this builder for chaining
+     */
+    public SceneBuilder fromGltf(String resourcePath) {
+        this.gltfPath = resourcePath;
+        return this;
+    }
+
+    /**
+     * Returns the glTF path if this scene is glTF-based, or null otherwise.
+     *
+     * <p>This is used internally by SceneManager to detect whether it needs to
+     * load a glTF file during scene instantiation.
+     *
+     * @return the resource path set via {@link #fromGltf(String)}, or null
+     */
+    public String getGltfPath() {
+        return gltfPath;
+    }
+
+    /**
+     * Builds the immutable Scene from the current builder state.
+     *
+     * <p>After calling this, the Scene is fully configured and ready to be loaded
+     * by the SceneManager. The builder should not be reused after this call.
+     *
+     * @return a new immutable Scene instance
+     */
     public Scene build() {
-        return new Scene(name, entities, systems, inputMap);
+        return new Scene(name, entities, systems, inputMap, gltfPath);
     }
 }
