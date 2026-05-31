@@ -12,7 +12,6 @@ import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.input.InputMap;
 import org.chapzlock.core.logging.Log;
 import org.chapzlock.core.render.CameraSystem;
-import org.chapzlock.core.render.EntityMaterialRenderer;
 import org.chapzlock.core.render.MaterialSystem;
 import org.chapzlock.core.render.MeshSystem;
 import org.chapzlock.core.render.PbrMaterialRenderer;
@@ -107,8 +106,6 @@ public class Application {
             .build();
 
         WindowSpecification windowSpec = appSpec.getWindowSpec();
-        materialSystem.registerDefault(MaterialType.ENTITY,
-            new EntityMaterialRenderer(shaderSystem, textureSystem));
         materialSystem.registerDefault(MaterialType.PBR,
             new PbrMaterialRenderer(shaderSystem, textureSystem));
         materialSystem.registerDefault(MaterialType.UI,

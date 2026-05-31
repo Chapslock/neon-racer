@@ -3,7 +3,6 @@ package org.chapzlock.core.scene;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.chapzlock.core.component.ModelDescriptor;
 import org.chapzlock.core.component.PhysicsDescriptor;
 import org.chapzlock.core.component.SpriteDescriptor;
 import org.chapzlock.core.component.Transform;
@@ -21,8 +20,7 @@ import org.chapzlock.core.ecs.Tag;
  * <pre>{@code
  * new EntityBlueprintBuilder("player")
  *     .transform(Transform.at(0, 10, -5, 0, 0, 180))
- *     .model(ModelDescriptor.of("obj/car.obj", "textures/car.png"))
- *     .physics(PhysicsDescriptor.dynamic(1f))
+ *     .sprite(SpriteDescriptor.of("textures/hud.png"))
  *     .tag(new PlayerTag())
  *     .component(new PlayerInputComponent())
  *     .build()
@@ -32,7 +30,6 @@ public class EntityBlueprintBuilder {
 
     private final String name;
     private Transform transform;
-    private ModelDescriptor modelDescriptor;
     private SpriteDescriptor spriteDescriptor;
     private PhysicsDescriptor physicsDescriptor;
     private final List<Tag> tags = new ArrayList<>();
@@ -45,12 +42,6 @@ public class EntityBlueprintBuilder {
     /** Sets the initial transform for this entity. */
     public EntityBlueprintBuilder transform(Transform transform) {
         this.transform = transform;
-        return this;
-    }
-
-/** Declares a 3D model to load for this entity. */
-    public EntityBlueprintBuilder model(ModelDescriptor descriptor) {
-        this.modelDescriptor = descriptor;
         return this;
     }
 
@@ -78,25 +69,20 @@ public class EntityBlueprintBuilder {
         return this;
     }
 
-/**
+    /**
      * Validates configuration and produces an immutable EntityBlueprint.
      *
      * @throws IllegalStateException if configuration is invalid
      */
     public EntityBlueprint build() {
         validate();
-        return new EntityBlueprint(name, transform, modelDescriptor,
+        return new EntityBlueprint(name, transform,
             spriteDescriptor, physicsDescriptor, tags, components);
     }
 
     private void validate() {
-        if (modelDescriptor != null && spriteDescriptor != null) {
-            throw new IllegalStateException(
-                "Entity '" + name + "': model() and sprite() are mutually exclusive");
-        }
-        if (physicsDescriptor != null && modelDescriptor == null) {
-            throw new IllegalStateException(
-                "Entity '" + name + "': physics() requires model()");
-        }
+        // No conflicting descriptors to check currently.
+        // Sprites are the only visual descriptor in the blueprint system now;
+        // 3D models are loaded via glTF directly through SceneManager.
     }
 }

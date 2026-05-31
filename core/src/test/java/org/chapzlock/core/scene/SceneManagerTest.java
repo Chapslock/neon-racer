@@ -6,8 +6,8 @@ import java.util.List;
 import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.component.Material;
 import org.chapzlock.core.component.Mesh;
-import org.chapzlock.core.component.ModelDescriptor;
 import org.chapzlock.core.component.Shader;
+import org.chapzlock.core.component.SpriteDescriptor;
 import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
@@ -267,7 +267,7 @@ class SceneManagerTest {
                 .build(),
             new EntityBlueprintBuilder("bad")
                 .transform(Transform.at(1, 1, 1))
-                .model(ModelDescriptor.builder().mesh("nonexistent.obj").build())
+                .sprite(SpriteDescriptor.of("nonexistent.png"))
                 .build()
         ), List.of(), null);
 

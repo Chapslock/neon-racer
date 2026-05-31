@@ -108,30 +108,4 @@ public class RenderContext {
         return ambientLight != null ? ambientLight.getStrength() : AmbientLight.DEFAULT_STRENGTH;
     }
 
-    // Temporary compatibility methods for old EntityMaterialRenderer
-    // These will be removed when Task 8 rewrites those renderers
-
-    /**
-     * @deprecated Use {@link #getPointLights()} instead. Returns first point light or null.
-     */
-    @Deprecated
-    public PointLight getPointLight() {
-        return pointLights.isEmpty() ? null : pointLights.get(0);
-    }
-
-    /**
-     * @deprecated Use {@link #getFog()} and {@link Fog#getDensity()} instead.
-     */
-    @Deprecated
-    public float getFogDensity() {
-        return fog != null ? fog.getDensity() : Fog.DEFAULT_DENSITY;
-    }
-
-    /**
-     * @deprecated Use {@link #getFog()} and {@link Fog#getGradient()} instead.
-     */
-    @Deprecated
-    public float getFogGradient() {
-        return fog != null ? fog.getGradient() : Fog.DEFAULT_GRADIENT;
-    }
 }

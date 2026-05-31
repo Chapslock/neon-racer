@@ -56,42 +56,42 @@ public class SceneBuilder {
 
     /** Adds a directional light entity to the scene. */
     public SceneBuilder directionalLight(DirectionalLight light) {
-        entities.add(new EntityBlueprint("directional-light", null, null, null, null,
+        entities.add(new EntityBlueprint("directional-light", null, null, null,
             List.of(), List.of(light)));
         return this;
     }
 
     /** Adds a point light entity to the scene. */
     public SceneBuilder pointLight(PointLight light) {
-        entities.add(new EntityBlueprint("point-light", null, null, null, null,
+        entities.add(new EntityBlueprint("point-light", null, null, null,
             List.of(), List.of(light)));
         return this;
     }
 
     /** Adds a fog entity to the scene. No call = fog disabled. */
     public SceneBuilder fog(Fog fog) {
-        entities.add(new EntityBlueprint("fog", null, null, null, null,
+        entities.add(new EntityBlueprint("fog", null, null, null,
             List.of(), List.of(fog)));
         return this;
     }
 
     /** Adds an ambient light entity to the scene. No call = uses AmbientLight.DEFAULT_STRENGTH. */
     public SceneBuilder ambient(AmbientLight ambient) {
-        entities.add(new EntityBlueprint("ambient-light", null, null, null, null,
+        entities.add(new EntityBlueprint("ambient-light", null, null, null,
             List.of(), List.of(ambient)));
         return this;
     }
 
     /** Adds a camera entity at the given position. */
     public SceneBuilder camera(float x, float y, float z) {
-        entities.add(new EntityBlueprint("camera", null, null, null, null,
+        entities.add(new EntityBlueprint("camera", null, null, null,
             List.of(), List.of(new Camera(new Vector3f(x, y, z)))));
         return this;
     }
 
     /** Adds a sky entity (background color). */
     public SceneBuilder sky() {
-        entities.add(new EntityBlueprint("sky", null, null, null, null,
+        entities.add(new EntityBlueprint("sky", null, null, null,
             List.of(), List.of(new Sky())));
         return this;
     }

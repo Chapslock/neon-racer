@@ -8,15 +8,11 @@ import org.chapzlock.core.asset.RawMeshData;
 import org.chapzlock.core.asset.RawMeshDataFactory;
 import org.chapzlock.core.component.Material;
 import org.chapzlock.core.component.Mesh;
-import org.chapzlock.core.component.ModelDescriptor;
-import org.chapzlock.core.component.OpaqueLayer;
 import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.PhysicsDescriptor;
-import org.chapzlock.core.component.Reflection;
 import org.chapzlock.core.component.Shader;
 import org.chapzlock.core.component.SpriteDescriptor;
 import org.chapzlock.core.component.Texture;
-import org.chapzlock.core.component.TransparentLayer;
 import org.chapzlock.core.component.UiLayer;
 import org.chapzlock.core.ecs.Component;
 import org.chapzlock.core.ecs.Tag;
@@ -56,9 +52,7 @@ public class DescriptorResolver {
 
         Mesh mesh = null;
 
-        if (blueprint.getModelDescriptor() != null) {
-            mesh = resolveModel(blueprint.getModelDescriptor(), result);
-        } else if (blueprint.getSpriteDescriptor() != null) {
+        if (blueprint.getSpriteDescriptor() != null) {
             mesh = resolveSprite(blueprint.getSpriteDescriptor(), result);
         }
 
@@ -73,42 +67,6 @@ public class DescriptorResolver {
         result.addAll(blueprint.getComponents());
 
         return result;
-    }
-
-    private Mesh resolveModel(ModelDescriptor desc, List<Component> result) {
-        MeshSystem meshSystem = ctx.getMeshSystem();
-        TextureSystem textureSystem = ctx.getTextureSystem();
-        MaterialSystem materialSystem = ctx.getMaterialSystem();
-
-        Mesh mesh = meshSystem.load(desc.getMesh());
-        result.add(mesh);
-
-        Texture texture = desc.getTexture() != null
-            ? textureSystem.load(desc.getTexture())
-            : null;
-
-        MaterialType type = MaterialType.ENTITY;
-        Shader shader = new Shader(type.getVertexPath(), type.getFragmentPath());
-
-        Material material = Material.builder()
-            .shader(shader)
-            .textures(texture != null ? List.of(texture) : List.of())
-            .reflection(Reflection.builder()
-                .reflectivity(desc.getReflectivity())
-                .shineDamper(desc.getShineDamper())
-                .build())
-            .build();
-
-        materialSystem.register(material, type);
-        result.add(material);
-
-        if (desc.isTransparent()) {
-            result.add(new TransparentLayer());
-        } else {
-            result.add(new OpaqueLayer());
-        }
-
-        return mesh;
     }
 
     private Mesh resolveSprite(SpriteDescriptor desc, List<Component> result) {

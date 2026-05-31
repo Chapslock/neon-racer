@@ -15,6 +15,7 @@ public class RaceTrackScene {
 
     public static Scene create() {
         return Scene.builder("race-track")
+            .fromGltf("models/funcar.glb")
             .inputMap(InputMap.builder()
                 .action("quit", Key.ESCAPE)
                 .axis("throttle", Key.S, Key.W)
@@ -43,13 +44,6 @@ public class RaceTrackScene {
             .ambient(AmbientLight.builder().strength(0.1f).build())
             .entity("player", e -> e
                 .transform(Transform.at(0, -70, 0, 0, 0, 0))
-                .model(ModelDescriptor.builder()
-                    .mesh("obj/funcar.obj")
-                    .texture("textures/funcar.png")
-                    .reflectivity(0.5f)
-                    .shineDamper(1f)
-                    .build())
-                .physics(PhysicsDescriptor.dynamic(1f))
                 .tag(new PlayerTag())
                 .component(new PlayerInputComponent()))
             .entity("speedometer", e -> e

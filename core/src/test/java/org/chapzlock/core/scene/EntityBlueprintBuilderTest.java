@@ -1,6 +1,5 @@
 package org.chapzlock.core.scene;
 
-import org.chapzlock.core.component.ModelDescriptor;
 import org.chapzlock.core.component.PhysicsDescriptor;
 import org.chapzlock.core.component.SpriteDescriptor;
 import org.chapzlock.core.component.Transform;
@@ -31,15 +30,6 @@ class EntityBlueprintBuilderTest {
     }
 
     @Test
-    void modelDescriptorIsStored() {
-        ModelDescriptor desc = ModelDescriptor.of("mesh.obj", "tex.png");
-        EntityBlueprint bp = new EntityBlueprintBuilder("test")
-            .model(desc)
-            .build();
-        assertSame(desc, bp.getModelDescriptor());
-    }
-
-    @Test
     void spriteDescriptorIsStored() {
         SpriteDescriptor desc = SpriteDescriptor.of("sprite.png");
         EntityBlueprint bp = new EntityBlueprintBuilder("test")
@@ -52,7 +42,6 @@ class EntityBlueprintBuilderTest {
     void physicsDescriptorIsStored() {
         PhysicsDescriptor desc = PhysicsDescriptor.dynamic(5f);
         EntityBlueprint bp = new EntityBlueprintBuilder("test")
-            .model(ModelDescriptor.of("m.obj", "t.png"))
             .physics(desc)
             .build();
         assertSame(desc, bp.getPhysicsDescriptor());
@@ -73,34 +62,6 @@ class EntityBlueprintBuilderTest {
             .component(new TestComponent(), new TestComponent())
             .build();
         assertEquals(2, bp.getComponents().size());
-    }
-
-    @Test
-    void modelAndSpriteAreMutuallyExclusive() {
-        EntityBlueprintBuilder builder = new EntityBlueprintBuilder("test")
-            .model(ModelDescriptor.of("m.obj", "t.png"))
-            .sprite(SpriteDescriptor.of("s.png"));
-
-        IllegalStateException ex = assertThrows(IllegalStateException.class, builder::build);
-        assertTrue(ex.getMessage().contains("model() and sprite() are mutually exclusive"));
-    }
-
-    @Test
-    void physicsRequiresModel() {
-        EntityBlueprintBuilder builder = new EntityBlueprintBuilder("test")
-            .physics(PhysicsDescriptor.dynamic(1f));
-
-        IllegalStateException ex = assertThrows(IllegalStateException.class, builder::build);
-        assertTrue(ex.getMessage().contains("physics() requires model()"));
-    }
-
-    @Test
-    void physicsWithModelIsValid() {
-        EntityBlueprint bp = new EntityBlueprintBuilder("test")
-            .model(ModelDescriptor.of("m.obj", "t.png"))
-            .physics(PhysicsDescriptor.dynamic(1f))
-            .build();
-        assertNotNull(bp.getPhysicsDescriptor());
     }
 
 }
