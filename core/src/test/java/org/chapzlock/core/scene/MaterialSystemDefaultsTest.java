@@ -27,6 +27,6 @@ class MaterialSystemDefaultsTest {
         ShaderSystem shaderSystem = mock(ShaderSystem.class);
         MaterialSystem system = new MaterialSystem(shaderSystem);
 
-        assertNull(system.getDefaultRenderer(MaterialType.TERRAIN));
+        assertNull(system.getDefaultRenderer(MaterialType.PBR));
     }
 }

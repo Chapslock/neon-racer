@@ -1,7 +1,5 @@
 package org.chapzlock.app.scene;
 
-import java.util.List;
-
 import org.chapzlock.app.component.PlayerInputComponent;
 import org.chapzlock.app.systems.PlayerCameraFollowSystem;
 import org.chapzlock.app.systems.PlayerInputSystem;
@@ -24,14 +22,27 @@ public class RaceTrackScene {
                 .build())
             .directionalLight(DirectionalLight.builder()
                 .direction(new Vector3f(-0.2f, -1f, -0.3f))
+                .color(new Color(1.0f, 0.95f, 0.8f))
                 .build())
             .pointLight(PointLight.builder()
-                .position(new Vector3f(-5, 300, -10))
+                .position(new Vector3f(0, -50, -5))
+                .color(new Color(1.0f, 0.3f, 0.1f))
+                .attenuation(Attenuation.DEFAULT)
                 .build())
-            .fog(Fog.builder().build())
-            .ambient(AmbientLight.builder().build())
+            .pointLight(PointLight.builder()
+                .position(new Vector3f(30, -50, -30))
+                .color(new Color(0.2f, 0.4f, 1.0f))
+                .attenuation(Attenuation.DEFAULT)
+                .build())
+            .pointLight(PointLight.builder()
+                .position(new Vector3f(-20, -50, -40))
+                .color(new Color(0.0f, 1.0f, 0.5f))
+                .attenuation(Attenuation.DEFAULT)
+                .build())
+            .fog(Fog.builder().density(0.012f).gradient(2.0f).build())
+            .ambient(AmbientLight.builder().strength(0.1f).build())
             .entity("player", e -> e
-                .transform(Transform.at(0, 10, -5, 0, 0, 180))
+                .transform(Transform.at(0, -70, 0, 0, 0, 0))
                 .model(ModelDescriptor.builder()
                     .mesh("obj/funcar.obj")
                     .texture("textures/funcar.png")
@@ -41,18 +52,6 @@ public class RaceTrackScene {
                 .physics(PhysicsDescriptor.dynamic(1f))
                 .tag(new PlayerTag())
                 .component(new PlayerInputComponent()))
-            .entity("terrain", e -> e
-                .transform(Transform.at(-400, 0, -400, 10, 0, 0))
-                .terrain(TerrainDescriptor.builder()
-                    .heightmap("textures/terrain/heightmap.png")
-                    .maxHeight(40f)
-                    .textures(List.of(
-                        "textures/terrain/grass.png",
-                        "textures/terrain/dirt.png",
-                        "textures/terrain/concrete.png"))
-                    .blendMap("textures/terrain/blendMap.png")
-                    .build())
-                .physics(PhysicsDescriptor.asStatic()))
             .entity("speedometer", e -> e
                 .transform(Transform.at(0, 0, 0, 0, 0, 0, 200))
                 .sprite(SpriteDescriptor.of("textures/speedometer.png")))

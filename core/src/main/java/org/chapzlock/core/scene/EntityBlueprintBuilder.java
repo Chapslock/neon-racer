@@ -6,7 +6,6 @@ import java.util.List;
 import org.chapzlock.core.component.ModelDescriptor;
 import org.chapzlock.core.component.PhysicsDescriptor;
 import org.chapzlock.core.component.SpriteDescriptor;
-import org.chapzlock.core.component.TerrainDescriptor;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.Component;
 import org.chapzlock.core.ecs.Tag;
@@ -34,7 +33,6 @@ public class EntityBlueprintBuilder {
     private final String name;
     private Transform transform;
     private ModelDescriptor modelDescriptor;
-    private TerrainDescriptor terrainDescriptor;
     private SpriteDescriptor spriteDescriptor;
     private PhysicsDescriptor physicsDescriptor;
     private final List<Tag> tags = new ArrayList<>();
@@ -53,12 +51,6 @@ public class EntityBlueprintBuilder {
 /** Declares a 3D model to load for this entity. */
     public EntityBlueprintBuilder model(ModelDescriptor descriptor) {
         this.modelDescriptor = descriptor;
-        return this;
-    }
-
-    /** Declares terrain to generate for this entity. */
-    public EntityBlueprintBuilder terrain(TerrainDescriptor descriptor) {
-        this.terrainDescriptor = descriptor;
         return this;
     }
 
@@ -93,26 +85,18 @@ public class EntityBlueprintBuilder {
      */
     public EntityBlueprint build() {
         validate();
-        return new EntityBlueprint(name, transform, modelDescriptor, terrainDescriptor,
+        return new EntityBlueprint(name, transform, modelDescriptor,
             spriteDescriptor, physicsDescriptor, tags, components);
     }
 
     private void validate() {
-        if (modelDescriptor != null && terrainDescriptor != null) {
-            throw new IllegalStateException(
-                "Entity '" + name + "': model() and terrain() are mutually exclusive");
-        }
         if (modelDescriptor != null && spriteDescriptor != null) {
             throw new IllegalStateException(
                 "Entity '" + name + "': model() and sprite() are mutually exclusive");
         }
-        if (terrainDescriptor != null && spriteDescriptor != null) {
+        if (physicsDescriptor != null && modelDescriptor == null) {
             throw new IllegalStateException(
-                "Entity '" + name + "': terrain() and sprite() are mutually exclusive");
-        }
-        if (physicsDescriptor != null && modelDescriptor == null && terrainDescriptor == null) {
-            throw new IllegalStateException(
-                "Entity '" + name + "': physics() requires model() or terrain()");
+                "Entity '" + name + "': physics() requires model()");
         }
     }
 }

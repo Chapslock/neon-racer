@@ -12,7 +12,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
  * Manages material-to-renderer associations.
  *
  * <p>Each {@link Material} is paired with a {@link MaterialRenderer} that knows how to render it.
- * Default renderers are registered for built-in material types (ENTITY, TERRAIN, UI).
+ * Default renderers are registered for built-in material types (ENTITY, PBR, UI).
  */
 public class MaterialSystem {
 

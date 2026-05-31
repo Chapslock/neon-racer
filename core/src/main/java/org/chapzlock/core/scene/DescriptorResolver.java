@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.chapzlock.core.application.EngineContext;
-import org.chapzlock.core.asset.FileUtils;
 import org.chapzlock.core.asset.RawMeshData;
 import org.chapzlock.core.asset.RawMeshDataFactory;
 import org.chapzlock.core.component.Material;
@@ -16,8 +15,6 @@ import org.chapzlock.core.component.PhysicsDescriptor;
 import org.chapzlock.core.component.Reflection;
 import org.chapzlock.core.component.Shader;
 import org.chapzlock.core.component.SpriteDescriptor;
-import org.chapzlock.core.component.Terrain;
-import org.chapzlock.core.component.TerrainDescriptor;
 import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.component.TransparentLayer;
 import org.chapzlock.core.component.UiLayer;
@@ -61,8 +58,6 @@ public class DescriptorResolver {
 
         if (blueprint.getModelDescriptor() != null) {
             mesh = resolveModel(blueprint.getModelDescriptor(), result);
-        } else if (blueprint.getTerrainDescriptor() != null) {
-            mesh = resolveTerrain(blueprint.getTerrainDescriptor(), result);
         } else if (blueprint.getSpriteDescriptor() != null) {
             mesh = resolveSprite(blueprint.getSpriteDescriptor(), result);
         }
@@ -112,47 +107,6 @@ public class DescriptorResolver {
         } else {
             result.add(new OpaqueLayer());
         }
-
-        return mesh;
-    }
-
-    private Mesh resolveTerrain(TerrainDescriptor desc, List<Component> result) {
-        MeshSystem meshSystem = ctx.getMeshSystem();
-        TextureSystem textureSystem = ctx.getTextureSystem();
-        MaterialSystem materialSystem = ctx.getMaterialSystem();
-
-        Terrain terrainComponent = Terrain.builder()
-            .maxHeight((int) desc.getMaxHeight())
-            .build();
-        result.add(terrainComponent);
-
-        RawMeshData rawMeshData = RawMeshDataFactory.generateTerrainFromHeightMap(
-            FileUtils.loadBufferedImage(desc.getHeightmap()),
-            desc.getSize(), desc.getMaxHeight());
-        Mesh mesh = meshSystem.load(rawMeshData);
-        result.add(mesh);
-
-        List<Texture> textures = new ArrayList<>();
-        for (String texPath : desc.getTextures()) {
-            textures.add(textureSystem.load(texPath));
-        }
-
-        Texture blendMap = desc.getBlendMap() != null
-            ? textureSystem.load(desc.getBlendMap())
-            : null;
-
-        MaterialType type = MaterialType.TERRAIN;
-        Shader shader = new Shader(type.getVertexPath(), type.getFragmentPath());
-
-        Material material = Material.builder()
-            .shader(shader)
-            .textures(textures)
-            .blendMap(blendMap)
-            .build();
-
-        materialSystem.register(material, type);
-        result.add(material);
-        result.add(new OpaqueLayer());
 
         return mesh;
     }

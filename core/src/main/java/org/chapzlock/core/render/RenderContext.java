@@ -108,7 +108,7 @@ public class RenderContext {
         return ambientLight != null ? ambientLight.getStrength() : AmbientLight.DEFAULT_STRENGTH;
     }
 
-    // Temporary compatibility methods for old EntityMaterialRenderer and TerrainMaterialRenderer
+    // Temporary compatibility methods for old EntityMaterialRenderer
     // These will be removed when Task 8 rewrites those renderers
 
     /**

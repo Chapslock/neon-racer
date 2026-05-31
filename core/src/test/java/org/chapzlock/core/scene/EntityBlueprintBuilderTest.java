@@ -3,13 +3,10 @@ package org.chapzlock.core.scene;
 import org.chapzlock.core.component.ModelDescriptor;
 import org.chapzlock.core.component.PhysicsDescriptor;
 import org.chapzlock.core.component.SpriteDescriptor;
-import org.chapzlock.core.component.TerrainDescriptor;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.Component;
 import org.chapzlock.core.ecs.Tag;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -40,16 +37,6 @@ class EntityBlueprintBuilderTest {
             .model(desc)
             .build();
         assertSame(desc, bp.getModelDescriptor());
-    }
-
-    @Test
-    void terrainDescriptorIsStored() {
-        TerrainDescriptor desc = TerrainDescriptor.builder()
-            .heightmap("hm.png").maxHeight(40).build();
-        EntityBlueprint bp = new EntityBlueprintBuilder("test")
-            .terrain(desc)
-            .build();
-        assertSame(desc, bp.getTerrainDescriptor());
     }
 
     @Test
@@ -89,16 +76,6 @@ class EntityBlueprintBuilderTest {
     }
 
     @Test
-    void modelAndTerrainAreMutuallyExclusive() {
-        EntityBlueprintBuilder builder = new EntityBlueprintBuilder("test")
-            .model(ModelDescriptor.of("m.obj", "t.png"))
-            .terrain(TerrainDescriptor.builder().heightmap("hm.png").maxHeight(10).build());
-
-        IllegalStateException ex = assertThrows(IllegalStateException.class, builder::build);
-        assertTrue(ex.getMessage().contains("model() and terrain() are mutually exclusive"));
-    }
-
-    @Test
     void modelAndSpriteAreMutuallyExclusive() {
         EntityBlueprintBuilder builder = new EntityBlueprintBuilder("test")
             .model(ModelDescriptor.of("m.obj", "t.png"))
@@ -109,22 +86,12 @@ class EntityBlueprintBuilderTest {
     }
 
     @Test
-    void terrainAndSpriteAreMutuallyExclusive() {
-        EntityBlueprintBuilder builder = new EntityBlueprintBuilder("test")
-            .terrain(TerrainDescriptor.builder().heightmap("hm.png").maxHeight(10).build())
-            .sprite(SpriteDescriptor.of("s.png"));
-
-        IllegalStateException ex = assertThrows(IllegalStateException.class, builder::build);
-        assertTrue(ex.getMessage().contains("terrain() and sprite() are mutually exclusive"));
-    }
-
-    @Test
-    void physicsRequiresModelOrTerrain() {
+    void physicsRequiresModel() {
         EntityBlueprintBuilder builder = new EntityBlueprintBuilder("test")
             .physics(PhysicsDescriptor.dynamic(1f));
 
         IllegalStateException ex = assertThrows(IllegalStateException.class, builder::build);
-        assertTrue(ex.getMessage().contains("physics() requires model() or terrain()"));
+        assertTrue(ex.getMessage().contains("physics() requires model()"));
     }
 
     @Test
@@ -136,12 +103,4 @@ class EntityBlueprintBuilderTest {
         assertNotNull(bp.getPhysicsDescriptor());
     }
 
-    @Test
-    void physicsWithTerrainIsValid() {
-        EntityBlueprint bp = new EntityBlueprintBuilder("test")
-            .terrain(TerrainDescriptor.builder().heightmap("hm.png").maxHeight(10).build())
-            .physics(PhysicsDescriptor.asStatic())
-            .build();
-        assertNotNull(bp.getPhysicsDescriptor());
-    }
 }

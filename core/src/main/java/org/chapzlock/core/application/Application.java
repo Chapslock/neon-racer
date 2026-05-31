@@ -17,7 +17,6 @@ import org.chapzlock.core.render.MaterialSystem;
 import org.chapzlock.core.render.MeshSystem;
 import org.chapzlock.core.render.PbrMaterialRenderer;
 import org.chapzlock.core.render.ShaderSystem;
-import org.chapzlock.core.render.TerrainMaterialRenderer;
 import org.chapzlock.core.render.TextureSystem;
 import org.chapzlock.core.render.UiMaterialRenderer;
 import org.chapzlock.core.scene.MaterialType;
@@ -110,8 +109,6 @@ public class Application {
         WindowSpecification windowSpec = appSpec.getWindowSpec();
         materialSystem.registerDefault(MaterialType.ENTITY,
             new EntityMaterialRenderer(shaderSystem, textureSystem));
-        materialSystem.registerDefault(MaterialType.TERRAIN,
-            new TerrainMaterialRenderer(shaderSystem, textureSystem));
         materialSystem.registerDefault(MaterialType.PBR,
             new PbrMaterialRenderer(shaderSystem, textureSystem));
         materialSystem.registerDefault(MaterialType.UI,
