@@ -9,6 +9,7 @@ import org.chapzlock.core.asset.gltf.GltfAsset;
 import org.chapzlock.core.asset.gltf.GltfMaterialData;
 import org.chapzlock.core.asset.gltf.GltfMeshData;
 import org.chapzlock.core.asset.gltf.GltfNodeData;
+import org.chapzlock.core.asset.gltf.GltfSkinData;
 import org.chapzlock.core.asset.gltf.GltfTextureRef;
 import org.chapzlock.core.component.AlphaMode;
 import org.chapzlock.core.component.Hierarchy;
@@ -16,6 +17,7 @@ import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.OpaqueLayer;
 import org.chapzlock.core.component.PbrMaterial;
 import org.chapzlock.core.component.Shader;
+import org.chapzlock.core.component.Skeleton;
 import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.component.WorldTransform;
@@ -45,7 +47,7 @@ import org.chapzlock.core.render.TextureSystem;
  * <p><strong>When to use:</strong> Called by SceneManager when loading a glTF scene
  * or instantiating a prefab. Game code doesn't call this directly.
  *
- * <p><strong>Three-phase approach:</strong> The instantiation process is split into three
+ * <p><strong>Four-phase approach:</strong> The instantiation process is split into four
  * phases to ensure all entities exist before hierarchy links are created, and all hierarchy
  * is resolved before meshes reference parent entities:
  * <ol>
@@ -55,6 +57,8 @@ import org.chapzlock.core.render.TextureSystem;
  *       IDs are known.</li>
  *   <li><em>Phase 3:</em> Upload mesh geometry to the GPU and create PBR material components
  *       for nodes that reference meshes.</li>
+ *   <li><em>Phase 4:</em> Create Skeleton components for skinned nodes, mapping joint node
+ *       indices to entity IDs for GPU skinning.</li>
  * </ol>
  *
  * @see GltfAsset
@@ -159,6 +163,9 @@ public class GltfSceneInstantiator {
             Shader pbrShader = getOrCreatePbrShader();
             instantiateMeshes(asset, nodes, entityIds, pbrShader);
         }
+
+        // Phase 4: Create Skeleton components for skinned nodes.
+        instantiateSkeletons(asset, nodes, entityIds);
 
         // Determine root entity ID: use the first root node from the asset,
         // or fall back to the first entity if no roots are specified.
@@ -310,5 +317,36 @@ public class GltfSceneInstantiator {
             ? textureSystem.loadFromMemory(ref.imageBytes(), ref.cacheKey())
             : textureSystem.load(ref.filePath());
         setter.accept(tex);
+    }
+
+    /**
+     * Creates Skeleton components for all nodes that reference a skin.
+     *
+     * <p>A skin in glTF defines which joints (nodes) influence a mesh and provides the
+     * inverse bind matrices needed for GPU skinning. This method remaps the joint node
+     * indices to entity IDs (since entities were created in Phase 1) and attaches a
+     * Skeleton component to the skinned mesh entity.
+     *
+     * @param asset     the glTF asset with skin data
+     * @param nodes     the flat list of glTF nodes
+     * @param entityIds mapping from node index to entity ID
+     */
+    private void instantiateSkeletons(GltfAsset asset, List<GltfNodeData> nodes, int[] entityIds) {
+        for (int i = 0; i < nodes.size(); i++) {
+            GltfNodeData node = nodes.get(i);
+            if (node.skinIndex() < 0) continue;
+            if (node.skinIndex() >= asset.skins().size()) continue;
+
+            GltfSkinData skinData = asset.skins().get(node.skinIndex());
+            int[] jointNodeIndices = skinData.jointNodeIndices();
+            int[] jointEntities = new int[jointNodeIndices.length];
+
+            for (int j = 0; j < jointNodeIndices.length; j++) {
+                jointEntities[j] = entityIds[jointNodeIndices[j]];
+            }
+
+            Skeleton skeleton = new Skeleton(jointEntities, skinData.inverseBindMatrices());
+            registry.addComponent(entityIds[i], skeleton);
+        }
     }
 }
