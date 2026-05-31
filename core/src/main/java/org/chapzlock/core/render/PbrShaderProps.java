@@ -44,6 +44,14 @@ public final class PbrShaderProps {
     public static final String UNIFORM_HAS_OCCLUSION_MAP = "uHasOcclusionMap";
     public static final String UNIFORM_HAS_EMISSIVE_MAP = "uHasEmissiveMap";
 
+    // Skeletal animation (GPU skinning)
+    /** Uniform flag indicating the entity has a skeleton and should apply skinning. */
+    public static final String UNIFORM_HAS_SKIN = "uHasSkin";
+    /** Uniform array of joint transformation matrices (world * inverseBindMatrix per joint). */
+    public static final String UNIFORM_JOINT_MATRICES = "uJointMatrices";
+    /** Maximum number of joints supported by the shader. Must match MAX_JOINTS in PbrVertex.glsl. */
+    public static final int MAX_JOINTS = 128;
+
     // Lighting
     public static final String UNIFORM_CAMERA_POSITION = "uCameraPosition";
     public static final String UNIFORM_AMBIENT_STRENGTH = "uAmbientStrength";

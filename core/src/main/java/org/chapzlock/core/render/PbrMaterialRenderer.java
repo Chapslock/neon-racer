@@ -42,6 +42,15 @@ public class PbrMaterialRenderer implements MaterialRenderer {
     private final ShaderSystem shaderSystem;
     private final TextureSystem textureSystem;
 
+    /**
+     * Reusable temporary matrix for computing joint skin matrices each frame.
+     *
+     * <p>Allocating a new Matrix4f per joint per entity per frame would create massive GC
+     * pressure (128 joints * N entities * 60 fps). Instead we reuse this single instance,
+     * overwriting it for each joint during upload.
+     */
+    private final Matrix4f tempJointMatrix = new Matrix4f();
+
     public PbrMaterialRenderer(ShaderSystem shaderSystem, TextureSystem textureSystem) {
         this.shaderSystem = shaderSystem;
         this.textureSystem = textureSystem;
@@ -123,10 +132,23 @@ public class PbrMaterialRenderer implements MaterialRenderer {
     }
 
     /**
-     * Sets the per-entity model (world) transformation matrix uniform.
+     * Sets the per-entity model (world) transformation matrix and skinning uniforms.
      *
      * <p>Prefers {@link WorldTransform} (computed by TransformSystem for hierarchy support).
      * Falls back to {@link Transform#getTransformationMatrix()} for standalone entities.
+     *
+     * <p><strong>GPU Skinning:</strong> If the entity has a {@link Skeleton} component, this
+     * method computes and uploads the joint matrices needed for vertex skinning. The skin
+     * matrix formula per joint is:
+     * <pre>
+     *   skinMatrix[j] = jointWorldMatrix[j] * inverseBindMatrix[j]
+     * </pre>
+     * This transforms vertices from bind-pose space into the joint's current animated position.
+     * The vertex shader then blends up to 4 joint influences per vertex using the weights
+     * stored in the WEIGHTS_0 attribute.
+     *
+     * <p>For entities without a Skeleton, skinning is disabled (uHasSkin=false) and the
+     * shader uses the raw vertex positions unchanged.
      */
     @Override
     public void prepareEntity(RenderContext ctx, EntityView entity) {
@@ -139,6 +161,30 @@ public class PbrMaterialRenderer implements MaterialRenderer {
             : entity.get(Transform.class).getTransformationMatrix();
 
         shaderSystem.setUniform(material.getShader(), UNIFORM_MODEL_MATRIX, modelMatrix);
+
+        // --- GPU Skinning: upload joint matrices if the entity has a skeleton ---
+        Skeleton skeleton = ctx.getRegistry().getComponent(entity.getId(), Skeleton.class);
+        if (skeleton != null) {
+            shaderSystem.setUniform(material.getShader(), UNIFORM_HAS_SKIN, true);
+            int[] jointEntities = skeleton.getJointEntities();
+            Matrix4f[] inverseBindMatrices = skeleton.getInverseBindMatrices();
+
+            for (int j = 0; j < skeleton.jointCount(); j++) {
+                WorldTransform jointWorld = ctx.getRegistry().getComponent(
+                    jointEntities[j], WorldTransform.class);
+                if (jointWorld != null) {
+                    // skinMatrix = jointWorldMatrix * inverseBindMatrix
+                    tempJointMatrix.set(jointWorld.getWorldMatrix()).mul(inverseBindMatrices[j]);
+                } else {
+                    // Joint has no world transform yet — use identity (bind pose)
+                    tempJointMatrix.identity();
+                }
+                shaderSystem.setUniform(material.getShader(),
+                    UNIFORM_JOINT_MATRICES + "[" + j + "]", tempJointMatrix);
+            }
+        } else {
+            shaderSystem.setUniform(material.getShader(), UNIFORM_HAS_SKIN, false);
+        }
     }
 
     @Override
