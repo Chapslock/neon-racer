@@ -34,6 +34,7 @@ public class EntityBlueprintBuilder {
     private PhysicsDescriptor physicsDescriptor;
     private final List<Tag> tags = new ArrayList<>();
     private final List<Component> components = new ArrayList<>();
+    private String gltfModelPath;
 
     public EntityBlueprintBuilder(String name) {
         this.name = name;
@@ -70,6 +71,37 @@ public class EntityBlueprintBuilder {
     }
 
     /**
+     * Declares a glTF model to instantiate as children of this entity.
+     *
+     * <p>When the scene is instantiated, the glTF file is loaded and its node tree
+     * is parented under this entity. This makes the entity the "owner" of the model
+     * — moving it will move the entire model. Animation clips from the glTF are also
+     * attached to this entity via AnimationClipSet and AnimationState components.
+     *
+     * <p><strong>How it works:</strong> During scene instantiation, the SceneManager detects
+     * the glTF model path on this blueprint and calls
+     * {@link GltfSceneInstantiator#instantiateAsChild(org.chapzlock.core.asset.gltf.GltfAsset, int)}
+     * to load the model as child entities. The entity defined by this blueprint becomes the
+     * parent, and all glTF nodes become its children in the hierarchy.
+     *
+     * <p><strong>Usage example:</strong>
+     * <pre>{@code
+     * .entity("player", e -> e
+     *     .transform(Transform.at(0, -70, 0))
+     *     .gltfModel("glb/player.glb")
+     *     .tag(new PlayerTag())
+     *     .component(new PlayerInputComponent()))
+     * }</pre>
+     *
+     * @param resourcePath path to the glTF/GLB file relative to the resources root
+     * @return this builder for chaining
+     */
+    public EntityBlueprintBuilder gltfModel(String resourcePath) {
+        this.gltfModelPath = resourcePath;
+        return this;
+    }
+
+    /**
      * Validates configuration and produces an immutable EntityBlueprint.
      *
      * @throws IllegalStateException if configuration is invalid
@@ -77,7 +109,7 @@ public class EntityBlueprintBuilder {
     public EntityBlueprint build() {
         validate();
         return new EntityBlueprint(name, transform,
-            spriteDescriptor, physicsDescriptor, tags, components);
+            spriteDescriptor, physicsDescriptor, tags, components, gltfModelPath);
     }
 
     private void validate() {

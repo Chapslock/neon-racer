@@ -190,6 +190,117 @@ public class GltfSceneInstantiator {
     }
 
     /**
+     * Instantiates a glTF asset as children of an existing entity.
+     *
+     * <p>This is used for the {@code .gltfModel()} scene builder method, where a model
+     * is loaded as part of a programmatic entity. The glTF nodes become children of the
+     * specified parent entity instead of being standalone roots.
+     *
+     * <p><strong>How it differs from {@link #instantiate(GltfAsset)}:</strong>
+     * <ul>
+     *   <li>Root nodes get {@code Hierarchy.childOf(parentEntityId)} instead of {@code Hierarchy.root()}</li>
+     *   <li>The parent entity's Hierarchy component gets the root children added to it</li>
+     *   <li>AnimationClipSet and AnimationState are attached to the parent entity
+     *       (not the glTF root node), so game code can control animations from the owning entity</li>
+     * </ul>
+     *
+     * <p><strong>Same 5-phase logic as {@link #instantiate(GltfAsset)}:</strong>
+     * <ol>
+     *   <li><em>Phase 1:</em> Create entities with local transforms</li>
+     *   <li><em>Phase 2:</em> Wire hierarchy — root nodes become children of parentEntityId</li>
+     *   <li><em>Phase 3:</em> Upload meshes and create PBR materials</li>
+     *   <li><em>Phase 4:</em> Create Skeleton components for skinned nodes</li>
+     *   <li><em>Phase 5:</em> Create Animations — attached to the parent entity</li>
+     * </ol>
+     *
+     * <p><strong>When to use:</strong> Called by SceneManager when a blueprint has a
+     * {@code gltfModelPath} set via the builder's {@code .gltfModel()} method. Game code
+     * does not call this directly.
+     *
+     * @param asset          the parsed glTF data containing nodes, meshes, materials, etc.
+     * @param parentEntityId the entity to parent the model under — this entity becomes
+     *                       the owner of the entire glTF node tree
+     * @return a GltfInstance handle for name-based entity lookup within the instantiated model
+     */
+    public GltfInstance instantiateAsChild(GltfAsset asset, int parentEntityId) {
+        List<GltfNodeData> nodes = asset.nodes();
+        int[] entityIds = new int[nodes.size()];
+        Map<String, Integer> nameMap = new HashMap<>();
+
+        // Phase 1: Create all entities and set transforms.
+        // Same as instantiate() — we need all entity IDs before wiring hierarchy.
+        for (int i = 0; i < nodes.size(); i++) {
+            GltfNodeData node = nodes.get(i);
+            int entityId = Entity.create(registry);
+            entityIds[i] = entityId;
+
+            Transform transform = new Transform();
+            transform.setPosition(node.translation());
+            transform.setRotationQuaternion(node.rotation());
+            transform.setScale(node.scale().x);
+
+            WorldTransform worldTransform = new WorldTransform();
+            registry.addComponents(entityId, transform, worldTransform);
+
+            if (node.name() != null && !node.name().isEmpty()) {
+                nameMap.put(node.name(), entityId);
+            }
+        }
+
+        // Phase 2: Hierarchy — root nodes become children of parentEntityId.
+        // Non-root nodes get their normal parent from the glTF tree.
+        for (int i = 0; i < nodes.size(); i++) {
+            GltfNodeData node = nodes.get(i);
+            List<Integer> childIndices = node.childIndices();
+
+            boolean isRoot = asset.rootNodeIndices().contains(i);
+            Hierarchy hierarchy;
+            if (isRoot) {
+                // Key difference from instantiate(): root nodes are parented under the
+                // provided entity instead of being free-standing roots.
+                hierarchy = Hierarchy.childOf(parentEntityId);
+            } else {
+                hierarchy = findParentAndCreateHierarchy(i, nodes, entityIds);
+            }
+
+            for (int childIdx : childIndices) {
+                hierarchy.addChild(entityIds[childIdx]);
+            }
+            registry.addComponent(entityIds[i], hierarchy);
+        }
+
+        // Register root entities as children in the parent's hierarchy component.
+        // If the parent doesn't have a Hierarchy yet, create one as a root.
+        Hierarchy parentHierarchy = registry.getComponent(parentEntityId, Hierarchy.class);
+        if (parentHierarchy == null) {
+            parentHierarchy = Hierarchy.root();
+            registry.addComponent(parentEntityId, parentHierarchy);
+        }
+        for (int rootIdx : asset.rootNodeIndices()) {
+            parentHierarchy.addChild(entityIds[rootIdx]);
+        }
+
+        // Phase 3: Meshes — same as instantiate()
+        if (meshSystem != null && shaderSystem != null) {
+            Shader pbrShader = getOrCreatePbrShader();
+            instantiateMeshes(asset, nodes, entityIds, pbrShader);
+        }
+
+        // Phase 4: Skeletons — same as instantiate()
+        instantiateSkeletons(asset, nodes, entityIds);
+
+        // Phase 5: Animations — key difference: attach to parentEntityId (not glTF root).
+        // This lets game code find AnimationClipSet on the owning entity directly.
+        instantiateAnimations(asset, entityIds, parentEntityId);
+
+        int rootEntityId = asset.rootNodeIndices().isEmpty()
+            ? entityIds[0]
+            : entityIds[asset.rootNodeIndices().get(0)];
+
+        return new GltfInstance(rootEntityId, nameMap);
+    }
+
+    /**
      * Uploads mesh data and creates PBR materials for all nodes that reference meshes.
      *
      * <p>A single glTF mesh can contain multiple "primitives" (sub-meshes), each with

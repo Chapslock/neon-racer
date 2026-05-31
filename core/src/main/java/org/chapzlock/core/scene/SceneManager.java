@@ -311,6 +311,22 @@ public class SceneManager {
                     trackAsset(component, assets);
                 }
                 entityIds.add(entityId);
+
+                // If this entity has a glTF model path, instantiate the model as children.
+                // The glTF nodes become children of this entity, making it the "owner" of
+                // the model. Animation clips are attached to this entity for easy access.
+                if (blueprint.getGltfModelPath() != null) {
+                    GltfAsset modelAsset = context.getGltfAssetRegistry().getOrLoad(blueprint.getGltfModelPath());
+                    GltfSceneInstantiator instantiator = new GltfSceneInstantiator(context);
+                    GltfInstance modelInstance = instantiator.instantiateAsChild(modelAsset, entityId);
+                    for (int childId : modelInstance.allEntities().values()) {
+                        entityIds.add(childId);
+                    }
+                    if (!entityIds.contains(modelInstance.rootEntity())) {
+                        entityIds.add(modelInstance.rootEntity());
+                    }
+                }
+
                 Log.debug("  Entity \"" + blueprint.getName() + "\" created (id=" + entityId + ")");
             } catch (Exception e) {
                 registry.destroyEntity(entityId);
