@@ -1,10 +1,16 @@
 package org.chapzlock.core.scene;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.chapzlock.core.animation.Animation;
+import org.chapzlock.core.animation.Channel;
+import org.chapzlock.core.animation.Interpolation;
+import org.chapzlock.core.animation.TargetPath;
 import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.asset.gltf.GltfAnimationData;
 import org.chapzlock.core.asset.gltf.GltfAsset;
 import org.chapzlock.core.asset.gltf.GltfMaterialData;
 import org.chapzlock.core.asset.gltf.GltfMeshData;
@@ -12,6 +18,8 @@ import org.chapzlock.core.asset.gltf.GltfNodeData;
 import org.chapzlock.core.asset.gltf.GltfSkinData;
 import org.chapzlock.core.asset.gltf.GltfTextureRef;
 import org.chapzlock.core.component.AlphaMode;
+import org.chapzlock.core.component.AnimationClipSet;
+import org.chapzlock.core.component.AnimationState;
 import org.chapzlock.core.component.Hierarchy;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.OpaqueLayer;
@@ -47,7 +55,7 @@ import org.chapzlock.core.render.TextureSystem;
  * <p><strong>When to use:</strong> Called by SceneManager when loading a glTF scene
  * or instantiating a prefab. Game code doesn't call this directly.
  *
- * <p><strong>Four-phase approach:</strong> The instantiation process is split into four
+ * <p><strong>Five-phase approach:</strong> The instantiation process is split into five
  * phases to ensure all entities exist before hierarchy links are created, and all hierarchy
  * is resolved before meshes reference parent entities:
  * <ol>
@@ -59,6 +67,8 @@ import org.chapzlock.core.render.TextureSystem;
  *       for nodes that reference meshes.</li>
  *   <li><em>Phase 4:</em> Create Skeleton components for skinned nodes, mapping joint node
  *       indices to entity IDs for GPU skinning.</li>
+ *   <li><em>Phase 5:</em> Create Animation components from glTF animation data, remapping
+ *       node indices to entity IDs and attaching an AnimationClipSet to the root entity.</li>
  * </ol>
  *
  * @see GltfAsset
@@ -172,6 +182,9 @@ public class GltfSceneInstantiator {
         int rootEntityId = asset.rootNodeIndices().isEmpty()
             ? entityIds[0]
             : entityIds[asset.rootNodeIndices().get(0)];
+
+        // Phase 5: Create animations from glTF animation data.
+        instantiateAnimations(asset, entityIds, rootEntityId);
 
         return new GltfInstance(rootEntityId, nameMap);
     }
@@ -348,5 +361,57 @@ public class GltfSceneInstantiator {
             Skeleton skeleton = new Skeleton(jointEntities, skinData.inverseBindMatrices());
             registry.addComponent(entityIds[i], skeleton);
         }
+    }
+
+    /**
+     * Converts glTF animation data into engine Animation objects and attaches an
+     * AnimationClipSet to the root entity.
+     *
+     * <p>Each glTF animation becomes an engine {@link Animation} with channels remapped
+     * from node indices to entity IDs. All clips are collected into an {@link AnimationClipSet}
+     * on the root entity so game code can switch between them at runtime.
+     *
+     * @param asset        the glTF asset containing animation data
+     * @param entityIds    mapping from node index to entity ID
+     * @param rootEntityId the root entity to attach the clip set to
+     */
+    private void instantiateAnimations(GltfAsset asset, int[] entityIds, int rootEntityId) {
+        if (asset.animations().isEmpty()) return;
+
+        Map<String, Animation> clips = new HashMap<>();
+
+        for (GltfAnimationData animData : asset.animations()) {
+            List<Channel> channels = new ArrayList<>();
+
+            for (GltfAnimationData.ChannelData channelData : animData.channels()) {
+                int targetEntity = entityIds[channelData.targetNodeIndex()];
+                TargetPath path = switch (channelData.path()) {
+                    case "translation" -> TargetPath.TRANSLATION;
+                    case "rotation" -> TargetPath.ROTATION;
+                    case "scale" -> TargetPath.SCALE;
+                    case "weights" -> TargetPath.WEIGHTS;
+                    default -> null;
+                };
+                if (path == null) continue;
+
+                Interpolation interpolation = switch (channelData.interpolation()) {
+                    case "STEP" -> Interpolation.STEP;
+                    case "CUBICSPLINE" -> Interpolation.CUBICSPLINE;
+                    default -> Interpolation.LINEAR;
+                };
+
+                channels.add(new Channel(targetEntity, path, interpolation,
+                    channelData.keyframeTimes(), channelData.keyframeValues()));
+            }
+
+            String name = animData.name() != null ? animData.name() : "animation_" + clips.size();
+            clips.put(name, new Animation(name, animData.duration(), channels));
+        }
+
+        registry.addComponent(rootEntityId, new AnimationClipSet(clips));
+
+        AnimationState state = new AnimationState(null);
+        state.setPlaying(false);
+        registry.addComponent(rootEntityId, state);
     }
 }
