@@ -43,14 +43,26 @@ public class TextureSystem implements Disposable {
     }
 
     /**
-     * Load a texture from memory (for embedded GLB textures).
+     * Loads a texture from in-memory image bytes (PNG/JPEG) and uploads to GPU.
      *
-     * @param imageBytes raw PNG/JPEG bytes from GLB binary chunk
-     * @param cacheKey unique identifier for caching (e.g., "embedded:model.glb:tex0")
-     * @return texture bound to GPU
+     * <p>Used for embedded GLB textures where the image data lives in the binary
+     * chunk rather than as a separate file. Caches by cacheKey to avoid redundant
+     * decoding and GPU uploads when the same embedded texture is referenced multiple times.
+     *
+     * @param imageBytes raw PNG/JPEG bytes from the GLB binary chunk
+     * @param cacheKey   unique identifier for caching (e.g., "embedded:model.glb:tex0")
+     * @return GPU-bound texture ready for rendering
      */
     public Texture loadFromMemory(java.nio.ByteBuffer imageBytes, String cacheKey) {
-        throw new UnsupportedOperationException("Not yet implemented — will be added in embedded texture support task");
+        Integer existingId = filePathToIdMap.get(cacheKey);
+        if (existingId != null) {
+            return texturePool.get(existingId);
+        }
+        RawImageData rawImageData = FileUtils.loadRawImageFromMemory(imageBytes, cacheKey);
+        Texture texture = TextureUtil.bindTextureDataToGpu(rawImageData);
+        texturePool.put(texture.getId(), texture);
+        filePathToIdMap.put(cacheKey, texture.getId());
+        return texture;
     }
 
     /**

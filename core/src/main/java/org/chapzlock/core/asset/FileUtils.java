@@ -89,6 +89,32 @@ public class FileUtils {
     }
 
     /**
+     * Decodes raw image bytes (PNG/JPEG) from a ByteBuffer into RGBA pixel data.
+     *
+     * <p>Used for embedded GLB textures where the image data is already in memory
+     * rather than on the filesystem. Uses STB to decode the compressed image format
+     * into raw RGBA pixels suitable for GPU upload.
+     *
+     * @param imageBytes buffer containing encoded PNG/JPEG bytes
+     * @param cacheKey   identifier for error messages and caching
+     * @return decoded RGBA pixel data ready for GPU upload
+     */
+    public static RawImageData loadRawImageFromMemory(ByteBuffer imageBytes, String cacheKey) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer w = stack.mallocInt(1);
+            IntBuffer h = stack.mallocInt(1);
+            IntBuffer comp = stack.mallocInt(1);
+
+            STBImage.stbi_set_flip_vertically_on_load(true);
+            ByteBuffer image = STBImage.stbi_load_from_memory(imageBytes, w, h, comp, 4);
+            if (image == null) {
+                throw new RuntimeException("Failed to decode embedded texture '" + cacheKey + "': " + STBImage.stbi_failure_reason());
+            }
+            return new RawImageData(image, w.get(0), h.get(0), cacheKey);
+        }
+    }
+
+    /**
      * Loads an image from the classpath resource directory (e.g., src/main/resources).
      *
      * @param resourcePath The path to the image resource (e.g. "textures/heightmap.png").
