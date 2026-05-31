@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.chapzlock.core.asset.RawMeshData;
 import org.joml.Matrix4f;
@@ -114,6 +115,10 @@ public class GltfLoader {
      * <p>Each glTF mesh can have multiple "primitives" (sub-meshes), each with its own
      * geometry and material. We convert each primitive's accessor data into a
      * {@link RawMeshData} that our GPU upload code understands.
+     *
+     * <p>Morph targets (blend shapes) are also extracted from each primitive if present.
+     * These store per-vertex position/normal deltas that can be blended at runtime using
+     * weights to produce facial expressions, corrective shapes, etc.
      */
     private List<GltfMeshData> extractMeshes(GltfModel model) {
         List<GltfMeshData> meshes = new ArrayList<>();
@@ -122,11 +127,49 @@ public class GltfLoader {
             for (MeshPrimitiveModel primitive : meshModel.getMeshPrimitiveModels()) {
                 RawMeshData rawMesh = extractPrimitiveMesh(primitive);
                 int materialIndex = model.getMaterialModels().indexOf(primitive.getMaterialModel());
-                primitives.add(new GltfMeshData.Primitive(rawMesh, materialIndex));
+                List<GltfMeshData.MorphTargetData> morphTargets = extractMorphTargets(primitive);
+                primitives.add(new GltfMeshData.Primitive(rawMesh, materialIndex, morphTargets));
             }
             meshes.add(new GltfMeshData(meshModel.getName(), primitives));
         }
         return meshes;
+    }
+
+    /**
+     * Extracts morph target (blend shape) data from a mesh primitive.
+     *
+     * <p>In glTF, morph targets are stored as a list of attribute maps on each primitive.
+     * Each map represents one target and contains accessors for the vertex attribute deltas
+     * (offsets from the base mesh). Common keys are:
+     * <ul>
+     *   <li>"POSITION" — per-vertex position offsets (vec3), the most common target attribute</li>
+     *   <li>"NORMAL" — per-vertex normal offsets (vec3), for correct lighting on morphed shapes</li>
+     *   <li>"TANGENT" — per-vertex tangent offsets (vec3, not vec4), rare in practice</li>
+     * </ul>
+     *
+     * <p>We extract position and normal deltas. Tangent deltas are omitted as they are rarely
+     * used and can be recomputed from morphed positions/normals if needed.
+     *
+     * @param primitive the mesh primitive to extract morph targets from
+     * @return list of morph target data (empty list if no targets present)
+     */
+    private List<GltfMeshData.MorphTargetData> extractMorphTargets(MeshPrimitiveModel primitive) {
+        List<Map<String, AccessorModel>> targets = primitive.getTargets();
+        if (targets == null || targets.isEmpty()) {
+            return List.of();
+        }
+
+        List<GltfMeshData.MorphTargetData> result = new ArrayList<>();
+        for (Map<String, AccessorModel> target : targets) {
+            AccessorModel posAccessor = target.get("POSITION");
+            float[] posDeltas = posAccessor != null ? readFloatAccessor(posAccessor) : null;
+
+            AccessorModel normalAccessor = target.get("NORMAL");
+            float[] normalDeltas = normalAccessor != null ? readFloatAccessor(normalAccessor) : null;
+
+            result.add(new GltfMeshData.MorphTargetData(posDeltas, normalDeltas));
+        }
+        return result;
     }
 
     /**

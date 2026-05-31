@@ -4,7 +4,6 @@ import java.util.Map;
 
 import org.chapzlock.core.application.Disposable;
 import org.chapzlock.core.component.Mesh;
-import org.chapzlock.core.asset.FileUtils;
 import org.chapzlock.core.asset.RawMeshData;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -21,32 +20,12 @@ public class MeshSystem implements Disposable {
 
     private final Map<Integer, Mesh> meshPool = new Int2ObjectOpenHashMap<>();
     private final Map<Integer, RawMeshData> rawMeshDataPool = new Int2ObjectOpenHashMap<>();
-    private final Map<String, Integer> resourcePathToIdMap = new Object2IntOpenHashMap<>();
     private final Map<RawMeshData, Integer> rawMeshDataToIdMap = new Object2IntOpenHashMap<>();
     private final Int2IntOpenHashMap refCounts = new Int2IntOpenHashMap();
 
     public MeshSystem() {
     }
 
-    /**
-     * Loads mesh data from an .obj file and uploads it to GPU
-     *
-     * @param resourcePath file path to the .obj file
-     * @return uploaded mesh component
-     */
-    public Mesh load(String resourcePath) {
-        Integer existingId = resourcePathToIdMap.get(resourcePath);
-        if (existingId != null) {
-            return meshPool.get(existingId);
-        }
-        RawMeshData rawMeshData = FileUtils.loadMeshData(resourcePath);
-        Mesh mesh = MeshUtil.bindMeshDataToGpu(rawMeshData);
-        meshPool.put(mesh.getId(), mesh);
-        rawMeshDataPool.put(mesh.getId(), rawMeshData);
-        rawMeshDataToIdMap.put(rawMeshData, mesh.getId());
-        resourcePathToIdMap.put(resourcePath, mesh.getId());
-        return mesh;
-    }
 
     /**
      * uploads raw mesh data to the GPU
@@ -96,7 +75,6 @@ public class MeshSystem implements Disposable {
                 MeshUtil.delete(mesh);
             }
             rawMeshDataPool.remove(assetId);
-            resourcePathToIdMap.values().removeIf(id -> id.equals(assetId));
             rawMeshDataToIdMap.values().removeIf(id -> id.equals(assetId));
         } else {
             refCounts.put(assetId, count);
@@ -114,7 +92,6 @@ public class MeshSystem implements Disposable {
         }
         meshPool.clear();
         rawMeshDataPool.clear();
-        resourcePathToIdMap.clear();
         rawMeshDataToIdMap.clear();
     }
 }
