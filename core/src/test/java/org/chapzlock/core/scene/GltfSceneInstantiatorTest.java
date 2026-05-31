@@ -49,7 +49,7 @@ class GltfSceneInstantiatorTest {
             -1, -1, List.of());
 
         GltfAsset asset = new GltfAsset(
-            List.of(root, child), List.of(0), List.of(), List.of());
+            List.of(root, child), List.of(0), List.of(), List.of(), List.of(), List.of());
 
         // Instantiate without GPU systems (no meshes to upload)
         GltfSceneInstantiator instantiator = new GltfSceneInstantiator(ctx);
@@ -87,7 +87,7 @@ class GltfSceneInstantiatorTest {
             -1, -1, List.of());
 
         GltfAsset asset = new GltfAsset(
-            List.of(node), List.of(0), List.of(), List.of());
+            List.of(node), List.of(0), List.of(), List.of(), List.of(), List.of());
 
         GltfSceneInstantiator instantiator = new GltfSceneInstantiator(ctx);
         GltfInstance instance = instantiator.instantiate(asset);
@@ -106,7 +106,7 @@ class GltfSceneInstantiatorTest {
             -1, -1, List.of());
 
         GltfAsset asset = new GltfAsset(
-            List.of(rootA, rootB), List.of(0, 1), List.of(), List.of());
+            List.of(rootA, rootB), List.of(0, 1), List.of(), List.of(), List.of(), List.of());
 
         GltfSceneInstantiator instantiator = new GltfSceneInstantiator(ctx);
         GltfInstance instance = instantiator.instantiate(asset);
@@ -130,7 +130,7 @@ class GltfSceneInstantiatorTest {
             -1, -1, List.of());
 
         GltfAsset asset = new GltfAsset(
-            List.of(node), List.of(0), List.of(), List.of());
+            List.of(node), List.of(0), List.of(), List.of(), List.of(), List.of());
 
         GltfSceneInstantiator instantiator = new GltfSceneInstantiator(ctx);
         GltfInstance instance = instantiator.instantiate(asset);
@@ -150,7 +150,7 @@ class GltfSceneInstantiatorTest {
             -1, -1, List.of());
 
         GltfAsset asset = new GltfAsset(
-            List.of(node), List.of(0), List.of(), List.of());
+            List.of(node), List.of(0), List.of(), List.of(), List.of(), List.of());
 
         GltfSceneInstantiator instantiator = new GltfSceneInstantiator(ctx);
         GltfInstance instance = instantiator.instantiate(asset);
@@ -173,7 +173,7 @@ class GltfSceneInstantiatorTest {
             -1, -1, List.of());
 
         GltfAsset asset = new GltfAsset(
-            List.of(node), List.of(0), List.of(), List.of());
+            List.of(node), List.of(0), List.of(), List.of(), List.of(), List.of());
 
         GltfSceneInstantiator instantiator = new GltfSceneInstantiator(ctx);
         GltfInstance instance = instantiator.instantiate(asset);
@@ -197,7 +197,7 @@ class GltfSceneInstantiatorTest {
             -1, -1, List.of());
 
         GltfAsset asset = new GltfAsset(
-            List.of(grandparent, parent, child), List.of(0), List.of(), List.of());
+            List.of(grandparent, parent, child), List.of(0), List.of(), List.of(), List.of(), List.of());
 
         GltfSceneInstantiator instantiator = new GltfSceneInstantiator(ctx);
         GltfInstance instance = instantiator.instantiate(asset);
@@ -235,7 +235,7 @@ class GltfSceneInstantiatorTest {
             -1, -1, List.of());
 
         GltfAsset asset = new GltfAsset(
-            List.of(unnamed, named), List.of(0, 1), List.of(), List.of());
+            List.of(unnamed, named), List.of(0, 1), List.of(), List.of(), List.of(), List.of());
 
         GltfSceneInstantiator instantiator = new GltfSceneInstantiator(ctx);
         GltfInstance instance = instantiator.instantiate(asset);
@@ -254,7 +254,7 @@ class GltfSceneInstantiatorTest {
             -1, -1, List.of());
 
         GltfAsset asset = new GltfAsset(
-            List.of(emptyName), List.of(0), List.of(), List.of());
+            List.of(emptyName), List.of(0), List.of(), List.of(), List.of(), List.of());
 
         GltfSceneInstantiator instantiator = new GltfSceneInstantiator(ctx);
         GltfInstance instance = instantiator.instantiate(asset);

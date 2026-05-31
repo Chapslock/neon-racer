@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.chapzlock.core.asset.RawMeshData;
+import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -101,8 +102,10 @@ public class GltfLoader {
         List<GltfMaterialData> materials = extractMaterials(model, sourcePath);
         List<GltfNodeData> nodes = extractNodes(model);
         List<Integer> rootNodeIndices = extractRootNodeIndices(model);
+        List<GltfSkinData> skins = extractSkins(model);
+        List<GltfAnimationData> animations = extractAnimations(model);
 
-        return new GltfAsset(nodes, rootNodeIndices, meshes, materials);
+        return new GltfAsset(nodes, rootNodeIndices, meshes, materials, skins, animations);
     }
 
     /**
@@ -438,5 +441,94 @@ public class GltfLoader {
             }
         }
         return roots;
+    }
+
+    /**
+     * Extracts all skins (skeleton rig definitions) from the glTF model.
+     *
+     * <p>Each skin defines a set of joints (nodes acting as bones) and their inverse bind
+     * matrices. The inverse bind matrix for a joint transforms vertices from mesh space into
+     * that joint's bone-local space at the bind pose.
+     *
+     * <p><strong>Joint ordering:</strong> The order of joints in a skin is significant —
+     * it defines the "joint index" that vertex JOINTS_0 attributes reference. Joint 0 in
+     * JOINTS_0 maps to the first entry in the skin's joint list.
+     *
+     * @param model the parsed glTF model
+     * @return list of extracted skin data (empty if no skins in the file)
+     */
+    private List<GltfSkinData> extractSkins(GltfModel model) {
+        List<GltfSkinData> skins = new ArrayList<>();
+        List<NodeModel> allNodes = model.getNodeModels();
+
+        for (SkinModel skin : model.getSkinModels()) {
+            List<NodeModel> joints = skin.getJoints();
+            int jointCount = joints.size();
+
+            // Map each joint to its index in the global node list
+            int[] jointNodeIndices = new int[jointCount];
+            for (int j = 0; j < jointCount; j++) {
+                jointNodeIndices[j] = allNodes.indexOf(joints.get(j));
+            }
+
+            // Extract inverse bind matrices (one per joint, 4x4 column-major)
+            Matrix4f[] inverseBindMatrices = new Matrix4f[jointCount];
+            for (int j = 0; j < jointCount; j++) {
+                float[] raw = skin.getInverseBindMatrix(j, null);
+                Matrix4f ibm = new Matrix4f();
+                ibm.set(raw);
+                inverseBindMatrices[j] = ibm;
+            }
+
+            skins.add(new GltfSkinData(skin.getName(), jointNodeIndices, inverseBindMatrices));
+        }
+        return skins;
+    }
+
+    /**
+     * Extracts all animation clips from the glTF model.
+     *
+     * <p>Each animation contains one or more channels. A channel binds a sampler (keyframe
+     * data + interpolation method) to a target node property. The sampler's input accessor
+     * provides keyframe times, and the output accessor provides the corresponding values.
+     *
+     * <p><strong>Duration computation:</strong> The animation's total duration is the maximum
+     * time value found in any channel's keyframe times. This is needed for looping/blending.
+     *
+     * @param model the parsed glTF model
+     * @return list of extracted animation data (empty if no animations in the file)
+     */
+    private List<GltfAnimationData> extractAnimations(GltfModel model) {
+        List<GltfAnimationData> animations = new ArrayList<>();
+        List<NodeModel> allNodes = model.getNodeModels();
+
+        for (AnimationModel anim : model.getAnimationModels()) {
+            List<GltfAnimationData.ChannelData> channels = new ArrayList<>();
+            float duration = 0f;
+
+            for (AnimationModel.Channel channel : anim.getChannels()) {
+                int targetNodeIndex = allNodes.indexOf(channel.getNodeModel());
+                String path = channel.getPath();
+
+                AnimationModel.Sampler sampler = channel.getSampler();
+                String interpolation = sampler.getInterpolation().name();
+                float[] keyframeTimes = readFloatAccessor(sampler.getInput());
+                float[] keyframeValues = readFloatAccessor(sampler.getOutput());
+
+                // Track the maximum keyframe time for overall animation duration
+                if (keyframeTimes.length > 0) {
+                    float lastTime = keyframeTimes[keyframeTimes.length - 1];
+                    if (lastTime > duration) {
+                        duration = lastTime;
+                    }
+                }
+
+                channels.add(new GltfAnimationData.ChannelData(
+                    targetNodeIndex, path, interpolation, keyframeTimes, keyframeValues));
+            }
+
+            animations.add(new GltfAnimationData(anim.getName(), duration, channels));
+        }
+        return animations;
     }
 }

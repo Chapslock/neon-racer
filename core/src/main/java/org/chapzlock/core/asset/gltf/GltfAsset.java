@@ -7,7 +7,7 @@ import java.util.List;
  *
  * <p>This is the CPU-side result of loading a 3D asset file. It contains everything
  * needed to instantiate a scene: the node tree (hierarchy), meshes (geometry),
- * and materials (PBR properties). Later phases will add animations and skins.
+ * materials (PBR properties), skins (skeleton rigs), and animations (keyframed clips).
  *
  * <p><strong>Lifecycle:</strong>
  * <ol>
@@ -19,7 +19,8 @@ import java.util.List;
  * <p><strong>Cross-referencing:</strong> Data in this asset references other data by index.
  * A node's {@code meshIndex} points into {@link #meshes()}, a primitive's
  * {@code materialIndex} points into {@link #materials()}, a node's {@code childIndices}
- * point into {@link #nodes()}.
+ * point into {@link #nodes()}, a node's {@code skinIndex} points into {@link #skins()},
+ * and animation channel targets reference {@link #nodes()} by index.
  *
  * @see GltfLoader
  */
@@ -31,7 +32,11 @@ public record GltfAsset(
     /** All meshes in the file. Referenced by nodes via meshIndex. */
     List<GltfMeshData> meshes,
     /** All materials in the file. Referenced by mesh primitives via materialIndex. */
-    List<GltfMaterialData> materials
+    List<GltfMaterialData> materials,
+    /** All skins (skeleton rigs) in the file. Referenced by nodes via skinIndex. */
+    List<GltfSkinData> skins,
+    /** All animation clips in the file. Each targets nodes by index into {@link #nodes()}. */
+    List<GltfAnimationData> animations
 ) {
     /** Returns the total number of nodes in this asset. */
     public int nodeCount() { return nodes.size(); }
