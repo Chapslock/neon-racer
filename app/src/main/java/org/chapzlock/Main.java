@@ -3,6 +3,7 @@ package org.chapzlock;
 import java.util.List;
 
 import org.chapzlock.app.scene.RaceTrackScene;
+import org.chapzlock.core.animation.AnimationSystem;
 import org.chapzlock.core.application.Application;
 import org.chapzlock.core.application.ApplicationSpecification;
 import org.chapzlock.core.logging.Log;
@@ -24,6 +25,7 @@ public class Main {
                     .height(720)
                     .build())
                 .engineSystems(List.of(
+                    new AnimationSystem(),
                     new TweenSystem(),
                     new TransformSystem(),
                     new PhysicsSystem(PhysicsSystemSpecs.builder()
