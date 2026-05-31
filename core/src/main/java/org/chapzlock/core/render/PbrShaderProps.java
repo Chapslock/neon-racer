@@ -44,6 +44,16 @@ public final class PbrShaderProps {
     public static final String UNIFORM_HAS_OCCLUSION_MAP = "uHasOcclusionMap";
     public static final String UNIFORM_HAS_EMISSIVE_MAP = "uHasEmissiveMap";
 
+    // Morph targets (blend shapes)
+    /** Uniform flag indicating the entity has active morph targets with non-zero weights. */
+    public static final String UNIFORM_HAS_MORPH_TARGETS = "uHasMorphTargets";
+    /** Shader attribute location for pre-blended morph position deltas (vec3). */
+    public static final int ATTRIB_MORPH_POSITION_DELTA = 8;
+    /** Shader attribute location for pre-blended morph normal deltas (vec3). */
+    public static final int ATTRIB_MORPH_NORMAL_DELTA = 9;
+    /** Maximum number of morph targets supported for CPU blending. */
+    public static final int MAX_MORPH_TARGETS = 8;
+
     // Skeletal animation (GPU skinning)
     /** Uniform flag indicating the entity has a skeleton and should apply skinning. */
     public static final String UNIFORM_HAS_SKIN = "uHasSkin";

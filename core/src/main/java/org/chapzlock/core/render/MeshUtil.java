@@ -7,6 +7,7 @@ import static org.lwjgl.opengl.GL11.GL_UNSIGNED_INT;
 import static org.lwjgl.opengl.GL11.glDrawElements;
 import static org.lwjgl.opengl.GL15.GL_ARRAY_BUFFER;
 import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
+import static org.lwjgl.opengl.GL15.GL_DYNAMIC_DRAW;
 import static org.lwjgl.opengl.GL15.GL_STATIC_DRAW;
 import static org.lwjgl.opengl.GL15.glBindBuffer;
 import static org.lwjgl.opengl.GL15.glBufferData;
@@ -22,6 +23,7 @@ import static org.lwjgl.opengl.GL30.glVertexAttribIPointer;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.List;
 
 import org.chapzlock.core.asset.RawMeshData;
 import org.chapzlock.core.component.Mesh;
@@ -224,5 +226,137 @@ public class MeshUtil {
 
         glBindVertexArray(0);
         glDeleteVertexArrays(mesh.getVaoId());
+    }
+
+    /**
+     * Uploads morph target delta arrays to the GPU as standalone VBOs.
+     *
+     * <p>Morph targets (blend shapes) store per-vertex position/normal offsets that are
+     * blended at runtime using weights. This method uploads each delta array to its own
+     * VBO so the GPU can access the data during rendering.
+     *
+     * <p><strong>How these VBOs are used:</strong> Unlike regular vertex attributes (positions,
+     * normals, etc.) which are bound to VAO attribute slots, morph target delta VBOs are
+     * standalone buffers. They are NOT bound to the mesh's VAO. Instead, the renderer
+     * (e.g., PbrMaterialRenderer) will bind them to temporary attribute slots or use them
+     * for CPU-side blending before each draw call. The exact binding strategy is determined
+     * by the shader integration (Task 7.3).
+     *
+     * <p><strong>Memory layout:</strong> Each VBO contains a flat float array of vec3 deltas
+     * (3 floats per vertex: [dx0, dy0, dz0, dx1, dy1, dz1, ...]). The vertex count and
+     * ordering matches the base mesh's vertex data exactly.
+     *
+     * <p><strong>Lifecycle:</strong> The returned VBO IDs should be stored on the entity's
+     * MorphTargets component. When the entity is destroyed or the scene is unloaded, call
+     * {@link #deleteMorphTargetVbos(int[])} to free the GPU memory.
+     *
+     * @param deltaSets list of float arrays, one per morph target. Each array contains vec3
+     *                  deltas for every vertex in the mesh. Null entries in the list are
+     *                  skipped (VBO ID will be 0 for that slot).
+     * @return array of OpenGL VBO IDs, one per entry in deltaSets. A value of 0 indicates
+     *         that the corresponding delta set was null and no VBO was allocated.
+     */
+    public static int[] uploadMorphTargetDeltas(List<float[]> deltaSets) {
+        int[] vboIds = new int[deltaSets.size()];
+        for (int i = 0; i < deltaSets.size(); i++) {
+            float[] data = deltaSets.get(i);
+            if (data != null) {
+                int vbo = glGenBuffers();
+                FloatBuffer buffer = MemoryUtil.memAllocFloat(data.length);
+                buffer.put(data).flip();
+                glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                glBufferData(GL_ARRAY_BUFFER, buffer, GL_STATIC_DRAW);
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+                MemoryUtil.memFree(buffer);
+                vboIds[i] = vbo;
+            }
+        }
+        return vboIds;
+    }
+
+    /**
+     * Frees GPU memory for morph target delta VBOs.
+     *
+     * <p>Call this when an entity with morph targets is destroyed or when its scene is
+     * unloaded. Each non-zero VBO ID in the array is deleted via {@code glDeleteBuffers}.
+     *
+     * @param vboIds array of VBO IDs as returned by {@link #uploadMorphTargetDeltas(List)}.
+     *              May be null (no-op). Zero entries are skipped.
+     */
+    public static void deleteMorphTargetVbos(int[] vboIds) {
+        if (vboIds == null) return;
+        for (int vbo : vboIds) {
+            if (vbo != 0) {
+                glDeleteBuffers(vbo);
+            }
+        }
+    }
+
+    /**
+     * Creates a new OpenGL buffer for dynamic (per-frame) data uploads.
+     *
+     * <p>Used by the morph target blending system to create reusable VBOs for
+     * uploading blended delta data each frame. These buffers use {@code GL_DYNAMIC_DRAW}
+     * to hint to the driver that the data changes frequently.
+     *
+     * @return the OpenGL VBO ID
+     */
+    public static int createDynamicVbo() {
+        return glGenBuffers();
+    }
+
+    /**
+     * Uploads pre-blended morph target delta data to a VBO and binds it as a vertex
+     * attribute in the given VAO.
+     *
+     * <p>This is called each frame for entities with active morph targets. The caller
+     * computes the weighted sum of all morph target deltas on the CPU and passes the
+     * single blended result here. This method uploads it to the given VBO (reused across
+     * frames to avoid allocation) and configures the VAO's attribute pointer.
+     *
+     * <p><strong>Performance notes:</strong>
+     * <ul>
+     *   <li>Uses {@code GL_DYNAMIC_DRAW} — tells the driver this buffer changes every frame</li>
+     *   <li>The VBO is reused (same ID) across frames to avoid create/delete churn</li>
+     *   <li>Native memory is allocated and freed immediately (no persistent mapped buffer)</li>
+     * </ul>
+     *
+     * @param vaoId the VAO to configure the attribute pointer in
+     * @param attribLocation the vertex attribute location (e.g., 8 for position deltas)
+     * @param vbo the VBO to upload data into (reused across frames)
+     * @param data the blended float array (vec3 per vertex, length = vertexCount * 3)
+     */
+    public static void bindBlendedMorphDelta(int vaoId, int attribLocation, int vbo, float[] data) {
+        glBindVertexArray(vaoId);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+        FloatBuffer buffer = MemoryUtil.memAllocFloat(data.length);
+        buffer.put(data).flip();
+        glBufferData(GL_ARRAY_BUFFER, buffer, GL_DYNAMIC_DRAW);
+        MemoryUtil.memFree(buffer);
+
+        glVertexAttribPointer(attribLocation, 3, GL_FLOAT, false, 0, 0);
+        glEnableVertexAttribArray(attribLocation);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
+
+    /**
+     * Disables morph target attribute slots in the given VAO.
+     *
+     * <p>Called for entities that do NOT have morph targets to ensure leftover attribute
+     * data from a previous entity's draw call doesn't bleed through. Without this,
+     * a non-morphed entity rendered after a morphed one could read stale delta data.
+     *
+     * @param vaoId the VAO to disable morph attributes in
+     * @param positionAttrib the morph position delta attribute location
+     * @param normalAttrib the morph normal delta attribute location
+     */
+    public static void disableMorphAttributes(int vaoId, int positionAttrib, int normalAttrib) {
+        glBindVertexArray(vaoId);
+        glDisableVertexAttribArray(positionAttrib);
+        glDisableVertexAttribArray(normalAttrib);
+        glBindVertexArray(0);
     }
 }

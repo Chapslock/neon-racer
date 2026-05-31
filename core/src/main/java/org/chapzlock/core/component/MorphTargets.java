@@ -58,6 +58,30 @@ public class MorphTargets implements Component {
     private int[] normalDeltaVbos;
 
     /**
+     * Raw CPU-side position delta arrays for CPU blending.
+     *
+     * <p>Each entry is a flat float array containing vec3 deltas for every vertex in the mesh
+     * (length = vertexCount * 3). The outer array has one entry per morph target. These are
+     * retained in RAM so that {@code PbrMaterialRenderer} can compute the weighted sum of
+     * active targets each frame without reading back from GPU memory.
+     *
+     * <p>Memory layout per target: [dx0, dy0, dz0, dx1, dy1, dz1, ...] where vertex i
+     * occupies indices [i*3, i*3+1, i*3+2].
+     *
+     * <p>Set alongside VBOs during mesh upload. May be null if the mesh loader doesn't
+     * retain CPU data.
+     */
+    private float[][] positionDeltaArrays;
+
+    /**
+     * Raw CPU-side normal delta arrays for CPU blending (optional).
+     *
+     * <p>Same layout as {@link #positionDeltaArrays} but for normal vector deltas.
+     * May be null if the morph targets only affect positions.
+     */
+    private float[][] normalDeltaArrays;
+
+    /**
      * Creates a MorphTargets component with the given number of targets.
      * All weights start at 0.0 (no deformation applied).
      *
@@ -151,5 +175,50 @@ public class MorphTargets implements Component {
      */
     public void setNormalDeltaVbos(int[] vbos) {
         this.normalDeltaVbos = vbos;
+    }
+
+    /**
+     * Returns the raw CPU-side position delta arrays for CPU blending,
+     * or null if not retained.
+     *
+     * @return array of float arrays (one per morph target), or null
+     */
+    public float[][] getPositionDeltaArrays() {
+        return positionDeltaArrays;
+    }
+
+    /**
+     * Sets the raw CPU-side position delta arrays for CPU blending.
+     *
+     * <p>Should be called during mesh loading alongside VBO upload, passing the same
+     * delta data that was uploaded to the GPU. Each inner array must have length
+     * vertexCount * 3 (flat vec3 per vertex).
+     *
+     * @param arrays array of float arrays (one per morph target)
+     */
+    public void setPositionDeltaArrays(float[][] arrays) {
+        this.positionDeltaArrays = arrays;
+    }
+
+    /**
+     * Returns the raw CPU-side normal delta arrays for CPU blending,
+     * or null if not present.
+     *
+     * @return array of float arrays (one per morph target), or null
+     */
+    public float[][] getNormalDeltaArrays() {
+        return normalDeltaArrays;
+    }
+
+    /**
+     * Sets the raw CPU-side normal delta arrays for CPU blending.
+     *
+     * <p>Same layout as position delta arrays. May remain null if morphs
+     * only affect positions.
+     *
+     * @param arrays array of float arrays (one per morph target), or null
+     */
+    public void setNormalDeltaArrays(float[][] arrays) {
+        this.normalDeltaArrays = arrays;
     }
 }
