@@ -41,6 +41,11 @@ public class EngineContext implements Disposable {
     private final Time time;
     private final TweenManager tweenManager;
     private final GltfAssetRegistry gltfAssetRegistry;
+    /**
+     * Set after construction due to circular dependency: SceneManager needs
+     * EngineContext in its constructor, but EngineContext holds SceneManager.
+     * This is intentional — set once during Application.run() and never changed after.
+     */
     @Setter
     private SceneManager sceneManager;
     @Setter
