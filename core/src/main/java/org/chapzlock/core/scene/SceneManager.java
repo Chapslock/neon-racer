@@ -12,6 +12,7 @@ import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.asset.gltf.GltfAsset;
 import org.chapzlock.core.component.Material;
 import org.chapzlock.core.component.Mesh;
+import org.chapzlock.core.component.Name;
 import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.component.Transform;
@@ -311,6 +312,10 @@ public class SceneManager {
                     trackAsset(component, assets);
                 }
                 entityIds.add(entityId);
+
+                if (!blueprint.getName().startsWith("_")) {
+                    registry.addComponent(entityId, new Name(blueprint.getName()));
+                }
 
                 // If this entity has a glTF model path, instantiate the model as children.
                 // The glTF nodes become children of this entity, making it the "owner" of

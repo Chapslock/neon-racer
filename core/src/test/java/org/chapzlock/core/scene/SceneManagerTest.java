@@ -260,6 +260,21 @@ class SceneManagerTest {
     }
 
     @Test
+    void loadImmediateAddsNameComponentForNamedBlueprints() {
+        Scene scene = new Scene("test", List.of(
+            new EntityBlueprintBuilder("player")
+                .transform(Transform.at(0, 0, 0))
+                .build()
+        ), List.of(), null);
+
+        sceneManager.loadImmediate(scene);
+
+        ComponentRegistry registry = ctx.getRegistry();
+        int playerId = registry.getEntityByName("player");
+        assertNotEquals(-1, playerId);
+    }
+
+    @Test
     void failedEntityInstantiationDoesNotLeavePartialEntity() {
         Scene scene = new Scene("bad-entity", List.of(
             new EntityBlueprintBuilder("good")
