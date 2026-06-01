@@ -42,6 +42,7 @@ public class RenderContext {
     private List<PointLight> pointLights;
     private Fog fog;
     private AmbientLight ambientLight;
+    private boolean warnedNoCamera = false;
 
     public RenderContext(EngineContext ctx) {
         this.registry = ctx.getRegistry();
@@ -56,9 +57,13 @@ public class RenderContext {
     public boolean beginFrame() {
         Optional<EntityView> cameraView = registry.viewFirst(Camera.class);
         if (cameraView.isEmpty()) {
-            Log.error("No Camera entity found. Skipping render.");
+            if (!warnedNoCamera) {
+                Log.warn("RenderContext", "No Camera entity found — rendering is skipped. Add a camera to your scene via .camera(x, y, z) on the SceneBuilder.");
+                warnedNoCamera = true;
+            }
             return false;
         }
+        warnedNoCamera = false;
         this.camera = cameraView.get().get(Camera.class);
         this.cameraPosition = camera.getPosition();
         if (cameraSystem != null) {
@@ -72,22 +77,23 @@ public class RenderContext {
 
         var dirLightEntities = registry.view(DirectionalLight.class);
         if (dirLightEntities.size() > 1) {
-            Log.warn("Scene has " + dirLightEntities.size() + " directional lights. Only the first is used.");
+            Log.warn("RenderContext", "Scene has " + dirLightEntities.size() + " directional lights. Only the first is used.");
         }
         this.directionalLight = registry.viewFirst(DirectionalLight.class)
             .map(v -> v.get(DirectionalLight.class))
             .orElse(null);
 
         this.pointLights = new ArrayList<>();
-        registry.view(PointLight.class).forEach(entity -> {
+        var pointLightEntities = registry.view(PointLight.class);
+        if (pointLightEntities.size() > PointLight.MAX_COUNT) {
+            Log.warn("RenderContext", "Scene has " + pointLightEntities.size() + " point lights. Only first " +
+                PointLight.MAX_COUNT + " are rendered.");
+        }
+        pointLightEntities.forEach(entity -> {
             if (pointLights.size() < PointLight.MAX_COUNT) {
                 pointLights.add(entity.get(PointLight.class));
             }
         });
-        if (registry.view(PointLight.class).size() > PointLight.MAX_COUNT) {
-            Log.warn("Scene has more than " + PointLight.MAX_COUNT + " point lights. Only first " +
-                PointLight.MAX_COUNT + " are rendered.");
-        }
 
         this.fog = registry.viewFirst(Fog.class)
             .map(v -> v.get(Fog.class))
