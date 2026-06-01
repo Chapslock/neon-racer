@@ -2,7 +2,6 @@ package org.chapzlock.core.ecs;
 
 import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,8 +24,8 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
  * Central registry for all components and entities.
  *
  * <p>Stores components in typed maps and provides fast archetype queries via bitset masks.
- * Query results are cached and invalidated on component mutations — {@link #view(Class[])}
- * is O(1) on stable frames.
+ * Query results are cached and invalidated on component mutations — queries are O(1) on
+ * stable frames.
  *
  * <p>Example:
  * <pre>{@code
@@ -34,11 +33,9 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
  * registry.addComponent(entity, new Transform());
  * registry.addComponent(entity, new Mesh("model.obj"));
  *
- * for (EntityView e : registry.view(Transform.class, Mesh.class)) {
- *     Transform t = e.get(Transform.class);
- *     Mesh m = e.get(Mesh.class);
+ * registry.forEach(Transform.class, Mesh.class, (entityId, transform, mesh) -> {
  *     // process entity
- * }
+ * });
  * }</pre>
  */
 public class ComponentRegistry {
@@ -215,61 +212,6 @@ public class ComponentRegistry {
         invalidateAllCaches();
     }
 
-    /**
-     * Queries entities that have ALL required components.
-     *
-     * <p>Results are cached and invalidated on component mutations.
-     * Safe to call every frame — O(1) when no entities changed.
-     *
-     * @param requiredComponents component types to query
-     * @return list of entity views matching all required components
-     */
-    @SafeVarargs
-    public final List<EntityView> view(Class<? extends Component>... requiredComponents) {
-        if (requiredComponents.length == 0) {
-            return Collections.emptyList();
-        }
-
-        final int[] requiredTypeIds = new int[requiredComponents.length];
-        for (int i = 0; i < requiredComponents.length; i++) {
-            Integer typeId = typeToId.get(requiredComponents[i]);
-            if (typeId == null) {
-                return Collections.emptyList();
-            }
-            requiredTypeIds[i] = typeId;
-        }
-
-        BitSet queryMask = new BitSet();
-        for (int id : requiredTypeIds) {
-            queryMask.set(id);
-        }
-
-        CachedQuery cached = queryCache.computeIfAbsent(queryMask, CachedQuery::new);
-        if (!cached.valid) {
-            List<Integer> ids = new ArrayList<>();
-            for (Entry<Integer, BitSet> entry : entityComponentMasks.entrySet()) {
-                BitSet entityMask = entry.getValue();
-                boolean matches = true;
-                for (int typeId : requiredTypeIds) {
-                    if (!entityMask.get(typeId)) {
-                        matches = false;
-                        break;
-                    }
-                }
-                if (matches) {
-                    ids.add(entry.getKey());
-                }
-            }
-            cached.entityIds = ids;
-            cached.valid = true;
-        }
-
-        List<EntityView> results = new ArrayList<>(cached.entityIds.size());
-        for (int entityId : cached.entityIds) {
-            results.add(buildEntityView(entityId, requiredComponents, requiredTypeIds));
-        }
-        return results;
-    }
 
     /**
      * Returns the entity ID for a named entity, or -1 if no entity has that name.
@@ -345,8 +287,8 @@ public class ComponentRegistry {
     /**
      * Iterates all entities with the specified component, passing typed references to the consumer.
      *
-     * <p>Zero allocations on stable frames — uses the same cached query mechanism as {@link #view}.
-     * Avoids creating intermediate {@link EntityView} objects, making it ideal for hot-loop systems
+     * <p>Zero allocations on stable frames — uses the same cached query mechanism as other queries.
+     * Zero allocations on stable frames, making it ideal for hot-loop systems
      * that process a single component type every frame.
      *
      * <p>Example:
@@ -389,8 +331,8 @@ public class ComponentRegistry {
     /**
      * Iterates all entities with both specified components, passing typed references to the consumer.
      *
-     * <p>Zero allocations on stable frames — uses the same cached query mechanism as {@link #view}.
-     * Avoids creating intermediate {@link EntityView} objects, making it ideal for hot-loop systems
+     * <p>Zero allocations on stable frames — uses the same cached query mechanism as other queries.
+     * Zero allocations on stable frames, making it ideal for hot-loop systems
      * that process two component types every frame.
      *
      * <p>Example:
@@ -440,8 +382,8 @@ public class ComponentRegistry {
     /**
      * Iterates all entities with all three specified components, passing typed references to the consumer.
      *
-     * <p>Zero allocations on stable frames — uses the same cached query mechanism as {@link #view}.
-     * Avoids creating intermediate {@link EntityView} objects, making it ideal for hot-loop systems
+     * <p>Zero allocations on stable frames — uses the same cached query mechanism as other queries.
+     * Zero allocations on stable frames, making it ideal for hot-loop systems
      * that process three component types every frame.
      *
      * <p>Example:
@@ -496,8 +438,8 @@ public class ComponentRegistry {
     /**
      * Iterates all entities with all four specified components, passing typed references to the consumer.
      *
-     * <p>Zero allocations on stable frames — uses the same cached query mechanism as {@link #view}.
-     * Avoids creating intermediate {@link EntityView} objects, making it ideal for hot-loop systems
+     * <p>Zero allocations on stable frames — uses the same cached query mechanism as other queries.
+     * Zero allocations on stable frames, making it ideal for hot-loop systems
      * that process four component types every frame (e.g. the render pipeline iterating
      * Transform + Mesh + Material + layer tag).
      *
@@ -561,9 +503,9 @@ public class ComponentRegistry {
     /**
      * Returns the number of entities matching ALL required component types.
      *
-     * <p>Uses the same cached query mechanism as {@link #view(Class[])} — O(1) on stable frames,
-     * zero allocations after the first call. Prefer this over {@code view(...).size()} when
-     * you only need the count and don't need to iterate the entities.
+     * <p>Uses the same cached query mechanism as forEach — O(1) on stable frames,
+     * zero allocations after the first call. Prefer this over iterating when
+     * you only need the count and don't need to process the entities.
      *
      * <p>Example:
      * <pre>{@code
@@ -619,16 +561,6 @@ public class ComponentRegistry {
         return cached.entityIds.size();
     }
 
-    /**
-     * Helper that avoids re-looking-up the type ids for each component when building the view
-     */
-    private EntityView buildEntityView(int entityId, Class<? extends Component>[] requiredComponents, int[] requiredTypeIds) {
-        Component[] comps = new Component[requiredComponents.length];
-        for (int i = 0; i < requiredComponents.length; i++) {
-            comps[i] = stores.get(requiredTypeIds[i]).get(entityId);
-        }
-        return EntityView.of(entityId, requiredComponents, comps);
-    }
 
     private void invalidateCachesForType(int typeId) {
         for (CachedQuery cached : queryCache.values()) {

@@ -19,17 +19,13 @@ import org.chapzlock.core.application.EngineContext;
  *     @Override
  *     public void onInit(EngineContext ctx) {
  *         this.registry = ctx.getRegistry();
- *         ctx.getEventBus().subscribe(SceneLoadedEvent.class, event -> {
- *             // React to scene transitions
- *             return false;
- *         });
  *     }
  *
  *     @Override
  *     public void onUpdate(float deltaTime) {
- *         for (EntityView e : registry.view(Transform.class, Velocity.class)) {
+ *         registry.forEach(Transform.class, Velocity.class, (entityId, transform, vel) -> {
  *             // Update logic
- *         }
+ *         });
  *     }
  * }
  * }</pre>
