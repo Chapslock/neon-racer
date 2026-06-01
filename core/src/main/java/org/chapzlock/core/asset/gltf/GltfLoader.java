@@ -4,6 +4,7 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -13,7 +14,18 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
-import de.javagl.jgltf.model.*;
+import de.javagl.jgltf.model.AccessorModel;
+import de.javagl.jgltf.model.AnimationModel;
+import de.javagl.jgltf.model.BufferViewModel;
+import de.javagl.jgltf.model.GltfModel;
+import de.javagl.jgltf.model.ImageModel;
+import de.javagl.jgltf.model.MaterialModel;
+import de.javagl.jgltf.model.MeshModel;
+import de.javagl.jgltf.model.MeshPrimitiveModel;
+import de.javagl.jgltf.model.NodeModel;
+import de.javagl.jgltf.model.SceneModel;
+import de.javagl.jgltf.model.SkinModel;
+import de.javagl.jgltf.model.TextureModel;
 import de.javagl.jgltf.model.io.GltfModelReader;
 import de.javagl.jgltf.model.v2.MaterialModelV2;
 
@@ -347,17 +359,18 @@ public class GltfLoader {
         String baseDir = sourcePath.contains("/")
             ? sourcePath.substring(0, sourcePath.lastIndexOf('/') + 1) : "";
 
+        Map<ImageModel, Integer> imageIndexMap = new HashMap<>();
+
         for (MaterialModel mat : model.getMaterialModels()) {
             MaterialModelV2 matV2 = (MaterialModelV2) mat;
 
             // Extract texture references (null if no texture assigned)
-            int texIndex = 0;
-            GltfTextureRef baseColorTex = resolveTextureRef(matV2.getBaseColorTexture(), baseDir, sourcePath, texIndex++);
+            GltfTextureRef baseColorTex = resolveTextureRef(matV2.getBaseColorTexture(), baseDir, sourcePath, imageIndexMap);
             GltfTextureRef metallicRoughnessTex = resolveTextureRef(
-                matV2.getMetallicRoughnessTexture(), baseDir, sourcePath, texIndex++);
-            GltfTextureRef normalTex = resolveTextureRef(matV2.getNormalTexture(), baseDir, sourcePath, texIndex++);
-            GltfTextureRef occlusionTex = resolveTextureRef(matV2.getOcclusionTexture(), baseDir, sourcePath, texIndex++);
-            GltfTextureRef emissiveTex = resolveTextureRef(matV2.getEmissiveTexture(), baseDir, sourcePath, texIndex++);
+                matV2.getMetallicRoughnessTexture(), baseDir, sourcePath, imageIndexMap);
+            GltfTextureRef normalTex = resolveTextureRef(matV2.getNormalTexture(), baseDir, sourcePath, imageIndexMap);
+            GltfTextureRef occlusionTex = resolveTextureRef(matV2.getOcclusionTexture(), baseDir, sourcePath, imageIndexMap);
+            GltfTextureRef emissiveTex = resolveTextureRef(matV2.getEmissiveTexture(), baseDir, sourcePath, imageIndexMap);
 
             // Extract factors (with defaults matching glTF spec)
             float[] bcf = matV2.getBaseColorFactor() != null
@@ -399,13 +412,14 @@ public class GltfLoader {
      * image file. For separate .gltf files, this URI is relative to the .gltf file.
      * For .glb files with embedded textures, the URI may be null (data is in the binary chunk).
      *
-     * @param texture the texture model (may be null if no texture assigned)
-     * @param baseDir the directory containing the glTF file (for resolving relative paths)
-     * @param sourcePath the original file path (used to build unique cache keys for embedded textures)
-     * @param textureIndex the texture's index within this material (for unique cache keys)
+     * @param texture       the texture model (may be null if no texture assigned)
+     * @param baseDir       the directory containing the glTF file (for resolving relative paths)
+     * @param sourcePath    the original file path (used to build unique cache keys for embedded textures)
+     * @param imageIndexMap tracks unique images across all materials for deduplication
      * @return texture reference, or null if no texture/image
      */
-    private GltfTextureRef resolveTextureRef(TextureModel texture, String baseDir, String sourcePath, int textureIndex) {
+    private GltfTextureRef resolveTextureRef(TextureModel texture, String baseDir, String sourcePath,
+                                             Map<ImageModel, Integer> imageIndexMap) {
         if (texture == null) return null;
         ImageModel image = texture.getImageModel();
         if (image == null) return null;
@@ -416,7 +430,8 @@ public class GltfLoader {
         // Embedded texture: extract raw image bytes from GLB binary chunk
         ByteBuffer imageData = image.getImageData();
         if (imageData == null) return null;
-        String cacheKey = "embedded:" + sourcePath + ":tex" + textureIndex;
+        int imageIndex = imageIndexMap.computeIfAbsent(image, k -> imageIndexMap.size());
+        String cacheKey = "embedded:" + sourcePath + ":img" + imageIndex;
         return GltfTextureRef.fromMemory(imageData, cacheKey);
     }
 

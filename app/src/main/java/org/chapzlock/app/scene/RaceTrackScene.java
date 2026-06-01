@@ -1,13 +1,20 @@
 package org.chapzlock.app.scene;
 
 import org.chapzlock.app.component.PlayerInputComponent;
-import org.chapzlock.app.systems.PlayerCameraFollowSystem;
 import org.chapzlock.app.systems.PlayerInputSystem;
-import org.chapzlock.app.systems.PlayerMovementSystem;
+import org.chapzlock.app.systems.PlayerModelSystem;
 import org.chapzlock.app.tags.PlayerTag;
-import org.chapzlock.core.component.*;
+import org.chapzlock.core.component.AmbientLight;
+import org.chapzlock.core.component.Attenuation;
+import org.chapzlock.core.component.Color;
+import org.chapzlock.core.component.DirectionalLight;
+import org.chapzlock.core.component.Fog;
+import org.chapzlock.core.component.PointLight;
+import org.chapzlock.core.component.SpriteDescriptor;
+import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.input.InputMap;
 import org.chapzlock.core.input.Key;
+import org.chapzlock.core.render.CameraFreeRoamSystem;
 import org.chapzlock.core.scene.Scene;
 import org.joml.Vector3f;
 
@@ -18,8 +25,8 @@ public class RaceTrackScene {
             .fromGltf("glb/forest-scene.glb")
             .inputMap(InputMap.builder()
                 .action("quit", Key.ESCAPE)
-                .axis("throttle", Key.S, Key.W)
-                .axis("steer", Key.A, Key.D)
+                .axis("moveForward", Key.S, Key.W)
+                .axis("moveRight", Key.A, Key.D)
                 .build())
             .directionalLight(DirectionalLight.builder()
                 .direction(new Vector3f(-0.2f, -1f, -0.3f))
@@ -41,20 +48,24 @@ public class RaceTrackScene {
                 .attenuation(Attenuation.DEFAULT)
                 .build())
             .fog(Fog.builder().density(0.012f).gradient(2.0f).build())
-            .ambient(AmbientLight.builder().strength(0.1f).build())
+            .ambient(AmbientLight.builder().strength(0.5f)
+                .build())
             .entity("player", e -> e
-                .transform(Transform.at(0, -70, 0, 0, 0, 0))
+                .transform(Transform.at(0, 0, -3, 0, 90, 0))
                 .tag(new PlayerTag())
                 .component(new PlayerInputComponent()))
             .entity("speedometer", e -> e
                 .transform(Transform.at(0, 0, 0, 0, 0, 0, 200))
                 .sprite(SpriteDescriptor.of("textures/speedometer.png")))
-            .camera(0, 5, 10)
+            .camera(0, 0, 5)
             .sky()
             .systems(
                 new PlayerInputSystem(),
-                new PlayerMovementSystem(),
-                new PlayerCameraFollowSystem())
+                new PlayerModelSystem(),
+                //new PlayerMovementSystem(),
+                //new PlayerCameraFollowSystem()
+                new CameraFreeRoamSystem()
+            )
             .build();
     }
 }

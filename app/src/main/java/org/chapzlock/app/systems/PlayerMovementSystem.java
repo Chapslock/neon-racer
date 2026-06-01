@@ -3,19 +3,32 @@ package org.chapzlock.app.systems;
 import org.chapzlock.app.component.PlayerInputComponent;
 import org.chapzlock.app.tags.PlayerTag;
 import org.chapzlock.core.application.EngineContext;
-import org.chapzlock.core.ecs.GameSystem;
-import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.Transform;
-import org.chapzlock.core.ecs.EntityView;
-import org.chapzlock.core.physics.PhysicsForceUtil;
 import org.chapzlock.core.ecs.ComponentRegistry;
+import org.chapzlock.core.ecs.EntityView;
+import org.chapzlock.core.ecs.GameSystem;
 import org.joml.Vector3f;
 
+/**
+ * Moves the humanoid player character based on input from {@link PlayerInputComponent}.
+ *
+ * <p>Movement is transform-based (no physics forces): the player moves at a constant
+ * speed in the direction they are facing, and strafes perpendicular to that direction.
+ * The character rotates to face the movement direction when moving forward/backward.
+ *
+ * <p><strong>Movement model:</strong>
+ * <ul>
+ *   <li>Forward/backward: translates along the player's current facing direction</li>
+ *   <li>Left/right: strafes perpendicular to facing</li>
+ *   <li>Rotation: the character gradually turns to face the direction of movement</li>
+ * </ul>
+ */
 public class PlayerMovementSystem implements GameSystem {
+
     private ComponentRegistry registry;
 
-    private static final float ENGINE_FORCE = 1200f;
-    private static final float STEER_TORQUE = 1000f;
+    private static final float MOVE_SPEED = 8.0f;
+    private static final float TURN_SPEED = 10.0f;
 
     @Override
     public void onInit(EngineContext ctx) {
@@ -24,18 +37,49 @@ public class PlayerMovementSystem implements GameSystem {
 
     @Override
     public void onUpdate(float deltaTime) {
-        for (EntityView e : registry.view(PlayerTag.class, PhysicsBody.class, PlayerInputComponent.class, Transform.class)) {
+        for (EntityView e : registry.view(PlayerTag.class, PlayerInputComponent.class, Transform.class)) {
             var input = e.get(PlayerInputComponent.class);
-            var physicsBody = e.get(PhysicsBody.class);
+            var transform = e.get(Transform.class);
 
-            if (input.getThrottle() != 0f) {
-                float localForceMagnitude = ENGINE_FORCE * input.getThrottle() * deltaTime;
-                PhysicsForceUtil.applyLocalForce(physicsBody.getRigidBody(), new Vector3f(0f, 0f, localForceMagnitude));
+            float forward = input.getMoveForward();
+            float right = input.getMoveRight();
+
+            if (forward == 0f && right == 0f) {
+                return;
             }
 
-            if (input.getSteer() != 0f) {
-                float steerAmount = STEER_TORQUE * -input.getSteer() * deltaTime;
-                PhysicsForceUtil.applyLocalTorque(physicsBody.getRigidBody(), new Vector3f(0f, steerAmount, 0f));
+            Vector3f playerForward = transform.getForwardVector(new Vector3f());
+            Vector3f up = new Vector3f(0f, 1f, 0f);
+            Vector3f playerRight = new Vector3f();
+            playerForward.cross(up, playerRight).normalize();
+
+            Vector3f moveDir = new Vector3f();
+            moveDir.add(new Vector3f(playerForward).mul(forward));
+            moveDir.add(new Vector3f(playerRight).mul(right));
+
+            if (moveDir.lengthSquared() > 0.001f) {
+                moveDir.normalize();
+
+                Vector3f pos = transform.getPosition();
+                pos.x += moveDir.x * MOVE_SPEED * deltaTime;
+                pos.y += moveDir.y * MOVE_SPEED * deltaTime;
+                pos.z += moveDir.z * MOVE_SPEED * deltaTime;
+
+                if (forward != 0f) {
+                    float targetYaw = (float) Math.toDegrees(Math.atan2(-moveDir.x, -moveDir.z));
+                    float currentYaw = transform.getRotationEuler().y;
+                    float diff = targetYaw - currentYaw;
+
+                    // Normalize to [-180, 180]
+                    while (diff > 180f) {
+                        diff -= 360f;
+                    }
+                    while (diff < -180f) {
+                        diff += 360f;
+                    }
+
+                    transform.getRotationEuler().y += diff * TURN_SPEED * deltaTime;
+                }
             }
         }
     }

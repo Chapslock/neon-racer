@@ -16,7 +16,6 @@ import org.chapzlock.core.asset.gltf.GltfMaterialData;
 import org.chapzlock.core.asset.gltf.GltfMeshData;
 import org.chapzlock.core.asset.gltf.GltfNodeData;
 import org.chapzlock.core.asset.gltf.GltfSkinData;
-import org.chapzlock.core.asset.gltf.GltfTextureRef;
 import org.chapzlock.core.component.AlphaMode;
 import org.chapzlock.core.component.AnimationClipSet;
 import org.chapzlock.core.component.AnimationState;
@@ -425,21 +424,22 @@ public class GltfSceneInstantiator {
         });
 
         if (textureSystem != null) {
-            loadTextureRef(data.baseColorTexture(), builder::baseColorMap);
-            loadTextureRef(data.metallicRoughnessTexture(), builder::metallicRoughnessMap);
-            loadTextureRef(data.normalTexture(), builder::normalMap);
-            loadTextureRef(data.occlusionTexture(), builder::occlusionMap);
-            loadTextureRef(data.emissiveTexture(), builder::emissiveMap);
+            loadTextureRef(data.baseColorTexture(), builder::baseColorMap, true);
+            loadTextureRef(data.metallicRoughnessTexture(), builder::metallicRoughnessMap, false);
+            loadTextureRef(data.normalTexture(), builder::normalMap, false);
+            loadTextureRef(data.occlusionTexture(), builder::occlusionMap, false);
+            loadTextureRef(data.emissiveTexture(), builder::emissiveMap, true);
         }
 
         return builder.build();
     }
 
-    private void loadTextureRef(org.chapzlock.core.asset.gltf.GltfTextureRef ref, java.util.function.Consumer<Texture> setter) {
+    private void loadTextureRef(org.chapzlock.core.asset.gltf.GltfTextureRef ref,
+                                java.util.function.Consumer<Texture> setter, boolean srgb) {
         if (ref == null) return;
         Texture tex = ref.isEmbedded()
-            ? textureSystem.loadFromMemory(ref.imageBytes(), ref.cacheKey())
-            : textureSystem.load(ref.filePath());
+            ? textureSystem.loadFromMemory(ref.imageBytes(), ref.cacheKey(), srgb, false)
+            : textureSystem.load(ref.filePath(), srgb, false);
         setter.accept(tex);
     }
 
