@@ -66,8 +66,7 @@ class SceneManagerTest {
         sceneManager.loadImmediate(scene);
 
         ComponentRegistry registry = ctx.getRegistry();
-        List<?> transforms = registry.view(Transform.class);
-        assertEquals(1, transforms.size());
+        assertEquals(1, registry.count(Transform.class));
     }
 
     @Test
@@ -91,8 +90,7 @@ class SceneManagerTest {
 
         assertEquals("second", sceneManager.getPrimaryScene().getName());
         ComponentRegistry registry = ctx.getRegistry();
-        List<?> transforms = registry.view(Transform.class);
-        assertEquals(1, transforms.size());
+        assertEquals(1, registry.count(Transform.class));
     }
 
     @Test
@@ -135,11 +133,11 @@ class SceneManagerTest {
         sceneManager.loadAdditiveImmediate(additive);
 
         ComponentRegistry registry = ctx.getRegistry();
-        assertEquals(2, registry.view(Transform.class).size());
+        assertEquals(2, registry.count(Transform.class));
 
         sceneManager.unloadImmediate(additive);
 
-        assertEquals(1, registry.view(Transform.class).size());
+        assertEquals(1, registry.count(Transform.class));
         assertEquals(1, sceneManager.getActiveScenes().size());
     }
 
@@ -289,8 +287,7 @@ class SceneManagerTest {
         sceneManager.loadImmediate(scene);
 
         ComponentRegistry registry = ctx.getRegistry();
-        List<?> transforms = registry.view(Transform.class);
-        assertEquals(1, transforms.size(), "Only the good entity should exist");
+        assertEquals(1, registry.count(Transform.class), "Only the good entity should exist");
 
         // The key test: when we unload the scene, it should only try to destroy
         // entities that were successfully created. This verifies that the failed
@@ -299,6 +296,6 @@ class SceneManagerTest {
 
         // After loading a replacement scene, the original scene's entities should be cleaned up
         // and the new scene should have its entity
-        assertEquals(1, registry.view(Transform.class).size(), "New scene should have one entity");
+        assertEquals(1, registry.count(Transform.class), "New scene should have one entity");
     }
 }

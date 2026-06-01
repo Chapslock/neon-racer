@@ -120,8 +120,7 @@ class ComponentRegistryTest {
 
         assertNull(registry.getComponent(entityId, PositionComponent.class));
         assertNull(registry.getComponent(entityId, VelocityComponent.class));
-        assertTrue(registry.view(PositionComponent.class).isEmpty() ||
-            registry.view(PositionComponent.class).stream().noneMatch(v -> v.getId() == entityId));
+        assertEquals(0, registry.count(PositionComponent.class));
     }
 
     @Test

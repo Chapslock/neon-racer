@@ -1,5 +1,6 @@
 package org.chapzlock.core.ecs;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.chapzlock.core.event.EventBus;
@@ -24,16 +25,13 @@ class QueryCacheTest {
     }
 
     @Test
-    void repeatedViewCallsReturnEquivalentResults() {
+    void repeatedCountCallsReturnSameResult() {
         int e1 = Entity.create(registry);
         registry.addComponent(e1, new Position(1, 2));
         registry.addComponent(e1, new Velocity(3, 4));
 
-        List<EntityView> first = registry.view(Position.class, Velocity.class);
-        List<EntityView> second = registry.view(Position.class, Velocity.class);
-
-        assertEquals(first.size(), second.size());
-        assertEquals(first.get(0).getId(), second.get(0).getId());
+        assertEquals(1, registry.count(Position.class, Velocity.class));
+        assertEquals(1, registry.count(Position.class, Velocity.class));
     }
 
     @Test
@@ -41,12 +39,10 @@ class QueryCacheTest {
         int e1 = Entity.create(registry);
         registry.addComponent(e1, new Position(1, 2));
 
-        List<EntityView> before = registry.view(Position.class, Velocity.class);
-        assertTrue(before.isEmpty());
+        assertEquals(0, registry.count(Position.class, Velocity.class));
 
         registry.addComponent(e1, new Velocity(3, 4));
-        List<EntityView> after = registry.view(Position.class, Velocity.class);
-        assertEquals(1, after.size());
+        assertEquals(1, registry.count(Position.class, Velocity.class));
     }
 
     @Test
@@ -55,12 +51,10 @@ class QueryCacheTest {
         registry.addComponent(e1, new Position(1, 2));
         registry.addComponent(e1, new Velocity(3, 4));
 
-        List<EntityView> before = registry.view(Position.class, Velocity.class);
-        assertEquals(1, before.size());
+        assertEquals(1, registry.count(Position.class, Velocity.class));
 
         registry.removeComponent(e1, Velocity.class);
-        List<EntityView> after = registry.view(Position.class, Velocity.class);
-        assertTrue(after.isEmpty());
+        assertEquals(0, registry.count(Position.class, Velocity.class));
     }
 
     @Test
@@ -68,12 +62,10 @@ class QueryCacheTest {
         int e1 = Entity.create(registry);
         registry.addComponent(e1, new Position(1, 2));
 
-        List<EntityView> before = registry.view(Position.class);
-        assertEquals(1, before.size());
+        assertEquals(1, registry.count(Position.class));
 
         registry.destroyEntity(e1);
-        List<EntityView> after = registry.view(Position.class);
-        assertTrue(after.isEmpty());
+        assertEquals(0, registry.count(Position.class));
     }
 
     @Test
@@ -81,15 +73,12 @@ class QueryCacheTest {
         int e1 = Entity.create(registry);
         registry.addComponent(e1, new Position(1, 2));
 
-        List<EntityView> before = registry.view(Position.class);
-        assertEquals(1, before.size());
+        assertEquals(1, registry.count(Position.class));
 
         int e2 = Entity.create(registry);
         registry.addComponent(e2, new Health(100));
 
-        List<EntityView> after = registry.view(Position.class);
-        assertEquals(1, after.size());
-        assertEquals(before.get(0).getId(), after.get(0).getId());
+        assertEquals(1, registry.count(Position.class));
     }
 
     @Test
@@ -97,13 +86,24 @@ class QueryCacheTest {
         int e1 = Entity.create(registry);
         registry.addComponent(e1, new Position(1, 2));
 
-        List<EntityView> before = registry.view(Position.class);
-        assertEquals(1, before.size());
+        assertEquals(1, registry.count(Position.class));
 
         int e2 = Entity.create(registry);
         registry.addComponent(e2, new Position(5, 6));
 
-        List<EntityView> after = registry.view(Position.class);
-        assertEquals(2, after.size());
+        assertEquals(2, registry.count(Position.class));
+    }
+
+    @Test
+    void forEachSharesCacheWithCount() {
+        int e1 = Entity.create(registry);
+        registry.addComponent(e1, new Position(1, 2));
+
+        assertEquals(1, registry.count(Position.class));
+
+        List<Integer> ids = new ArrayList<>();
+        registry.forEach(Position.class, (entityId, pos) -> ids.add(entityId));
+        assertEquals(1, ids.size());
+        assertEquals(e1, ids.get(0).intValue());
     }
 }

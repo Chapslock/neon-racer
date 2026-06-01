@@ -272,16 +272,6 @@ public class ComponentRegistry {
     }
 
     /**
-     * Returns the first entity matching ALL required components, or empty if none match.
-     * Useful for singleton-style entities (e.g. Camera, Sky, PointLight).
-     */
-    @SafeVarargs
-    public final Optional<EntityView> viewFirst(Class<? extends Component>... requiredComponents) {
-        List<EntityView> results = view(requiredComponents);
-        return results.isEmpty() ? Optional.empty() : Optional.of(results.getFirst());
-    }
-
-    /**
      * Returns the entity ID for a named entity, or -1 if no entity has that name.
      *
      * <p>Entities are indexed by name when a {@link Name} component is added to them.
