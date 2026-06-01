@@ -13,7 +13,7 @@ import lombok.Getter;
 /**
  * Material component pairing a shader with textures and rendering properties.
  *
- * <p>Each material type (ENTITY, TERRAIN, UI) has a corresponding {@link org.chapzlock.core.render.MaterialRenderer}
+ * <p>Each material type (PBR, UI) has a corresponding {@link org.chapzlock.core.render.MaterialRenderer}
  * that knows how to bind uniforms and textures.
  */
 @Getter
@@ -26,25 +26,12 @@ public final class Material implements Component {
     @Builder.Default
     private Texture blendMap = null;
     @Builder.Default
-    private Reflection reflection = Reflection.builder()
-        .reflectivity(.1f)
-        .shineDamper(1f)
-        .build();
-    @Builder.Default
     private Vector4f tint = new Vector4f(1f, 1f, 1f, 1f);
 
     public Material(Shader shader, Texture texture) {
-        this(shader, texture, null);
-    }
-
-    public Material(Shader shader, Texture texture, Reflection reflection) {
         this.shader = shader;
         this.textures = new ArrayList<>();
         this.textures.add(texture);
-        this.reflection = reflection != null ? reflection : Reflection.builder()
-            .reflectivity(.1f)
-            .shineDamper(1f)
-            .build();
     }
 
     public Texture getFirstTexture() {

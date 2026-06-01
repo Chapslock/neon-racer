@@ -1,6 +1,7 @@
 package org.chapzlock.core.scene;
 
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.component.PhysicsDescriptor;
+import org.chapzlock.core.component.SpriteDescriptor;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.Component;
 import org.chapzlock.core.ecs.Tag;
@@ -11,98 +12,56 @@ import static org.junit.jupiter.api.Assertions.*;
 class EntityBlueprintBuilderTest {
 
     record TestTag() implements Tag {}
-
-    @Test
-    void transformBuildsCorrectComponent() {
-        EntityBlueprintBuilder builder = new EntityBlueprintBuilder("test");
-        builder.transform(1, 2, 3);
-        EntityBlueprint blueprint = builder.build();
-
-        EngineContext ctx = EngineContext.testContext();
-        Component[] components = blueprint.getFactories().get(0).create(ctx);
-
-        assertInstanceOf(Transform.class, components[0]);
-        Transform t = (Transform) components[0];
-        assertEquals(1f, t.getPosition().x);
-        assertEquals(2f, t.getPosition().y);
-        assertEquals(3f, t.getPosition().z);
-    }
-
-    @Test
-    void tagBuildsCorrectComponent() {
-        EntityBlueprintBuilder builder = new EntityBlueprintBuilder("test");
-        builder.tag(new TestTag());
-        EntityBlueprint blueprint = builder.build();
-
-        EngineContext ctx = EngineContext.testContext();
-        Component[] components = blueprint.getFactories().get(0).create(ctx);
-
-        assertInstanceOf(TestTag.class, components[0]);
-    }
-
-    @Test
-    void componentEscapeHatchAddsArbitraryComponent() {
-        Transform transform = new Transform();
-        EntityBlueprintBuilder builder = new EntityBlueprintBuilder("test");
-        builder.component(transform);
-        EntityBlueprint blueprint = builder.build();
-
-        EngineContext ctx = EngineContext.testContext();
-        Component[] components = blueprint.getFactories().get(0).create(ctx);
-
-        assertSame(transform, components[0]);
-    }
+    record TestComponent() implements Component {}
 
     @Test
     void builderNameIsPreserved() {
-        EntityBlueprintBuilder builder = new EntityBlueprintBuilder("my-entity");
-        EntityBlueprint blueprint = builder.build();
-        assertEquals("my-entity", blueprint.getName());
+        EntityBlueprint bp = new EntityBlueprintBuilder("my-entity").build();
+        assertEquals("my-entity", bp.getName());
     }
 
     @Test
-    void multipleCallsAccumulateFactories() {
-        EntityBlueprintBuilder builder = new EntityBlueprintBuilder("test");
-        builder.transform(0, 0, 0);
-        builder.tag(new TestTag());
-        EntityBlueprint blueprint = builder.build();
-
-        assertEquals(2, blueprint.getFactories().size());
+    void transformIsStored() {
+        Transform t = Transform.at(1, 2, 3);
+        EntityBlueprint bp = new EntityBlueprintBuilder("test")
+            .transform(t)
+            .build();
+        assertSame(t, bp.getTransform());
     }
 
     @Test
-    void meshWithNullSystemReturnsEmpty() {
-        EntityBlueprintBuilder builder = new EntityBlueprintBuilder("test");
-        builder.mesh("obj/car.obj");
-        EntityBlueprint blueprint = builder.build();
-
-        EngineContext ctx = EngineContext.testContext();
-        Component[] components = blueprint.getFactories().get(0).create(ctx);
-
-        assertEquals(0, components.length);
+    void spriteDescriptorIsStored() {
+        SpriteDescriptor desc = SpriteDescriptor.of("sprite.png");
+        EntityBlueprint bp = new EntityBlueprintBuilder("test")
+            .sprite(desc)
+            .build();
+        assertSame(desc, bp.getSpriteDescriptor());
     }
 
     @Test
-    void textureWithNullSystemReturnsEmpty() {
-        EntityBlueprintBuilder builder = new EntityBlueprintBuilder("test");
-        builder.texture("textures/car.png");
-        EntityBlueprint blueprint = builder.build();
-
-        EngineContext ctx = EngineContext.testContext();
-        Component[] components = blueprint.getFactories().get(0).create(ctx);
-
-        assertEquals(0, components.length);
+    void physicsDescriptorIsStored() {
+        PhysicsDescriptor desc = PhysicsDescriptor.dynamic(5f);
+        EntityBlueprint bp = new EntityBlueprintBuilder("test")
+            .physics(desc)
+            .build();
+        assertSame(desc, bp.getPhysicsDescriptor());
     }
 
     @Test
-    void modelWithNullSystemsReturnsEmpty() {
-        EntityBlueprintBuilder builder = new EntityBlueprintBuilder("test");
-        builder.model("obj/car.obj", "textures/car.png");
-        EntityBlueprint blueprint = builder.build();
-
-        EngineContext ctx = EngineContext.testContext();
-        Component[] components = blueprint.getFactories().get(0).create(ctx);
-
-        assertEquals(0, components.length);
+    void tagsAreAccumulated() {
+        EntityBlueprint bp = new EntityBlueprintBuilder("test")
+            .tag(new TestTag())
+            .tag(new TestTag())
+            .build();
+        assertEquals(2, bp.getTags().size());
     }
+
+    @Test
+    void componentsAreAccumulated() {
+        EntityBlueprint bp = new EntityBlueprintBuilder("test")
+            .component(new TestComponent(), new TestComponent())
+            .build();
+        assertEquals(2, bp.getComponents().size());
+    }
+
 }

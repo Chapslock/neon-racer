@@ -59,16 +59,41 @@ public class Transform implements Component {
         markMatrixDirty();
     }
 
-    /* --- helpers to mark dirty --- */
-    private void markMatrixDirty() {
-        this.matrixDirty = true;
-    }
-
     public Transform(Vector3f position, Vector3f rotationEuler) {
         this.position.set(position);
         this.rotationEuler.set(rotationEuler);
         this.quatFromEuler(); // build quaternion from euler immediately
         markMatrixDirty();
+    }
+
+    public Transform(Vector3f position, Vector3f rotationEuler, float scale) {
+        this.position.set(position);
+        this.rotationEuler.set(rotationEuler);
+        this.scale = scale;
+        this.quatFromEuler();
+        markMatrixDirty();
+    }
+
+    /* --- static factory methods --- */
+
+    /** Creates a Transform with initial position. */
+    public static Transform at(float x, float y, float z) {
+        return new Transform(new Vector3f(x, y, z));
+    }
+
+    /** Creates a Transform with initial position and euler rotation (degrees). */
+    public static Transform at(float x, float y, float z, float rotX, float rotY, float rotZ) {
+        return new Transform(new Vector3f(x, y, z), new Vector3f(rotX, rotY, rotZ));
+    }
+
+    /** Creates a Transform with initial position, euler rotation, and uniform scale. */
+    public static Transform at(float x, float y, float z, float rotX, float rotY, float rotZ, float scale) {
+        return new Transform(new Vector3f(x, y, z), new Vector3f(rotX, rotY, rotZ), scale);
+    }
+
+    /* --- helpers to mark dirty --- */
+    private void markMatrixDirty() {
+        this.matrixDirty = true;
     }
 
     /**
@@ -89,14 +114,6 @@ public class Transform implements Component {
 
         this.quatDirty = false;
         this.eulerDirty = false;
-    }
-
-    public Transform(Vector3f position, Vector3f rotationEuler, float scale) {
-        this.position.set(position);
-        this.rotationEuler.set(rotationEuler);
-        this.scale = scale;
-        this.quatFromEuler();
-        markMatrixDirty();
     }
 
     private void markQuatDirty() {

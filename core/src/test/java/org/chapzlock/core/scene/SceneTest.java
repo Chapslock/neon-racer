@@ -2,9 +2,7 @@ package org.chapzlock.core.scene;
 
 import java.util.List;
 
-import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.component.Transform;
-import org.chapzlock.core.ecs.Component;
 import org.chapzlock.core.ecs.GameSystem;
 import org.junit.jupiter.api.Test;
 
@@ -18,14 +16,10 @@ class SceneTest {
     void sceneHoldsNameEntitiesAndSystems() {
         GameSystem system = new DummySystem();
 
-        Scene scene = new Scene(
-            "test-scene",
-            List.of(new EntityBlueprint("player", List.of(
-                ctx -> new Component[]{ new Transform() }
-            ))),
-            List.of(system),
-            null
-        );
+        Scene scene = Scene.builder("test-scene")
+            .entity("player", e -> e.transform(Transform.at(0, 0, 0)))
+            .systems(system)
+            .build();
 
         assertEquals("test-scene", scene.getName());
         assertEquals(1, scene.getEntities().size());
@@ -36,25 +30,12 @@ class SceneTest {
 
     @Test
     void sceneIsImmutable() {
-        Scene scene = new Scene("empty", List.of(), List.of(), null);
+        Scene scene = Scene.builder("empty").build();
 
         assertThrows(UnsupportedOperationException.class, () ->
-            scene.getEntities().add(new EntityBlueprint("x", List.of())));
+            scene.getEntities().add(new EntityBlueprintBuilder("x").build()));
         assertThrows(UnsupportedOperationException.class, () ->
             scene.getSystems().add(new DummySystem()));
-    }
-
-    @Test
-    void entityBlueprintFactoriesProduceComponents() {
-        EntityBlueprint blueprint = new EntityBlueprint("entity1", List.of(
-            ctx -> new Component[]{ new Transform() }
-        ));
-
-        EngineContext testCtx = EngineContext.testContext();
-        Component[] components = blueprint.getFactories().get(0).create(testCtx);
-
-        assertEquals(1, components.length);
-        assertInstanceOf(Transform.class, components[0]);
     }
 
     @Test

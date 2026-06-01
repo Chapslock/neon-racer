@@ -4,11 +4,11 @@ import java.util.List;
 
 import org.chapzlock.app.tags.PlayerTag;
 import org.chapzlock.core.application.EngineContext;
-import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.Transform;
-import org.chapzlock.core.ecs.EntityView;
 import org.chapzlock.core.ecs.ComponentRegistry;
+import org.chapzlock.core.ecs.EntityView;
+import org.chapzlock.core.ecs.GameSystem;
 import org.joml.Vector3f;
 
 
@@ -16,9 +16,9 @@ public class PlayerCameraFollowSystem implements GameSystem {
 
     private ComponentRegistry registry;
 
-    private final float followDistance = 12f;   // behind the car
-    private final float height = 4.0f;          // above the car
-    private final float lateralOffset = 0.0f;   // side offset (for chase-cam feel)
+    private final float followDistance = 6f;    // behind the character
+    private final float height = 2.5f;          // above the character
+    private final float lateralOffset = 0.0f;   // side offset
     private final float positionDamping = 6f;   // larger = snappier
     private final float rotationDamping = 8f;   // larger = snappier
 

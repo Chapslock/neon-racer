@@ -42,6 +42,7 @@ public class InputMap {
     private final Set<Integer> justReleasedKeys = new HashSet<>();
     private final List<Subscription> subscriptions = new ArrayList<>();
     private final Set<String> warnedActions = new HashSet<>();
+    private final Set<String> warnedAxes = new HashSet<>();
 
     InputMap(Map<String, List<Key>> actionBindings, Map<String, Key[]> axisBindings) {
         this.actionBindings = actionBindings;
@@ -130,7 +131,7 @@ public class InputMap {
 
     private boolean isUnregisteredAxis(String axisName) {
         if (axisBindings.containsKey(axisName)) return false;
-        if (warnedActions.add(axisName)) {
+        if (warnedAxes.add(axisName)) {
             Log.warn("InputMap: queried unregistered axis \"" + axisName +
                 "\". Registered axes: " + axisBindings.keySet());
         }

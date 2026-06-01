@@ -21,11 +21,13 @@ val lombokVersion = "1.18.42"
 val fastUtilVersion = "5.0.9"
 val jBulletVersion = "20101010-1"
 val jomlVersion = "1.10.8"
+val jgltfVersion = "2.0.4"
 dependencies {
     annotationProcessor("org.projectlombok:lombok:$lombokVersion")
 
     implementation("org.projectlombok:lombok:$lombokVersion")
     api("cz.advel.jbullet:jbullet:$jBulletVersion")
+    api("de.javagl:jgltf-model:$jgltfVersion")
 
     api("fastutil:fastutil:$fastUtilVersion")
     api("org.joml:joml:$jomlVersion")

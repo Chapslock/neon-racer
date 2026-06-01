@@ -2,7 +2,6 @@ package org.chapzlock.core.asset;
 
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -13,21 +12,34 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import javax.imageio.ImageIO;
 
-import org.chapzlock.core.asset.RawMeshData;
 import org.chapzlock.core.render.RawImageData;
-import org.chapzlock.core.logging.Log;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryStack;
 
 import lombok.experimental.UtilityClass;
 
+/**
+ * Utility methods for loading files and images from the classpath or filesystem.
+ *
+ * <p><strong>Resource loading strategy:</strong> All game assets (shaders, textures, models)
+ * live in {@code src/main/resources/}. At runtime, they're accessed via the classloader which
+ * packages them inside the JAR. The methods here abstract over this — you pass a path relative
+ * to the resources root (e.g., "shaders/pbr.vert") and get back the file contents.
+ *
+ * <p><strong>Image loading:</strong> Uses the STB library (via LWJGL) to decode PNG/JPEG/BMP
+ * into raw RGBA pixel buffers suitable for GPU upload. STB is a single-header C library that
+ * LWJGL wraps — it's fast and supports all common formats.
+ *
+ * <p><strong>Thread safety:</strong> Image loading methods use a global STB flip setting
+ * ({@code stbi_set_flip_vertically_on_load}). All image loading MUST happen on the main
+ * thread. Do not load images from background threads — the global state will corrupt.
+ *
+ * @see org.chapzlock.core.render.TextureSystem
+ * @see org.chapzlock.core.render.RawImageData
+ */
 @UtilityClass
 public class FileUtils {
 
@@ -45,7 +57,10 @@ public class FileUtils {
                 .getContextClassLoader()
                 .getResourceAsStream(resourcePath)
         ) {
-            assert in != null;
+            if (in == null) {
+                throw new RuntimeException("Resource not found: \"" + resourcePath + "\". " +
+                    "Ensure the file exists in src/main/resources/ and the path is relative to the resources root (no leading slash).");
+            }
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))
             ) {
 
@@ -62,20 +77,6 @@ public class FileUtils {
         return builder.toString();
     }
 
-    /**
-     * Loads an Wavefront (.obj) file from the resource folder and creates RawMeshData from it
-     *
-     * @param resourcePath path of the file relative to the resource directory
-     * @return RawMeshData for the given wavefront file
-     */
-    public static RawMeshData loadMeshData(String resourcePath) {
-        try (BufferedReader br = openResource(resourcePath)) {
-            return parseObjFile(br);
-        } catch (Exception e) {
-            Log.error("Error while reading wavefront file! error: " + e.getMessage());
-            throw new RuntimeException("Failed to read file: " + resourcePath, e);
-        }
-    }
 
     /**
      * Loads raw image data from an image file
@@ -84,6 +85,10 @@ public class FileUtils {
      * @return raw image data
      */
     public static RawImageData loadRawImage(String resourcePath) {
+        return loadRawImage(resourcePath, true);
+    }
+
+    public static RawImageData loadRawImage(String resourcePath, boolean flipVertically) {
         ByteBuffer image;
         int width;
         int height;
@@ -95,7 +100,7 @@ public class FileUtils {
                 IntBuffer h = stack.mallocInt(1);
                 IntBuffer comp = stack.mallocInt(1);
 
-                STBImage.stbi_set_flip_vertically_on_load(true);
+                STBImage.stbi_set_flip_vertically_on_load(flipVertically);
                 image = STBImage.stbi_load_from_memory(resourceBuffer, w, h, comp, 4);
                 if (image == null) {
                     throw new RuntimeException("Failed to load texture: " + STBImage.stbi_failure_reason());
@@ -107,6 +112,43 @@ public class FileUtils {
             throw new RuntimeException("Failed to read resource: " + resourcePath, e);
         }
         return new RawImageData(image, width, height, resourcePath);
+    }
+
+    /**
+     * Decodes raw image bytes (PNG/JPEG) from a ByteBuffer into RGBA pixel data.
+     *
+     * <p>Used for embedded GLB textures where the image data is already in memory
+     * rather than on the filesystem. Uses STB to decode the compressed image format
+     * into raw RGBA pixels suitable for GPU upload.
+     *
+     * @param imageBytes buffer containing encoded PNG/JPEG bytes
+     * @param cacheKey   identifier for error messages and caching
+     * @return decoded RGBA pixel data ready for GPU upload
+     */
+    public static RawImageData loadRawImageFromMemory(ByteBuffer imageBytes, String cacheKey) {
+        return loadRawImageFromMemory(imageBytes, cacheKey, true);
+    }
+
+    public static RawImageData loadRawImageFromMemory(ByteBuffer imageBytes, String cacheKey, boolean flipVertically) {
+        ByteBuffer directBuf = imageBytes;
+        if (!imageBytes.isDirect()) {
+            directBuf = ByteBuffer.allocateDirect(imageBytes.remaining());
+            directBuf.put(imageBytes.duplicate());
+            directBuf.flip();
+        }
+
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer w = stack.mallocInt(1);
+            IntBuffer h = stack.mallocInt(1);
+            IntBuffer comp = stack.mallocInt(1);
+
+            STBImage.stbi_set_flip_vertically_on_load(flipVertically);
+            ByteBuffer image = STBImage.stbi_load_from_memory(directBuf, w, h, comp, 4);
+            if (image == null) {
+                throw new RuntimeException("Failed to decode embedded texture '" + cacheKey + "': " + STBImage.stbi_failure_reason());
+            }
+            return new RawImageData(image, w.get(0), h.get(0), cacheKey);
+        }
     }
 
     /**
@@ -147,149 +189,31 @@ public class FileUtils {
             }
         } else {
             try (
-                var source = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath);
-                var rbc = Channels.newChannel(source)
+                var source = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath)
             ) {
-                buffer = ByteBuffer.allocateDirect(8192);
-                while (true) {
-                    int bytes = rbc.read(buffer);
-                    if (bytes == -1) {
-                        break;
-                    }
-                    if (buffer.remaining() == 0) {
-                        ByteBuffer newBuffer = ByteBuffer.allocateDirect(buffer.capacity() * 2);
-                        buffer.flip();
-                        newBuffer.put(buffer);
-                        buffer = newBuffer;
+                if (source == null) {
+                    throw new IOException("Resource not found on classpath: \"" + resourcePath + "\". " +
+                        "Ensure the file exists in src/main/resources/ and the path is relative to the resources root.");
+                }
+                try (var rbc = Channels.newChannel(source)) {
+                    buffer = ByteBuffer.allocateDirect(8192);
+                    while (true) {
+                        int bytes = rbc.read(buffer);
+                        if (bytes == -1) {
+                            break;
+                        }
+                        if (buffer.remaining() == 0) {
+                            ByteBuffer newBuffer = ByteBuffer.allocateDirect(buffer.capacity() * 2);
+                            buffer.flip();
+                            newBuffer.put(buffer);
+                            buffer = newBuffer;
+                        }
                     }
                 }
             }
         }
         buffer.flip();
         return buffer;
-    }
-
-    private static BufferedReader openResource(String resourcePath) throws IOException {
-        InputStream fileStream = Thread.currentThread()
-            .getContextClassLoader()
-            .getResourceAsStream(resourcePath);
-
-        if (fileStream == null) {
-            throw new FileNotFoundException("Resource not found: " + resourcePath);
-        }
-        return new BufferedReader(new InputStreamReader(fileStream));
-    }
-
-    private static RawMeshData parseObjFile(BufferedReader br) throws IOException {
-        List<float[]> tempVertices = new ArrayList<>();
-        List<float[]> tempTexCoords = new ArrayList<>();
-        List<float[]> tempNormals = new ArrayList<>();
-
-        List<float[]> outVertices = new ArrayList<>();
-        List<float[]> outTexCoords = new ArrayList<>();
-        List<float[]> outNormals = new ArrayList<>();
-        List<Integer> indicesList = new ArrayList<>();
-
-        Map<String, Integer> uniqueMap = new HashMap<>();
-
-        String line;
-        while ((line = br.readLine()) != null) {
-            if (line.isBlank() || line.startsWith("#")) {
-                continue;
-            }
-            processObjLine(line, tempVertices, tempTexCoords, tempNormals,
-                outVertices, outTexCoords, outNormals, indicesList, uniqueMap);
-        }
-
-        return new RawMeshData(
-            flatten3f(outVertices),
-            flatten2f(outTexCoords),
-            indicesList.stream().mapToInt(i -> i).toArray(),
-            flatten3f(outNormals)
-        );
-    }
-
-    private static void processObjLine(
-        String line,
-        List<float[]> tempVertices,
-        List<float[]> tempTexCoords,
-        List<float[]> tempNormals,
-        List<float[]> outVertices,
-        List<float[]> outTexCoords,
-        List<float[]> outNormals,
-        List<Integer> indicesList,
-        Map<String, Integer> uniqueMap
-    ) {
-        String[] tokens = line.split("\\s+");
-        switch (tokens[0]) {
-            case "v" -> tempVertices.add(parseFloatArray(tokens, 1, 3));
-            case "vt" -> tempTexCoords.add(parseFloatArray(tokens, 1, 2));
-            case "vn" -> tempNormals.add(parseFloatArray(tokens, 1, 3));
-            case "f" -> processFace(tokens, tempVertices, tempTexCoords, tempNormals,
-                outVertices, outTexCoords, outNormals, indicesList, uniqueMap);
-            default -> {
-            }
-        }
-    }
-
-    private static float[] flatten3f(List<float[]> list) {
-        float[] result = new float[list.size() * 3];
-        for (int i = 0; i < list.size(); i++) {
-            float[] arr = list.get(i);
-            System.arraycopy(arr, 0, result, i * 3, 3);
-        }
-        return result;
-    }
-
-    private static float[] flatten2f(List<float[]> list) {
-        float[] result = new float[list.size() * 2];
-        for (int i = 0; i < list.size(); i++) {
-            float[] arr = list.get(i);
-            System.arraycopy(arr, 0, result, i * 2, 2);
-        }
-        return result;
-    }
-
-    private static float[] parseFloatArray(String[] tokens, int start, int count) {
-        float[] result = new float[count];
-        for (int i = 0; i < count; i++) {
-            result[i] = Float.parseFloat(tokens[start + i]);
-        }
-        return result;
-    }
-
-    private static void processFace(
-        String[] tokens,
-        List<float[]> tempVertices,
-        List<float[]> tempTexCoords,
-        List<float[]> tempNormals,
-        List<float[]> outVertices,
-        List<float[]> outTexCoords,
-        List<float[]> outNormals,
-        List<Integer> indicesList,
-        Map<String, Integer> uniqueMap
-    ) {
-        // OBJ faces are usually triangles, but may be quads or more.
-        for (int i = 1; i < tokens.length; i++) {
-            String key = tokens[i];
-            Integer index = uniqueMap.get(key);
-
-            if (index == null) {
-                String[] parts = key.split("/");
-                int vIndex = Integer.parseInt(parts[0]) - 1;
-                int tIndex = parts.length > 1 && !parts[1].isEmpty() ? Integer.parseInt(parts[1]) - 1 : -1;
-                int nIndex = parts.length > 2 ? Integer.parseInt(parts[2]) - 1 : -1;
-
-                outVertices.add(tempVertices.get(vIndex));
-                outTexCoords.add(tIndex >= 0 ? tempTexCoords.get(tIndex) : new float[]{0, 0});
-                outNormals.add(nIndex >= 0 ? tempNormals.get(nIndex) : new float[]{0, 0, 0});
-
-                index = outVertices.size() - 1;
-                uniqueMap.put(key, index);
-            }
-
-            indicesList.add(index);
-        }
     }
 
 }

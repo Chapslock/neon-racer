@@ -4,89 +4,133 @@ import java.util.Map;
 
 import org.chapzlock.core.application.Disposable;
 import org.chapzlock.core.component.Mesh;
-import org.chapzlock.core.asset.FileUtils;
 import org.chapzlock.core.asset.RawMeshData;
+import org.chapzlock.core.logging.Log;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 /**
- * Loads, caches, and manages GPU mesh resources.
+ * Uploads, caches, and manages GPU mesh (geometry) resources.
  *
- * <p>Meshes are reference-counted — use {@link #retain(org.chapzlock.core.component.Mesh)} and
- * {@link #release(org.chapzlock.core.component.Mesh)} to manage lifetimes across scenes.
+ * <p><strong>What is a mesh?</strong> A mesh is 3D geometry — the shape of an object defined
+ * by vertices (corner points), normals (surface directions for lighting), UV coordinates
+ * (for texturing), and indices (which vertices form triangles). A mesh lives on the GPU in
+ * Vertex Buffer Objects (VBOs) grouped into a Vertex Array Object (VAO).
+ *
+ * <p><strong>What this system does:</strong>
+ * <ul>
+ *   <li><em>Upload:</em> Takes CPU-side {@link RawMeshData} (float/int arrays) and uploads
+ *       it to the GPU via {@link MeshUtil#bindMeshDataToGpu}. Returns a {@link Mesh}
+ *       component holding the GPU resource IDs.</li>
+ *   <li><em>Deduplicate:</em> If the same {@link RawMeshData} is uploaded again (same object
+ *       instance), returns the existing GPU mesh instead of re-uploading. This happens when
+ *       multiple entities share the same geometry (e.g., multiple instances of a tree model).</li>
+ *   <li><em>Render:</em> Binds a mesh's VAO and issues the draw call.</li>
+ *   <li><em>Lifecycle:</em> Reference counting ensures meshes stay on the GPU as long as at
+ *       least one scene uses them, and are freed when the last scene unloads.</li>
+ * </ul>
+ *
+ * <p><strong>Reference counting:</strong> When a scene is loaded, SceneManager calls
+ * {@link #retain(int)} for each mesh used by that scene. When the scene is unloaded,
+ * {@link #release(int)} is called. The mesh is deleted from GPU memory only when its
+ * reference count drops to zero.
+ *
+ * <p><strong>Usage:</strong> Game code does not interact with this system directly. The
+ * {@link org.chapzlock.core.scene.GltfSceneInstantiator} and
+ * {@link org.chapzlock.core.scene.DescriptorResolver} use it during scene instantiation.
+ *
+ * @see Mesh
+ * @see MeshUtil
+ * @see RawMeshData
  */
 public class MeshSystem implements Disposable {
 
+    /** All uploaded meshes, indexed by their engine-assigned ID. */
     private final Map<Integer, Mesh> meshPool = new Int2ObjectOpenHashMap<>();
+
+    /** Maps mesh ID → the original CPU-side data (needed for physics shape generation). */
     private final Map<Integer, RawMeshData> rawMeshDataPool = new Int2ObjectOpenHashMap<>();
-    private final Map<String, Integer> resourcePathToIdMap = new Object2IntOpenHashMap<>();
+
+    /** Deduplication map: if the same RawMeshData instance is uploaded again, reuse existing. */
     private final Map<RawMeshData, Integer> rawMeshDataToIdMap = new Object2IntOpenHashMap<>();
+
+    /** Reference count per mesh ID. Mesh is deleted when count reaches zero. */
     private final Int2IntOpenHashMap refCounts = new Int2IntOpenHashMap();
 
     public MeshSystem() {
     }
 
     /**
-     * Loads mesh data from an .obj file and uploads it to GPU
+     * Uploads mesh data to the GPU, or returns an existing mesh if this data was already uploaded.
      *
-     * @param resourcePath file path to the .obj file
-     * @return uploaded mesh component
-     */
-    public Mesh load(String resourcePath) {
-        Integer existingId = resourcePathToIdMap.get(resourcePath);
-        if (existingId != null) {
-            return meshPool.get(existingId);
-        }
-        RawMeshData rawMeshData = FileUtils.loadMeshData(resourcePath);
-        Mesh mesh = MeshUtil.bindMeshDataToGpu(rawMeshData);
-        meshPool.put(mesh.getId(), mesh);
-        rawMeshDataPool.put(mesh.getId(), rawMeshData);
-        rawMeshDataToIdMap.put(rawMeshData, mesh.getId());
-        resourcePathToIdMap.put(resourcePath, mesh.getId());
-        return mesh;
-    }
-
-    /**
-     * uploads raw mesh data to the GPU
+     * <p>If the same {@link RawMeshData} instance was previously uploaded, the cached
+     * {@link Mesh} is returned without re-uploading. This deduplication works by object
+     * identity — two separate RawMeshData objects with identical content will be uploaded
+     * separately (which is correct, as they may represent different instances).
      *
-     * @param rawMeshData
-     * @return uploaded mesh component
+     * @param rawMeshData the CPU-side vertex/index data to upload
+     * @return a Mesh component holding the GPU resource IDs (VAO, VBOs)
      */
     public Mesh load(RawMeshData rawMeshData) {
         Integer existingId = rawMeshDataToIdMap.get(rawMeshData);
         if (existingId != null) {
+            Log.debug("Mesh cache hit: id=" + existingId + " (" + meshPool.get(existingId).getVertexCount() + " indices)");
             return meshPool.get(existingId);
         }
         Mesh mesh = MeshUtil.bindMeshDataToGpu(rawMeshData);
         meshPool.put(mesh.getId(), mesh);
         rawMeshDataPool.put(mesh.getId(), rawMeshData);
         rawMeshDataToIdMap.put(rawMeshData, mesh.getId());
+        Log.debug("Mesh uploaded to GPU: id=" + mesh.getId() + ", " + mesh.getVertexCount() + " indices");
         return mesh;
     }
 
     /**
-     * Renders a mesh
+     * Binds the mesh's VAO and issues a draw call for all its triangles.
+     *
+     * <p>The mesh must have been previously uploaded via {@link #load(RawMeshData)}.
+     * The appropriate shader program should be active before calling this.
+     *
+     * @param mesh the mesh to render
      */
     public void render(Mesh mesh) {
         MeshUtil.render(mesh);
     }
 
     /**
-     * Finds the Raw mesh data associated with the mesh component
+     * Returns the original CPU-side mesh data for a given mesh ID.
      *
-     * @param id of the mesh component
-     * @return RawMeshData for the given mesh
+     * <p>Used by the physics system to generate collision shapes from mesh geometry
+     * (e.g., convex hull or triangle mesh shapes).
+     *
+     * @param id the engine-assigned mesh ID (from {@link Mesh#getId()})
+     * @return the original RawMeshData, or null if not found
      */
     public RawMeshData getRawMeshById(int id) {
         return rawMeshDataPool.get(id);
     }
 
+    /**
+     * Increments the reference count for a mesh.
+     *
+     * <p>Called by SceneManager when a scene using this mesh is loaded.
+     *
+     * @param assetId the engine-assigned mesh ID
+     */
     public void retain(int assetId) {
         refCounts.put(assetId, refCounts.getOrDefault(assetId, 0) + 1);
     }
 
+    /**
+     * Decrements the reference count for a mesh.
+     *
+     * <p>If the count reaches zero, the mesh is deleted from the GPU. Called by
+     * SceneManager when a scene using this mesh is unloaded.
+     *
+     * @param assetId the engine-assigned mesh ID
+     */
     public void release(int assetId) {
         int count = refCounts.getOrDefault(assetId, 0) - 1;
         if (count <= 0) {
@@ -94,19 +138,30 @@ public class MeshSystem implements Disposable {
             Mesh mesh = meshPool.remove(assetId);
             if (mesh != null) {
                 MeshUtil.delete(mesh);
+                Log.debug("Mesh released and deleted from GPU: id=" + assetId);
             }
             rawMeshDataPool.remove(assetId);
-            resourcePathToIdMap.values().removeIf(id -> id.equals(assetId));
             rawMeshDataToIdMap.values().removeIf(id -> id.equals(assetId));
         } else {
             refCounts.put(assetId, count);
         }
     }
 
+    /**
+     * Returns the current reference count for a mesh.
+     *
+     * @param assetId the engine-assigned mesh ID
+     * @return the number of scenes currently using this mesh
+     */
     public int getRefCount(int assetId) {
         return refCounts.getOrDefault(assetId, 0);
     }
 
+    /**
+     * Frees ALL meshes from GPU memory. Called during engine shutdown.
+     *
+     * <p>Reference counts are ignored — everything is cleaned up unconditionally.
+     */
     @Override
     public void dispose() {
         for (Mesh mesh : meshPool.values()) {
@@ -114,7 +169,6 @@ public class MeshSystem implements Disposable {
         }
         meshPool.clear();
         rawMeshDataPool.clear();
-        resourcePathToIdMap.clear();
         rawMeshDataToIdMap.clear();
     }
 }

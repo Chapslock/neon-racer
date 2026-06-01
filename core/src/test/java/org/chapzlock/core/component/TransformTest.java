@@ -67,4 +67,27 @@ class TransformTest {
         assertEquals(0f, right.y, 0.001f);
         assertEquals(0f, right.z, 0.001f);
     }
+
+    @Test
+    void atCreatesTransformWithPosition() {
+        Transform t = Transform.at(1, 2, 3);
+        assertEquals(1f, t.getPosition().x);
+        assertEquals(2f, t.getPosition().y);
+        assertEquals(3f, t.getPosition().z);
+        assertEquals(1f, t.getScale());
+    }
+
+    @Test
+    void atCreatesTransformWithPositionAndRotation() {
+        Transform t = Transform.at(1, 2, 3, 45, 90, 0);
+        assertEquals(1f, t.getPosition().x);
+        assertEquals(45f, t.getRotationEuler().x);
+        assertEquals(90f, t.getRotationEuler().y);
+    }
+
+    @Test
+    void atCreatesTransformWithPositionRotationAndScale() {
+        Transform t = Transform.at(0, 0, 0, 0, 0, 0, 2.5f);
+        assertEquals(2.5f, t.getScale());
+    }
 }

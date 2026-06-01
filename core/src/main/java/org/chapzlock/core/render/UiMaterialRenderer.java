@@ -1,10 +1,7 @@
 package org.chapzlock.core.render;
 
-import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.Material;
-import org.chapzlock.core.component.PointLight;
 import org.chapzlock.core.component.Shader;
-import org.chapzlock.core.component.Sky;
 import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.EntityView;
@@ -13,36 +10,30 @@ import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
 /**
- * GUI renderer: uses orthographic projection (screen pixels),
- * disables depth testing, enables alpha blending and draws textured quads.
- * <p>
- * Assumes the Mesh for GUI is a unit quad at origin with positions in [0..1] or [-0.5..0.5]
- * (you can adapt RawMeshDataFactory to create a GUI quad).
+ * Renders UI sprites with orthographic projection.
+ *
+ * <p>Disables depth testing, enables alpha blending, draws textured quads
+ * in screen-space coordinates.</p>
  */
 public class UiMaterialRenderer implements MaterialRenderer {
 
     private final ShaderSystem shaderSystem;
     private final TextureSystem textureSystem;
-    private final CameraSystem cameraSystem;
-    private final WindowSpecification windowSpec;
     private final Matrix4f projection;
 
-    public UiMaterialRenderer(ShaderSystem shaderSystem, TextureSystem textureSystem, CameraSystem cameraSystem, WindowSpecification windowSpec) {
+    public UiMaterialRenderer(ShaderSystem shaderSystem, TextureSystem textureSystem, WindowSpecification windowSpec) {
         this.shaderSystem = shaderSystem;
         this.textureSystem = textureSystem;
-        this.cameraSystem = cameraSystem;
-        this.windowSpec = windowSpec;
         this.projection = new Matrix4f()
             .identity()
             .ortho2D(0f, windowSpec.getWidth(), windowSpec.getHeight(), 0f);
     }
 
     @Override
-    public void apply(Material material, Camera camera, PointLight light, Sky sky) {
+    public void apply(RenderContext ctx, Material material) {
         Shader shader = material.getShader();
         shaderSystem.use(shader);
 
-        // UI GL state
         GL11.glDisable(GL11.GL_DEPTH_TEST);
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
@@ -56,29 +47,21 @@ public class UiMaterialRenderer implements MaterialRenderer {
             shaderSystem.setUniform(shader, UiShaderProps.UNIFORM_TEXTURE_SAMPLER, 0);
         }
 
-        // If material holds tint (GuiMaterial), upload it as well (per-batch fallback); per-entity tint could override
         shaderSystem.setUniform(shader, UiShaderProps.UNIFORM_TINT_COLOR, material.getTint());
     }
 
     @Override
-    public void prepareEntity(EntityView entity, Material material) {
+    public void prepareEntity(RenderContext ctx, EntityView entity) {
         Transform transform = entity.get(Transform.class);
-        shaderSystem.setUniform(material.getShader(), UiShaderProps.UNIFORM_TRANSFORMATION_MATRIX, transform.getTransformationMatrix());
+        shaderSystem.setUniform(entity.get(Material.class).getShader(),
+            UiShaderProps.UNIFORM_TRANSFORMATION_MATRIX, transform.getTransformationMatrix());
     }
 
     @Override
-    public void unapply(Material material) {
-        Texture tex = material.getFirstTexture();
-        if (tex != null) {
-            textureSystem.unbind(tex);
-        }
-
-        // Restore GL state
+    public void unapply() {
         GL11.glEnable(GL11.GL_DEPTH_TEST);
         GL11.glDisable(GL11.GL_BLEND);
         GL11.glEnable(GL11.GL_CULL_FACE);
-
         shaderSystem.clearProgram();
     }
-
 }

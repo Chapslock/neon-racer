@@ -16,9 +16,9 @@ class MaterialSystemDefaultsTest {
         MaterialSystem system = new MaterialSystem(shaderSystem);
         MaterialRenderer renderer = mock(MaterialRenderer.class);
 
-        system.registerDefault(MaterialType.ENTITY, renderer);
+        system.registerDefault(MaterialType.PBR, renderer);
 
-        MaterialRenderer retrieved = system.getDefaultRenderer(MaterialType.ENTITY);
+        MaterialRenderer retrieved = system.getDefaultRenderer(MaterialType.PBR);
         assertSame(renderer, retrieved);
     }
 
@@ -27,6 +27,6 @@ class MaterialSystemDefaultsTest {
         ShaderSystem shaderSystem = mock(ShaderSystem.class);
         MaterialSystem system = new MaterialSystem(shaderSystem);
 
-        assertNull(system.getDefaultRenderer(MaterialType.TERRAIN));
+        assertNull(system.getDefaultRenderer(MaterialType.PBR));
     }
 }

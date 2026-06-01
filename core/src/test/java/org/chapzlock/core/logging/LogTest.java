@@ -1,29 +1,27 @@
 package org.chapzlock.core.logging;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class LogTest {
 
-    private PrintStream originalOut;
-    private PrintStream originalErr;
-    private ByteArrayOutputStream outContent;
-    private ByteArrayOutputStream errContent;
+    private final PrintStream originalOut = System.out;
+    private final PrintStream originalErr = System.err;
+    private ByteArrayOutputStream outCapture;
+    private ByteArrayOutputStream errCapture;
 
     @BeforeEach
     void setUp() {
-        originalOut = System.out;
-        originalErr = System.err;
-        outContent = new ByteArrayOutputStream();
-        errContent = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outContent));
-        System.setErr(new PrintStream(errContent));
+        outCapture = new ByteArrayOutputStream();
+        errCapture = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outCapture));
+        System.setErr(new PrintStream(errCapture));
         Log.setDebugEnabled(true);
     }
 
@@ -31,46 +29,42 @@ class LogTest {
     void tearDown() {
         System.setOut(originalOut);
         System.setErr(originalErr);
+    }
+
+    @Test
+    void debug_withoutTag_formatsWithoutBrackets() {
+        Log.debug("hello world");
+        assertEquals("[DEBUG] hello world\n", outCapture.toString());
+    }
+
+    @Test
+    void debug_withTag_includesTagInBrackets() {
+        Log.debug("ShaderSystem", "compiled program 5");
+        assertEquals("[DEBUG] [ShaderSystem] compiled program 5\n", outCapture.toString());
+    }
+
+    @Test
+    void info_withTag_includesTagInBrackets() {
+        Log.info("Engine", "startup complete");
+        assertEquals("[INFO] [Engine] startup complete\n", outCapture.toString());
+    }
+
+    @Test
+    void warn_withTag_includesTagInBrackets() {
+        Log.warn("RenderContext", "no camera found");
+        assertEquals("[WARN] [RenderContext] no camera found\n", outCapture.toString());
+    }
+
+    @Test
+    void error_withTag_includesTagInBrackets() {
+        Log.error("SceneManager", "failed to load");
+        assertEquals("[ERROR] [SceneManager] failed to load\n", errCapture.toString());
+    }
+
+    @Test
+    void debug_whenDisabled_doesNotOutput() {
         Log.setDebugEnabled(false);
-    }
-
-    @Test
-    void debugLogsWhenEnabled() {
-        Log.debug("test message");
-        assertTrue(outContent.toString().contains("[DEBUG] test message"));
-    }
-
-    @Test
-    void debugSilentWhenDisabled() {
-        Log.setDebugEnabled(false);
-        Log.debug("hidden");
-        assertFalse(outContent.toString().contains("hidden"));
-    }
-
-    @Test
-    void errorWithThrowableIncludesStackTrace() {
-        RuntimeException ex = new RuntimeException("boom");
-        Log.error("something failed", ex);
-        String output = errContent.toString();
-        assertTrue(output.contains("[ERROR] something failed"));
-        assertTrue(output.contains("boom"));
-    }
-
-    @Test
-    void infoFormatsCorrectly() {
-        Log.info("hello");
-        assertTrue(outContent.toString().contains("[INFO] hello"));
-    }
-
-    @Test
-    void warnFormatsCorrectly() {
-        Log.warn("careful");
-        assertTrue(outContent.toString().contains("[WARN] careful"));
-    }
-
-    @Test
-    void errorFormatsCorrectly() {
-        Log.error("bad");
-        assertTrue(errContent.toString().contains("[ERROR] bad"));
+        Log.debug("ShaderSystem", "should not appear");
+        assertEquals("", outCapture.toString());
     }
 }

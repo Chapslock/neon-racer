@@ -1,118 +1,71 @@
 package org.chapzlock.app.scene;
 
-import java.util.List;
-
 import org.chapzlock.app.component.PlayerInputComponent;
-import org.chapzlock.app.systems.PlayerCameraFollowSystem;
 import org.chapzlock.app.systems.PlayerInputSystem;
-import org.chapzlock.app.systems.PlayerMovementSystem;
+import org.chapzlock.app.systems.PlayerModelSystem;
 import org.chapzlock.app.tags.PlayerTag;
-import org.chapzlock.core.asset.FileUtils;
-import org.chapzlock.core.asset.RawMeshData;
-import org.chapzlock.core.asset.RawMeshDataFactory;
-import org.chapzlock.core.component.Material;
-import org.chapzlock.core.component.Mesh;
-import org.chapzlock.core.component.PhysicsBody;
-import org.chapzlock.core.component.Reflection;
-import org.chapzlock.core.component.Shader;
-import org.chapzlock.core.component.Terrain;
-import org.chapzlock.core.component.Texture;
-import org.chapzlock.core.ecs.Component;
+import org.chapzlock.core.component.AmbientLight;
+import org.chapzlock.core.component.Attenuation;
+import org.chapzlock.core.component.Color;
+import org.chapzlock.core.component.DirectionalLight;
+import org.chapzlock.core.component.Fog;
+import org.chapzlock.core.component.PointLight;
+import org.chapzlock.core.component.SpriteDescriptor;
+import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.input.InputMap;
 import org.chapzlock.core.input.Key;
-import org.chapzlock.core.physics.CollisionShapeFactory;
-import org.chapzlock.core.physics.PhysicsSpecs;
-import org.chapzlock.core.render.EntityShaderProps;
-import org.chapzlock.core.render.TerrainShaderProps;
-import org.chapzlock.core.render.UiShaderProps;
-import org.chapzlock.core.scene.MaterialType;
+import org.chapzlock.core.render.CameraFreeRoamSystem;
 import org.chapzlock.core.scene.Scene;
+import org.joml.Vector3f;
 
 public class RaceTrackScene {
 
     public static Scene create() {
         return Scene.builder("race-track")
+            .fromGltf("glb/forest-scene.glb")
             .inputMap(InputMap.builder()
                 .action("quit", Key.ESCAPE)
-                .axis("throttle", Key.S, Key.W)
-                .axis("steer", Key.A, Key.D)
+                .axis("moveForward", Key.S, Key.W)
+                .axis("moveRight", Key.A, Key.D)
+                .build())
+            .directionalLight(DirectionalLight.builder()
+                .direction(new Vector3f(-0.2f, -1f, -0.3f))
+                .color(new Color(1.0f, 0.95f, 0.8f))
+                .build())
+            .pointLight(PointLight.builder()
+                .position(new Vector3f(0, -50, -5))
+                .color(new Color(1.0f, 0.3f, 0.1f))
+                .attenuation(Attenuation.DEFAULT)
+                .build())
+            .pointLight(PointLight.builder()
+                .position(new Vector3f(30, -50, -30))
+                .color(new Color(0.2f, 0.4f, 1.0f))
+                .attenuation(Attenuation.DEFAULT)
+                .build())
+            .pointLight(PointLight.builder()
+                .position(new Vector3f(-20, -50, -40))
+                .color(new Color(0.0f, 1.0f, 0.5f))
+                .attenuation(Attenuation.DEFAULT)
+                .build())
+            .fog(Fog.builder().density(0.012f).gradient(2.0f).build())
+            .ambient(AmbientLight.builder().strength(0.5f)
                 .build())
             .entity("player", e -> e
-                .transform(0, 10, -5, 0, 0, 180)
-                .component(new PlayerInputComponent())
+                .transform(Transform.at(0, 0, -3, 0, 90, 0))
                 .tag(new PlayerTag())
-                .component(ctx -> {
-                    var meshSystem = ctx.getMeshSystem();
-                    var textureSystem = ctx.getTextureSystem();
-                    var materialSystem = ctx.getMaterialSystem();
-
-                    Mesh mesh = meshSystem.load("obj/funcar.obj");
-                    Texture texture = textureSystem.load("textures/funcar.png");
-                    Material material = new Material(
-                        new Shader(EntityShaderProps.VERTEX_FILE, EntityShaderProps.FRAGMENT_FILE),
-                        texture,
-                        Reflection.builder().reflectivity(.5f).shineDamper(1f).build());
-                    materialSystem.register(material, MaterialType.ENTITY);
-
-                    PhysicsBody physicsBody = new PhysicsBody(
-                        CollisionShapeFactory.createConvexHullShape(meshSystem.getRawMeshById(mesh.getId())),
-                        PhysicsSpecs.builder().mass(1).build());
-
-                    return new Component[]{ mesh, material, physicsBody };
-                }))
-            .entity("terrain", e -> e
-                .transform(-400, 0, -400, 10, 0, 0)
-                .component(ctx -> {
-                    var meshSystem = ctx.getMeshSystem();
-                    var textureSystem = ctx.getTextureSystem();
-                    var materialSystem = ctx.getMaterialSystem();
-
-                    Terrain terrainProps = Terrain.builder().maxHeight(40).build();
-                    Material terrainMaterial = Material.builder()
-                        .textures(List.of(
-                            textureSystem.load("textures/terrain/grass.png"),
-                            textureSystem.load("textures/terrain/dirt.png"),
-                            textureSystem.load("textures/terrain/concrete.png")))
-                        .blendMap(textureSystem.load("textures/terrain/blendMap.png"))
-                        .shader(new Shader(TerrainShaderProps.VERTEX_FILE, TerrainShaderProps.FRAGMENT_FILE))
-                        .build();
-                    materialSystem.register(terrainMaterial, MaterialType.TERRAIN);
-
-                    RawMeshData rawMeshData = RawMeshDataFactory.generateTerrainFromHeightMap(
-                        FileUtils.loadBufferedImage("textures/terrain/heightmap.png"),
-                        terrainProps.getSize(), terrainProps.getMaxHeight());
-                    Mesh mesh = meshSystem.load(rawMeshData);
-
-                    PhysicsBody physicsBody = new PhysicsBody(
-                        CollisionShapeFactory.createBvhTriangleMeshShapeFromRaw(rawMeshData, true),
-                        PhysicsSpecs.builder().restitution(0).build());
-
-                    return new Component[]{ terrainProps, terrainMaterial, mesh, physicsBody };
-                }))
-            .entity("ui", e -> e
-                .transform(0, 0, 0, 0, 0, 0, 200)
-                .component(ctx -> {
-                    var meshSystem = ctx.getMeshSystem();
-                    var textureSystem = ctx.getTextureSystem();
-                    var materialSystem = ctx.getMaterialSystem();
-
-                    Texture texture = textureSystem.load("textures/speedometer.png");
-                    Material material = Material.builder()
-                        .shader(new Shader(UiShaderProps.VERTEX_FILE, UiShaderProps.FRAGMENT_FILE))
-                        .textures(List.of(texture))
-                        .build();
-                    materialSystem.register(material, MaterialType.UI);
-
-                    Mesh mesh = meshSystem.load(RawMeshDataFactory.createUi());
-                    return new Component[]{ material, mesh };
-                }))
-            .pointLight(-5, 300, -10)
-            .camera(0, 5, 10)
+                .component(new PlayerInputComponent()))
+            .entity("speedometer", e -> e
+                .transform(Transform.at(0, 0, 0, 0, 0, 0, 200))
+                .sprite(SpriteDescriptor.of("textures/speedometer.png")))
+            .camera(0, 0, 5)
             .sky()
             .systems(
                 new PlayerInputSystem(),
-                new PlayerMovementSystem(),
-                new PlayerCameraFollowSystem())
+                new PlayerModelSystem(),
+                //new PlayerMovementSystem(),
+                //new PlayerCameraFollowSystem()
+                new CameraFreeRoamSystem()
+            )
             .build();
     }
 }

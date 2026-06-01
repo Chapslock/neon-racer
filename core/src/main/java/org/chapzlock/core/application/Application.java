@@ -6,17 +6,17 @@ import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
 
 import java.util.List;
 
+import org.chapzlock.core.asset.gltf.GltfAssetRegistry;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.input.InputMap;
 import org.chapzlock.core.logging.Log;
 import org.chapzlock.core.render.CameraSystem;
-import org.chapzlock.core.render.EntityMaterialRenderer;
 import org.chapzlock.core.render.MaterialSystem;
 import org.chapzlock.core.render.MeshSystem;
+import org.chapzlock.core.render.PbrMaterialRenderer;
 import org.chapzlock.core.render.ShaderSystem;
-import org.chapzlock.core.render.TerrainMaterialRenderer;
 import org.chapzlock.core.render.TextureSystem;
 import org.chapzlock.core.render.UiMaterialRenderer;
 import org.chapzlock.core.scene.MaterialType;
@@ -92,6 +92,7 @@ public class Application {
         CameraSystem cameraSystem = new CameraSystem(appSpec.getWindowSpec());
         Time time = new Time();
         TweenManager tweenManager = new TweenManager();
+        GltfAssetRegistry gltfAssetRegistry = new GltfAssetRegistry();
 
         context = EngineContext.builder()
             .registry(registry)
@@ -104,15 +105,14 @@ public class Application {
             .window(window)
             .time(time)
             .tweenManager(tweenManager)
+            .gltfAssetRegistry(gltfAssetRegistry)
             .build();
 
         WindowSpecification windowSpec = appSpec.getWindowSpec();
-        materialSystem.registerDefault(MaterialType.ENTITY,
-            new EntityMaterialRenderer(shaderSystem, textureSystem, cameraSystem));
-        materialSystem.registerDefault(MaterialType.TERRAIN,
-            new TerrainMaterialRenderer(shaderSystem, textureSystem, cameraSystem));
+        materialSystem.registerDefault(MaterialType.PBR,
+            new PbrMaterialRenderer(shaderSystem, textureSystem));
         materialSystem.registerDefault(MaterialType.UI,
-            new UiMaterialRenderer(shaderSystem, textureSystem, cameraSystem, windowSpec));
+            new UiMaterialRenderer(shaderSystem, textureSystem, windowSpec));
 
         Log.debug("Subsystems initialized: MeshSystem, TextureSystem, ShaderSystem, MaterialSystem, CameraSystem");
 
