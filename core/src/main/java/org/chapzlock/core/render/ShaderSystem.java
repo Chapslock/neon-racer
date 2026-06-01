@@ -161,10 +161,14 @@ public class ShaderSystem implements Disposable {
      * <p>On first call for a given (program, name) pair, queries the GPU and caches
      * the result. Subsequent calls return the cached value directly.
      *
+     * <p>If the uniform doesn't exist in the shader (returns -1), logs a warning on the
+     * first occurrence and returns -1. The setUniform calls in {@link ShaderUtil} are
+     * no-ops for location -1 (OpenGL ignores uniform operations on invalid locations).
+     * This prevents crashes when shaders are edited and unused uniforms are removed.
+     *
      * @param shader the shader whose program to query
      * @param name the uniform name as declared in the GLSL source
-     * @return the uniform location (>= 0)
-     * @throws RuntimeException if the uniform doesn't exist in the shader program
+     * @return the uniform location (>= 0), or -1 if the uniform doesn't exist
      */
     public int getUniformLocation(Shader shader, String name) {
         int programId = shader.getProgramId();
@@ -172,7 +176,10 @@ public class ShaderSystem implements Disposable {
         return uniformMappings.computeIfAbsent(name, k -> {
             int uniformLocation = ShaderUtil.getUniformLocation(programId, k);
             if (uniformLocation < 0) {
-                throw new RuntimeException("Uniform not found: " + k);
+                Log.warn("ShaderSystem", "Uniform \"" + k + "\" not found in shader (vertex=" +
+                    shader.getVertexPath() + ", fragment=" + shader.getFragmentPath() +
+                    "). It may have been removed or optimized away by the GLSL compiler. " +
+                    "Check the shader source file.");
             }
             return uniformLocation;
         });
