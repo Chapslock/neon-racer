@@ -5,7 +5,6 @@ import org.chapzlock.app.tags.PlayerTag;
 import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
-import org.chapzlock.core.ecs.EntityView;
 import org.chapzlock.core.ecs.GameSystem;
 import org.joml.Vector3f;
 
@@ -15,13 +14,6 @@ import org.joml.Vector3f;
  * <p>Movement is transform-based (no physics forces): the player moves at a constant
  * speed in the direction they are facing, and strafes perpendicular to that direction.
  * The character rotates to face the movement direction when moving forward/backward.
- *
- * <p><strong>Movement model:</strong>
- * <ul>
- *   <li>Forward/backward: translates along the player's current facing direction</li>
- *   <li>Left/right: strafes perpendicular to facing</li>
- *   <li>Rotation: the character gradually turns to face the direction of movement</li>
- * </ul>
  */
 public class PlayerMovementSystem implements GameSystem {
 
@@ -37,50 +29,43 @@ public class PlayerMovementSystem implements GameSystem {
 
     @Override
     public void onUpdate(float deltaTime) {
-        for (EntityView e : registry.view(PlayerTag.class, PlayerInputComponent.class, Transform.class)) {
-            var input = e.get(PlayerInputComponent.class);
-            var transform = e.get(Transform.class);
+        registry.forEach(PlayerTag.class, PlayerInputComponent.class, Transform.class,
+            (entityId, tag, input, transform) -> {
+                float forward = input.getMoveForward();
+                float right = input.getMoveRight();
 
-            float forward = input.getMoveForward();
-            float right = input.getMoveRight();
-
-            if (forward == 0f && right == 0f) {
-                return;
-            }
-
-            Vector3f playerForward = transform.getForwardVector(new Vector3f());
-            Vector3f up = new Vector3f(0f, 1f, 0f);
-            Vector3f playerRight = new Vector3f();
-            playerForward.cross(up, playerRight).normalize();
-
-            Vector3f moveDir = new Vector3f();
-            moveDir.add(new Vector3f(playerForward).mul(forward));
-            moveDir.add(new Vector3f(playerRight).mul(right));
-
-            if (moveDir.lengthSquared() > 0.001f) {
-                moveDir.normalize();
-
-                Vector3f pos = transform.getPosition();
-                pos.x += moveDir.x * MOVE_SPEED * deltaTime;
-                pos.y += moveDir.y * MOVE_SPEED * deltaTime;
-                pos.z += moveDir.z * MOVE_SPEED * deltaTime;
-
-                if (forward != 0f) {
-                    float targetYaw = (float) Math.toDegrees(Math.atan2(-moveDir.x, -moveDir.z));
-                    float currentYaw = transform.getRotationEuler().y;
-                    float diff = targetYaw - currentYaw;
-
-                    // Normalize to [-180, 180]
-                    while (diff > 180f) {
-                        diff -= 360f;
-                    }
-                    while (diff < -180f) {
-                        diff += 360f;
-                    }
-
-                    transform.getRotationEuler().y += diff * TURN_SPEED * deltaTime;
+                if (forward == 0f && right == 0f) {
+                    return;
                 }
-            }
-        }
+
+                Vector3f playerForward = transform.getForwardVector(new Vector3f());
+                Vector3f up = new Vector3f(0f, 1f, 0f);
+                Vector3f playerRight = new Vector3f();
+                playerForward.cross(up, playerRight).normalize();
+
+                Vector3f moveDir = new Vector3f();
+                moveDir.add(new Vector3f(playerForward).mul(forward));
+                moveDir.add(new Vector3f(playerRight).mul(right));
+
+                if (moveDir.lengthSquared() > 0.001f) {
+                    moveDir.normalize();
+
+                    Vector3f pos = transform.getPosition();
+                    pos.x += moveDir.x * MOVE_SPEED * deltaTime;
+                    pos.y += moveDir.y * MOVE_SPEED * deltaTime;
+                    pos.z += moveDir.z * MOVE_SPEED * deltaTime;
+
+                    if (forward != 0f) {
+                        float targetYaw = (float) Math.toDegrees(Math.atan2(-moveDir.x, -moveDir.z));
+                        float currentYaw = transform.getRotationEuler().y;
+                        float diff = targetYaw - currentYaw;
+
+                        while (diff > 180f) { diff -= 360f; }
+                        while (diff < -180f) { diff += 360f; }
+
+                        transform.getRotationEuler().y += diff * TURN_SPEED * deltaTime;
+                    }
+                }
+            });
     }
 }

@@ -6,7 +6,6 @@ import org.chapzlock.app.component.PlayerInputComponent;
 import org.chapzlock.app.tags.PlayerTag;
 import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.ecs.ComponentRegistry;
-import org.chapzlock.core.ecs.EntityView;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.ecs.SystemPhase;
 import org.chapzlock.core.input.InputMap;
@@ -51,10 +50,9 @@ public class PlayerInputSystem implements GameSystem {
             return;
         }
 
-        for (EntityView e : registry.view(PlayerTag.class, PlayerInputComponent.class)) {
-            var playerInput = e.get(PlayerInputComponent.class);
+        registry.forEach(PlayerTag.class, PlayerInputComponent.class, (entityId, tag, playerInput) -> {
             playerInput.setMoveForward(input.getAxis("moveForward"));
             playerInput.setMoveRight(input.getAxis("moveRight"));
-        }
+        });
     }
 }
