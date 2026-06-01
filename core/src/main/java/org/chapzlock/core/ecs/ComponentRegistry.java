@@ -307,6 +307,157 @@ public class ComponentRegistry {
     }
 
     /**
+     * Iterates all entities with the specified component, passing typed references to the consumer.
+     *
+     * <p>Zero allocations on stable frames — uses the same cached query mechanism as {@link #view}.
+     * Avoids creating intermediate {@link EntityView} objects, making it ideal for hot-loop systems
+     * that process a single component type every frame.
+     *
+     * <p>Example:
+     * <pre>{@code
+     * registry.forEach(Velocity.class, (entityId, vel) -> {
+     *     // process velocity for each entity
+     * });
+     * }</pre>
+     *
+     * @param <A> the component type
+     * @param type the component class to query
+     * @param consumer callback receiving entity ID and the component instance
+     */
+    @SuppressWarnings("unchecked")
+    public <A extends Component> void forEach(Class<A> type, ComponentConsumer1<A> consumer) {
+        Integer typeIdA = typeToId.get(type);
+        if (typeIdA == null) return;
+
+        BitSet queryMask = new BitSet();
+        queryMask.set(typeIdA);
+
+        CachedQuery cached = queryCache.computeIfAbsent(queryMask, CachedQuery::new);
+        if (!cached.valid) {
+            List<Integer> ids = new ArrayList<>();
+            for (Entry<Integer, BitSet> entry : entityComponentMasks.entrySet()) {
+                if (entry.getValue().get(typeIdA)) {
+                    ids.add(entry.getKey());
+                }
+            }
+            cached.entityIds = ids;
+            cached.valid = true;
+        }
+
+        ComponentStore<A> storeA = (ComponentStore<A>) stores.get(typeIdA);
+        for (int entityId : cached.entityIds) {
+            consumer.accept(entityId, storeA.get(entityId));
+        }
+    }
+
+    /**
+     * Iterates all entities with both specified components, passing typed references to the consumer.
+     *
+     * <p>Zero allocations on stable frames — uses the same cached query mechanism as {@link #view}.
+     * Avoids creating intermediate {@link EntityView} objects, making it ideal for hot-loop systems
+     * that process two component types every frame.
+     *
+     * <p>Example:
+     * <pre>{@code
+     * registry.forEach(Transform.class, Velocity.class, (entityId, transform, vel) -> {
+     *     transform.translate(vel.dx() * delta, vel.dy() * delta, 0);
+     * });
+     * }</pre>
+     *
+     * @param <A> first component type
+     * @param <B> second component type
+     * @param typeA first component class to query
+     * @param typeB second component class to query
+     * @param consumer callback receiving entity ID and both component instances
+     */
+    @SuppressWarnings("unchecked")
+    public <A extends Component, B extends Component> void forEach(
+            Class<A> typeA, Class<B> typeB, ComponentConsumer2<A, B> consumer) {
+        Integer typeIdA = typeToId.get(typeA);
+        Integer typeIdB = typeToId.get(typeB);
+        if (typeIdA == null || typeIdB == null) return;
+
+        BitSet queryMask = new BitSet();
+        queryMask.set(typeIdA);
+        queryMask.set(typeIdB);
+
+        CachedQuery cached = queryCache.computeIfAbsent(queryMask, CachedQuery::new);
+        if (!cached.valid) {
+            List<Integer> ids = new ArrayList<>();
+            for (Entry<Integer, BitSet> entry : entityComponentMasks.entrySet()) {
+                BitSet mask = entry.getValue();
+                if (mask.get(typeIdA) && mask.get(typeIdB)) {
+                    ids.add(entry.getKey());
+                }
+            }
+            cached.entityIds = ids;
+            cached.valid = true;
+        }
+
+        ComponentStore<A> storeA = (ComponentStore<A>) stores.get(typeIdA);
+        ComponentStore<B> storeB = (ComponentStore<B>) stores.get(typeIdB);
+        for (int entityId : cached.entityIds) {
+            consumer.accept(entityId, storeA.get(entityId), storeB.get(entityId));
+        }
+    }
+
+    /**
+     * Iterates all entities with all three specified components, passing typed references to the consumer.
+     *
+     * <p>Zero allocations on stable frames — uses the same cached query mechanism as {@link #view}.
+     * Avoids creating intermediate {@link EntityView} objects, making it ideal for hot-loop systems
+     * that process three component types every frame.
+     *
+     * <p>Example:
+     * <pre>{@code
+     * registry.forEach(Transform.class, Mesh.class, Material.class, (entityId, t, mesh, mat) -> {
+     *     // render entity with all three components
+     * });
+     * }</pre>
+     *
+     * @param <A> first component type
+     * @param <B> second component type
+     * @param <C> third component type
+     * @param typeA first component class to query
+     * @param typeB second component class to query
+     * @param typeC third component class to query
+     * @param consumer callback receiving entity ID and all three component instances
+     */
+    @SuppressWarnings("unchecked")
+    public <A extends Component, B extends Component, C extends Component> void forEach(
+            Class<A> typeA, Class<B> typeB, Class<C> typeC, ComponentConsumer3<A, B, C> consumer) {
+        Integer typeIdA = typeToId.get(typeA);
+        Integer typeIdB = typeToId.get(typeB);
+        Integer typeIdC = typeToId.get(typeC);
+        if (typeIdA == null || typeIdB == null || typeIdC == null) return;
+
+        BitSet queryMask = new BitSet();
+        queryMask.set(typeIdA);
+        queryMask.set(typeIdB);
+        queryMask.set(typeIdC);
+
+        CachedQuery cached = queryCache.computeIfAbsent(queryMask, CachedQuery::new);
+        if (!cached.valid) {
+            List<Integer> ids = new ArrayList<>();
+            for (Entry<Integer, BitSet> entry : entityComponentMasks.entrySet()) {
+                BitSet mask = entry.getValue();
+                if (mask.get(typeIdA) && mask.get(typeIdB) && mask.get(typeIdC)) {
+                    ids.add(entry.getKey());
+                }
+            }
+            cached.entityIds = ids;
+            cached.valid = true;
+        }
+
+        ComponentStore<A> storeA = (ComponentStore<A>) stores.get(typeIdA);
+        ComponentStore<B> storeB = (ComponentStore<B>) stores.get(typeIdB);
+        ComponentStore<C> storeC = (ComponentStore<C>) stores.get(typeIdC);
+        for (int entityId : cached.entityIds) {
+            consumer.accept(entityId, storeA.get(entityId), storeB.get(entityId), storeC.get(entityId));
+        }
+    }
+
+    /**
      * Helper that avoids re-looking-up the type ids for each component when building the view
      */
     private EntityView buildEntityView(int entityId, Class<? extends Component>[] requiredComponents, int[] requiredTypeIds) {
