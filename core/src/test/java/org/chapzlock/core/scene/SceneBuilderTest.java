@@ -102,4 +102,28 @@ class SceneBuilderTest {
         Scene scene = Scene.builder("test").systems(s1, s2).build();
         assertEquals(2, scene.getSystems().size());
     }
+
+    @Test
+    void namelessEntityCreatesBlueprint() {
+        Camera cam = new Camera(new Vector3f(0, 5, 10));
+        Scene scene = Scene.builder("test")
+            .entity(cam)
+            .build();
+
+        assertEquals(1, scene.getEntities().size());
+        assertTrue(scene.getEntities().get(0).getName().startsWith("_entity_"));
+        assertSame(cam, scene.getEntities().get(0).getComponents().get(0));
+    }
+
+    @Test
+    void namelessEntityMultipleComponents() {
+        Camera cam = new Camera(new Vector3f(0, 0, 0));
+        Sky sky = new Sky();
+        Scene scene = Scene.builder("test")
+            .entity(cam, sky)
+            .build();
+
+        assertEquals(1, scene.getEntities().size());
+        assertEquals(2, scene.getEntities().get(0).getComponents().size());
+    }
 }

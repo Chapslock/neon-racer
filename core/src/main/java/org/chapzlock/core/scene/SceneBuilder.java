@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import org.chapzlock.core.component.*;
+import org.chapzlock.core.ecs.Component;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.input.InputMap;
 import org.joml.Vector3f;
@@ -36,6 +37,7 @@ public class SceneBuilder {
     private final List<EntityBlueprint> entities = new ArrayList<>();
     private final List<GameSystem> systems = new ArrayList<>();
     private InputMap inputMap;
+    private int namelessCounter = 0;
 
     /**
      * Optional path to a glTF/GLB file that provides additional entities for this scene.
@@ -51,6 +53,26 @@ public class SceneBuilder {
         EntityBlueprintBuilder builder = new EntityBlueprintBuilder(entityName);
         configurator.accept(builder);
         entities.add(builder.build());
+        return this;
+    }
+
+    /**
+     * Adds a nameless entity with the given components.
+     *
+     * <p>Nameless entities do not get a {@link org.chapzlock.core.component.Name} component
+     * during instantiation. They are found via component-type queries
+     * ({@code registry.getSingleton(T.class)} or {@code registry.forEach(T.class, ...)})
+     * rather than by name.
+     *
+     * <p>Use this for singleton-style game state that doesn't need a human-readable identifier.
+     *
+     * @param components the components to attach to the entity
+     * @return this builder for chaining
+     */
+    public SceneBuilder entity(Component... components) {
+        String internalName = "_entity_" + namelessCounter++;
+        entities.add(new EntityBlueprint(internalName, null, null, null,
+            List.of(), List.of(components)));
         return this;
     }
 
