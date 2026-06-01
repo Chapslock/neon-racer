@@ -57,7 +57,10 @@ public class FileUtils {
                 .getContextClassLoader()
                 .getResourceAsStream(resourcePath)
         ) {
-            assert in != null;
+            if (in == null) {
+                throw new RuntimeException("Resource not found: \"" + resourcePath + "\". " +
+                    "Ensure the file exists in src/main/resources/ and the path is relative to the resources root (no leading slash).");
+            }
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))
             ) {
 
@@ -186,20 +189,25 @@ public class FileUtils {
             }
         } else {
             try (
-                var source = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath);
-                var rbc = Channels.newChannel(source)
+                var source = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath)
             ) {
-                buffer = ByteBuffer.allocateDirect(8192);
-                while (true) {
-                    int bytes = rbc.read(buffer);
-                    if (bytes == -1) {
-                        break;
-                    }
-                    if (buffer.remaining() == 0) {
-                        ByteBuffer newBuffer = ByteBuffer.allocateDirect(buffer.capacity() * 2);
-                        buffer.flip();
-                        newBuffer.put(buffer);
-                        buffer = newBuffer;
+                if (source == null) {
+                    throw new IOException("Resource not found on classpath: \"" + resourcePath + "\". " +
+                        "Ensure the file exists in src/main/resources/ and the path is relative to the resources root.");
+                }
+                try (var rbc = Channels.newChannel(source)) {
+                    buffer = ByteBuffer.allocateDirect(8192);
+                    while (true) {
+                        int bytes = rbc.read(buffer);
+                        if (bytes == -1) {
+                            break;
+                        }
+                        if (buffer.remaining() == 0) {
+                            ByteBuffer newBuffer = ByteBuffer.allocateDirect(buffer.capacity() * 2);
+                            buffer.flip();
+                            newBuffer.put(buffer);
+                            buffer = newBuffer;
+                        }
                     }
                 }
             }
