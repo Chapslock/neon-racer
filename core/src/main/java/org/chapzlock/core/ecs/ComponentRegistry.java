@@ -307,6 +307,52 @@ public class ComponentRegistry {
     }
 
     /**
+     * Returns the single instance of a component type, or empty if no entity has it.
+     *
+     * <p>If multiple entities have this component, returns the first and logs a debug
+     * warning. Use {@link #forEach(Class, ComponentConsumer1)} if multiple are expected.
+     *
+     * @param <T> the component type
+     * @param type the component class to look up
+     * @return the component instance wrapped in Optional, or empty
+     */
+    @SuppressWarnings("unchecked")
+    public <T extends Component> Optional<T> getSingleton(Class<T> type) {
+        Integer typeId = typeToId.get(type);
+        if (typeId == null) {
+            return Optional.empty();
+        }
+
+        BitSet queryMask = new BitSet();
+        queryMask.set(typeId);
+
+        CachedQuery cached = queryCache.computeIfAbsent(queryMask, CachedQuery::new);
+        if (!cached.valid) {
+            List<Integer> ids = new ArrayList<>();
+            for (Entry<Integer, BitSet> entry : entityComponentMasks.entrySet()) {
+                if (entry.getValue().get(typeId)) {
+                    ids.add(entry.getKey());
+                }
+            }
+            cached.entityIds = ids;
+            cached.valid = true;
+        }
+
+        if (cached.entityIds.isEmpty()) {
+            return Optional.empty();
+        }
+
+        if (cached.entityIds.size() > 1) {
+            Log.debug("ComponentRegistry", "getSingleton(" + type.getSimpleName() +
+                ") found " + cached.entityIds.size() + " entities — returning first. " +
+                "Use forEach() if multiple are intentional.");
+        }
+
+        ComponentStore<T> store = (ComponentStore<T>) stores.get(typeId);
+        return Optional.ofNullable(store.get(cached.entityIds.getFirst()));
+    }
+
+    /**
      * Iterates all entities with the specified component, passing typed references to the consumer.
      *
      * <p>Zero allocations on stable frames — uses the same cached query mechanism as {@link #view}.
