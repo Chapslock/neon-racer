@@ -21,6 +21,7 @@ import org.chapzlock.core.component.AnimationClipSet;
 import org.chapzlock.core.component.AnimationState;
 import org.chapzlock.core.component.Hierarchy;
 import org.chapzlock.core.component.Mesh;
+import org.chapzlock.core.component.Name;
 import org.chapzlock.core.component.OpaqueLayer;
 import org.chapzlock.core.component.PbrMaterial;
 import org.chapzlock.core.component.Shader;
@@ -139,9 +140,10 @@ public class GltfSceneInstantiator {
             WorldTransform worldTransform = new WorldTransform();
             registry.addComponents(entityId, transform, worldTransform);
 
-            // Track named nodes so gameplay code can find them via GltfInstance.entity("name")
+            // Track named nodes for both GltfInstance lookup and registry name-based lookup
             if (node.name() != null && !node.name().isEmpty()) {
                 nameMap.put(node.name(), entityId);
+                registry.addComponent(entityId, new Name(node.name()));
             }
         }
 
@@ -241,8 +243,10 @@ public class GltfSceneInstantiator {
             WorldTransform worldTransform = new WorldTransform();
             registry.addComponents(entityId, transform, worldTransform);
 
+            // Track named nodes for both GltfInstance lookup and registry name-based lookup
             if (node.name() != null && !node.name().isEmpty()) {
                 nameMap.put(node.name(), entityId);
+                registry.addComponent(entityId, new Name(node.name()));
             }
         }
 
