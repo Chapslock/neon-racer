@@ -55,8 +55,8 @@ public class CameraSystem {
      * @return the cached projection matrix (read-only — do not modify)
      */
     public Matrix4f calculateProjectionMatrix(Camera camera) {
-        if (camera.getFieldOfView() <= 0 || camera.getFieldOfView() > Math.PI) {
-            Log.warn("CameraSystem: degenerate FOV=" + camera.getFieldOfView() + " (expected 0 < fov < π radians). Projection matrix may be invalid.");
+        if (camera.getFieldOfView() <= 0 || camera.getFieldOfView() > 180) {
+            Log.warn("CameraSystem: degenerate FOV=" + camera.getFieldOfView() + " (expected 0 < fov <= 180 degrees). Projection matrix may be invalid.");
         }
         if (windowSpec.getAspectRatio() <= 0) {
             Log.warn("CameraSystem: degenerate aspect ratio=" + windowSpec.getAspectRatio() + " (window may not be initialized yet).");
@@ -68,7 +68,7 @@ public class CameraSystem {
             this.cachedAspectRatio = windowSpec.getAspectRatio();
             this.projectionMatrix.identity();
             this.projectionMatrix.perspective(
-                camera.getFieldOfView(),
+                (float) Math.toRadians(camera.getFieldOfView()),
                 cachedAspectRatio,
                 camera.getNearPlane(),
                 camera.getFarPlane()
