@@ -5,7 +5,6 @@ import org.chapzlock.core.component.Hierarchy;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.component.WorldTransform;
 import org.chapzlock.core.ecs.ComponentRegistry;
-import org.chapzlock.core.ecs.EntityView;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.ecs.SystemPhase;
 import org.joml.Matrix4f;
@@ -87,30 +86,24 @@ public class TransformSystem implements GameSystem {
     public void onUpdate(float deltaTime) {
         // Pass 1: Update standalone entities (those without a Hierarchy component)
         // These entities have no parent, so their world matrix is just their local matrix
-        for (EntityView entity : registry.view(Transform.class, WorldTransform.class)) {
-            Hierarchy hierarchy = registry.getComponent(entity.getId(), Hierarchy.class);
+        registry.forEach(Transform.class, WorldTransform.class, (entityId, transform, worldTransform) -> {
+            Hierarchy hierarchy = registry.getComponent(entityId, Hierarchy.class);
             if (hierarchy == null) {
-                Transform transform = entity.get(Transform.class);
-                WorldTransform worldTransform = entity.get(WorldTransform.class);
                 worldTransform.getWorldMatrix().set(transform.getTransformationMatrix());
             }
-        }
+        });
 
         // Pass 2: Update hierarchical entities starting from roots
         // Root entities are those with a Hierarchy component where isRoot() returns true
-        for (EntityView entity : registry.view(Hierarchy.class, Transform.class, WorldTransform.class)) {
-            Hierarchy hierarchy = entity.get(Hierarchy.class);
+        registry.forEach(Hierarchy.class, Transform.class, WorldTransform.class, (entityId, hierarchy, transform, worldTransform) -> {
             if (hierarchy.isRoot()) {
-                Transform transform = entity.get(Transform.class);
-                WorldTransform worldTransform = entity.get(WorldTransform.class);
-
                 // Root entities have no parent, so world matrix = local matrix
                 worldTransform.getWorldMatrix().set(transform.getTransformationMatrix());
 
                 // Now recursively update all children of this root
                 propagateToChildren(hierarchy, worldTransform.getWorldMatrix());
             }
-        }
+        });
     }
 
     /**

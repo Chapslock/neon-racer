@@ -4,7 +4,6 @@ import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.component.AnimationState;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
-import org.chapzlock.core.ecs.EntityView;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.ecs.SystemPhase;
 import org.joml.Quaternionf;
@@ -97,11 +96,9 @@ public class AnimationSystem implements GameSystem {
      */
     @Override
     public void onUpdate(float deltaTime) {
-        for (EntityView view : registry.view(AnimationState.class)) {
-            AnimationState state = view.get(AnimationState.class);
-
+        registry.forEach(AnimationState.class, (entityId, state) -> {
             if (!state.isPlaying() || state.getCurrentAnimation() == null) {
-                continue;
+                return;
             }
 
             if (state.isBlending()) {
@@ -109,7 +106,7 @@ public class AnimationSystem implements GameSystem {
             } else {
                 updateNormal(state, deltaTime);
             }
-        }
+        });
     }
 
     /**
