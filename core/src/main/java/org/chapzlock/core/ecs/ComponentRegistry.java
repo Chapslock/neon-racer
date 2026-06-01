@@ -10,11 +10,13 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.chapzlock.core.component.Name;
 import org.chapzlock.core.event.ComponentAddedEvent;
 import org.chapzlock.core.event.ComponentRemovedEvent;
 import org.chapzlock.core.event.EntityDestroyedEvent;
 import org.chapzlock.core.event.Event;
 import org.chapzlock.core.event.EventBus;
+import org.chapzlock.core.logging.Log;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -53,6 +55,7 @@ public class ComponentRegistry {
     private final Int2ObjectOpenHashMap<BitSet> entityComponentMasks = new Int2ObjectOpenHashMap<>();
 
     private final Map<BitSet, CachedQuery> queryCache = new HashMap<>();
+    private final Map<String, Integer> nameIndex = new HashMap<>();
 
     private static class CachedQuery {
         final BitSet mask;
@@ -108,6 +111,14 @@ public class ComponentRegistry {
         BitSet mask = entityComponentMasks.computeIfAbsent(entityId, e -> new BitSet());
         mask.set(typeId);
         eventBus.publish(new ComponentAddedEvent(entityId, component.getClass()));
+        if (component instanceof Name nameComp) {
+            String nameValue = nameComp.getValue();
+            if (nameIndex.containsKey(nameValue)) {
+                Log.debug("ComponentRegistry", "Name \"" + nameValue + "\" already in use by entity " +
+                    nameIndex.get(nameValue) + " — overwriting with entity " + entityId);
+            }
+            nameIndex.put(nameValue, entityId);
+        }
         invalidateCachesForType(typeId);
     }
 
@@ -128,6 +139,16 @@ public class ComponentRegistry {
         }
         for (T component : components) {
             eventBus.publish(new ComponentAddedEvent(entityId, component.getClass()));
+        }
+        for (T component : components) {
+            if (component instanceof Name nameComp) {
+                String nameValue = nameComp.getValue();
+                if (nameIndex.containsKey(nameValue)) {
+                    Log.debug("ComponentRegistry", "Name \"" + nameValue + "\" already in use by entity " +
+                        nameIndex.get(nameValue) + " — overwriting with entity " + entityId);
+                }
+                nameIndex.put(nameValue, entityId);
+            }
         }
         for (T component : components) {
             invalidateCachesForType(getOrRegisterTypeId(component.getClass()));
@@ -159,6 +180,9 @@ public class ComponentRegistry {
         ComponentStore<T> store = (ComponentStore<T>) stores.get(typeId);
         eventBus.publish(new ComponentRemovedEvent(entityId, type));
         store.remove(entityId);
+        if (type == Name.class) {
+            nameIndex.values().removeIf(id -> id == entityId);
+        }
 
         BitSet mask = entityComponentMasks.get(entityId);
         if (mask != null) {
@@ -185,6 +209,7 @@ public class ComponentRegistry {
             stores.get(typeId).remove(entityId);
         }
 
+        nameIndex.values().removeIf(id -> id == entityId);
         entityComponentMasks.remove(entityId);
         eventBus.publish(new EntityDestroyedEvent(entityId));
         invalidateAllCaches();
@@ -254,6 +279,31 @@ public class ComponentRegistry {
     public final Optional<EntityView> viewFirst(Class<? extends Component>... requiredComponents) {
         List<EntityView> results = view(requiredComponents);
         return results.isEmpty() ? Optional.empty() : Optional.of(results.getFirst());
+    }
+
+    /**
+     * Returns the entity ID for a named entity, or -1 if no entity has that name.
+     *
+     * <p>Entities are indexed by name when a {@link Name} component is added to them.
+     * This provides O(1) lookup by name instead of iterating all entities.
+     *
+     * @param name the name to look up
+     * @return the entity ID, or -1 if not found
+     * @see Name
+     */
+    public int getEntityByName(String name) {
+        return nameIndex.getOrDefault(name, -1);
+    }
+
+    /**
+     * Returns true if an entity with the given name exists in the registry.
+     *
+     * @param name the name to check
+     * @return true if a named entity exists
+     * @see Name
+     */
+    public boolean hasEntity(String name) {
+        return nameIndex.containsKey(name);
     }
 
     /**
