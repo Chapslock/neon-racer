@@ -2,12 +2,10 @@ package org.chapzlock.core.render;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.component.*;
 import org.chapzlock.core.ecs.ComponentRegistry;
-import org.chapzlock.core.ecs.EntityView;
 import org.chapzlock.core.logging.Log;
 import org.chapzlock.core.scene.SceneManager;
 import org.joml.Matrix4f;
@@ -55,8 +53,8 @@ public class RenderContext {
     }
 
     public boolean beginFrame() {
-        Optional<EntityView> cameraView = registry.viewFirst(Camera.class);
-        if (cameraView.isEmpty()) {
+        var cameraOpt = registry.getSingleton(Camera.class);
+        if (cameraOpt.isEmpty()) {
             if (!warnedNoCamera) {
                 Log.warn("RenderContext", "No Camera entity found — rendering is skipped. Add a camera to your scene via .camera(x, y, z) on the SceneBuilder.");
                 warnedNoCamera = true;
@@ -64,44 +62,35 @@ public class RenderContext {
             return false;
         }
         warnedNoCamera = false;
-        this.camera = cameraView.get().get(Camera.class);
+        this.camera = cameraOpt.get();
         this.cameraPosition = camera.getPosition();
         if (cameraSystem != null) {
             this.projectionMatrix = cameraSystem.calculateProjectionMatrix(camera);
             this.viewMatrix = cameraSystem.calculateViewMatrix(camera);
         }
 
-        this.sky = registry.viewFirst(Sky.class)
-            .map(v -> v.get(Sky.class))
-            .orElse(null);
+        this.sky = registry.getSingleton(Sky.class).orElse(null);
 
-        var dirLightEntities = registry.view(DirectionalLight.class);
-        if (dirLightEntities.size() > 1) {
-            Log.warn("RenderContext", "Scene has " + dirLightEntities.size() + " directional lights. Only the first is used.");
+        int dirLightCount = registry.count(DirectionalLight.class);
+        if (dirLightCount > 1) {
+            Log.warn("RenderContext", "Scene has " + dirLightCount + " directional lights. Only the first is used.");
         }
-        this.directionalLight = registry.viewFirst(DirectionalLight.class)
-            .map(v -> v.get(DirectionalLight.class))
-            .orElse(null);
+        this.directionalLight = registry.getSingleton(DirectionalLight.class).orElse(null);
 
         this.pointLights = new ArrayList<>();
-        var pointLightEntities = registry.view(PointLight.class);
-        if (pointLightEntities.size() > PointLight.MAX_COUNT) {
-            Log.warn("RenderContext", "Scene has " + pointLightEntities.size() + " point lights. Only first " +
+        int pointLightCount = registry.count(PointLight.class);
+        if (pointLightCount > PointLight.MAX_COUNT) {
+            Log.warn("RenderContext", "Scene has " + pointLightCount + " point lights. Only first " +
                 PointLight.MAX_COUNT + " are rendered.");
         }
-        pointLightEntities.forEach(entity -> {
+        registry.forEach(PointLight.class, (entityId, light) -> {
             if (pointLights.size() < PointLight.MAX_COUNT) {
-                pointLights.add(entity.get(PointLight.class));
+                pointLights.add(light);
             }
         });
 
-        this.fog = registry.viewFirst(Fog.class)
-            .map(v -> v.get(Fog.class))
-            .orElse(null);
-
-        this.ambientLight = registry.viewFirst(AmbientLight.class)
-            .map(v -> v.get(AmbientLight.class))
-            .orElse(null);
+        this.fog = registry.getSingleton(Fog.class).orElse(null);
+        this.ambientLight = registry.getSingleton(AmbientLight.class).orElse(null);
 
         return true;
     }
