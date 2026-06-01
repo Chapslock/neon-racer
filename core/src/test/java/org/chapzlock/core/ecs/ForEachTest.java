@@ -17,6 +17,7 @@ class ForEachTest {
     record Position(float x, float y) implements Component {}
     record Velocity(float dx, float dy) implements Component {}
     record Health(int hp) implements Component {}
+    record Tag1() implements Component {}
 
     @BeforeEach
     void setUp() {
@@ -86,6 +87,30 @@ class ForEachTest {
         registry.forEach(Position.class, Velocity.class, Health.class,
             (entityId, pos, vel, health) -> {
                 visited.add(entityId);
+                assertEquals(100, health.hp());
+            });
+
+        assertEquals(1, visited.size());
+        assertEquals(e1, visited.get(0).intValue());
+    }
+
+    @Test
+    void forEach4_iteratesEntitiesWithAllFourComponents() {
+        int e1 = Entity.create(registry);
+        int e2 = Entity.create(registry);
+        registry.addComponent(e1, new Position(1, 2));
+        registry.addComponent(e1, new Velocity(3, 4));
+        registry.addComponent(e1, new Health(100));
+        registry.addComponent(e1, new Tag1());
+        registry.addComponent(e2, new Position(5, 6));
+        registry.addComponent(e2, new Velocity(7, 8));
+        registry.addComponent(e2, new Health(50));
+
+        List<Integer> visited = new ArrayList<>();
+        registry.forEach(Position.class, Velocity.class, Health.class, Tag1.class,
+            (entityId, pos, vel, health, tag) -> {
+                visited.add(entityId);
+                assertEquals(1f, pos.x());
                 assertEquals(100, health.hp());
             });
 

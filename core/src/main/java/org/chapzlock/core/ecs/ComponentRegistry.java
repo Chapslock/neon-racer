@@ -494,6 +494,71 @@ public class ComponentRegistry {
     }
 
     /**
+     * Iterates all entities with all four specified components, passing typed references to the consumer.
+     *
+     * <p>Zero allocations on stable frames — uses the same cached query mechanism as {@link #view}.
+     * Avoids creating intermediate {@link EntityView} objects, making it ideal for hot-loop systems
+     * that process four component types every frame (e.g. the render pipeline iterating
+     * Transform + Mesh + Material + layer tag).
+     *
+     * <p>Example:
+     * <pre>{@code
+     * registry.forEach(Transform.class, Mesh.class, Material.class, OpaqueLayer.class,
+     *     (entityId, transform, mesh, material, layer) -> {
+     *         // render opaque entity
+     *     });
+     * }</pre>
+     *
+     * @param <A> first component type
+     * @param <B> second component type
+     * @param <C> third component type
+     * @param <D> fourth component type
+     * @param typeA first component class to query
+     * @param typeB second component class to query
+     * @param typeC third component class to query
+     * @param typeD fourth component class to query
+     * @param consumer callback receiving entity ID and all four component instances
+     */
+    @SuppressWarnings("unchecked")
+    public <A extends Component, B extends Component, C extends Component, D extends Component> void forEach(
+            Class<A> typeA, Class<B> typeB, Class<C> typeC, Class<D> typeD,
+            ComponentConsumer4<A, B, C, D> consumer) {
+        Integer typeIdA = typeToId.get(typeA);
+        Integer typeIdB = typeToId.get(typeB);
+        Integer typeIdC = typeToId.get(typeC);
+        Integer typeIdD = typeToId.get(typeD);
+        if (typeIdA == null || typeIdB == null || typeIdC == null || typeIdD == null) return;
+
+        BitSet queryMask = new BitSet();
+        queryMask.set(typeIdA);
+        queryMask.set(typeIdB);
+        queryMask.set(typeIdC);
+        queryMask.set(typeIdD);
+
+        CachedQuery cached = queryCache.computeIfAbsent(queryMask, CachedQuery::new);
+        if (!cached.valid) {
+            List<Integer> ids = new ArrayList<>();
+            for (Entry<Integer, BitSet> entry : entityComponentMasks.entrySet()) {
+                BitSet mask = entry.getValue();
+                if (mask.get(typeIdA) && mask.get(typeIdB) && mask.get(typeIdC) && mask.get(typeIdD)) {
+                    ids.add(entry.getKey());
+                }
+            }
+            cached.entityIds = ids;
+            cached.valid = true;
+        }
+
+        ComponentStore<A> storeA = (ComponentStore<A>) stores.get(typeIdA);
+        ComponentStore<B> storeB = (ComponentStore<B>) stores.get(typeIdB);
+        ComponentStore<C> storeC = (ComponentStore<C>) stores.get(typeIdC);
+        ComponentStore<D> storeD = (ComponentStore<D>) stores.get(typeIdD);
+        for (int entityId : cached.entityIds) {
+            consumer.accept(entityId, storeA.get(entityId), storeB.get(entityId),
+                storeC.get(entityId), storeD.get(entityId));
+        }
+    }
+
+    /**
      * Returns the number of entities matching ALL required component types.
      *
      * <p>Uses the same cached query mechanism as {@link #view(Class[])} — O(1) on stable frames,
