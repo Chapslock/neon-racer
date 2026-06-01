@@ -504,6 +504,67 @@ public class ComponentRegistry {
     }
 
     /**
+     * Returns the number of entities matching ALL required component types.
+     *
+     * <p>Uses the same cached query mechanism as {@link #view(Class[])} — O(1) on stable frames,
+     * zero allocations after the first call. Prefer this over {@code view(...).size()} when
+     * you only need the count and don't need to iterate the entities.
+     *
+     * <p>Example:
+     * <pre>{@code
+     * int enemies = registry.count(Enemy.class, Transform.class);
+     * if (enemies == 0) {
+     *     // spawn next wave
+     * }
+     * }</pre>
+     *
+     * @param requiredComponents component types that entities must have (all must be present)
+     * @return number of matching entities, or 0 if no entities match or types are unregistered
+     */
+    @SafeVarargs
+    public final int count(Class<? extends Component>... requiredComponents) {
+        if (requiredComponents.length == 0) {
+            return 0;
+        }
+
+        final int[] requiredTypeIds = new int[requiredComponents.length];
+        for (int i = 0; i < requiredComponents.length; i++) {
+            Integer typeId = typeToId.get(requiredComponents[i]);
+            if (typeId == null) {
+                return 0;
+            }
+            requiredTypeIds[i] = typeId;
+        }
+
+        BitSet queryMask = new BitSet();
+        for (int id : requiredTypeIds) {
+            queryMask.set(id);
+        }
+
+        CachedQuery cached = queryCache.computeIfAbsent(queryMask, CachedQuery::new);
+        if (!cached.valid) {
+            List<Integer> ids = new ArrayList<>();
+            for (Entry<Integer, BitSet> entry : entityComponentMasks.entrySet()) {
+                BitSet entityMask = entry.getValue();
+                boolean matches = true;
+                for (int typeId : requiredTypeIds) {
+                    if (!entityMask.get(typeId)) {
+                        matches = false;
+                        break;
+                    }
+                }
+                if (matches) {
+                    ids.add(entry.getKey());
+                }
+            }
+            cached.entityIds = ids;
+            cached.valid = true;
+        }
+
+        return cached.entityIds.size();
+    }
+
+    /**
      * Helper that avoids re-looking-up the type ids for each component when building the view
      */
     private EntityView buildEntityView(int entityId, Class<? extends Component>[] requiredComponents, int[] requiredTypeIds) {
