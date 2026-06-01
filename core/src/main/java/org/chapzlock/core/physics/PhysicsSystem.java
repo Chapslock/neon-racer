@@ -139,8 +139,7 @@ public class PhysicsSystem implements GameSystem {
 
     private void renderDebugInfo() {
         dynamicsWorld.debugDrawWorld();
-        registry.viewFirst(Camera.class).ifPresent(view -> {
-            var camera = view.get(Camera.class);
+        registry.getSingleton(Camera.class).ifPresent(camera -> {
             var projectionMatrix = cameraSystem.calculateProjectionMatrix(camera);
             var viewMatrix = cameraSystem.calculateViewMatrix(camera);
             PhysicsDebugRenderer.drawLines(projectionMatrix, viewMatrix);

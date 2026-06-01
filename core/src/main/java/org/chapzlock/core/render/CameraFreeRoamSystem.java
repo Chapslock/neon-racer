@@ -45,11 +45,11 @@ public class CameraFreeRoamSystem implements GameSystem {
 
     @Override
     public void onUpdate(float deltaTime) {
-        var view = registry.view(Camera.class);
-        if (view.isEmpty()) {
+        var cameraOpt = registry.getSingleton(Camera.class);
+        if (cameraOpt.isEmpty()) {
             return;
         }
-        Camera camera = view.getFirst().get(Camera.class);
+        Camera camera = cameraOpt.get();
         float velocity = CAMERA_MOVEMENT_SPEED * deltaTime;
         if (movingForward) {
             Vector3f forward = camera.getCameraFront().mul(velocity);
@@ -139,11 +139,11 @@ public class CameraFreeRoamSystem implements GameSystem {
         lastMouseX = mouseX;
         lastMouseY = mouseY;
 
-        var view = registry.view(Camera.class);
-        if (view.isEmpty()) {
+        var cameraOpt = registry.getSingleton(Camera.class);
+        if (cameraOpt.isEmpty()) {
             return false;
         }
-        Camera camera = view.getFirst().get(Camera.class);
+        Camera camera = cameraOpt.get();
 
         float yaw = camera.getYaw() + (float) (xOffset * CAMERA_MOUSE_SENSITIVITY);
         float pitch = camera.getPitch() + (float) (yOffset * CAMERA_MOUSE_SENSITIVITY);
