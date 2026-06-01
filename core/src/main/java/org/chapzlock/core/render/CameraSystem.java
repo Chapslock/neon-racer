@@ -1,15 +1,34 @@
 package org.chapzlock.core.render;
 
 import org.chapzlock.core.component.Camera;
+import org.chapzlock.core.logging.Log;
 import org.chapzlock.core.window.WindowSpecification;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
 /**
- * Calculates projection and view matrices for the camera.
+ * Computes projection and view matrices from the active camera entity.
  *
- * <p>Caches matrices to avoid recalculation when camera settings haven't changed.
+ * <p><strong>What is a projection matrix?</strong> It defines how the 3D world is projected
+ * onto the 2D screen. A perspective projection makes distant objects smaller (like how your
+ * eyes work). It's defined by field-of-view (how wide the camera sees), aspect ratio (screen
+ * width/height), and near/far planes (minimum and maximum visible distance).
+ *
+ * <p><strong>What is a view matrix?</strong> It positions the camera in the world. Technically,
+ * it transforms world coordinates into "camera space" — as if the camera were at the origin
+ * looking down -Z. This is computed from the camera's position and its look-at direction.
+ *
+ * <p><strong>Why these matrices matter:</strong> Every vertex rendered goes through:
+ * {@code screenPosition = projectionMatrix × viewMatrix × modelMatrix × vertexPosition}.
+ * The model matrix positions the object in the world, the view matrix adjusts for where
+ * the camera is, and the projection matrix applies perspective.
+ *
+ * <p><strong>Caching:</strong> The projection matrix only changes when camera settings change
+ * (FOV, near/far planes, window resize). The view matrix changes every frame if the camera
+ * moves. This system caches the projection matrix and only recalculates when settings differ.
+ *
+ * @see org.chapzlock.core.component.Camera
  */
 public class CameraSystem {
 
@@ -33,6 +52,12 @@ public class CameraSystem {
      * @return perspective projection matrix
      */
     public Matrix4f calculateProjectionMatrix(Camera camera) {
+        if (camera.getFieldOfView() <= 0 || camera.getFieldOfView() > Math.PI) {
+            Log.warn("CameraSystem: degenerate FOV=" + camera.getFieldOfView() + " (expected 0 < fov < π radians). Projection matrix may be invalid.");
+        }
+        if (windowSpec.getAspectRatio() <= 0) {
+            Log.warn("CameraSystem: degenerate aspect ratio=" + windowSpec.getAspectRatio() + " (window may not be initialized yet).");
+        }
         if (isCameraSettingsSame(camera)) {
             return new Matrix4f(projectionMatrix);
         }

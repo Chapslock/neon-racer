@@ -21,6 +21,25 @@ import org.lwjgl.system.MemoryStack;
 
 import lombok.experimental.UtilityClass;
 
+/**
+ * Utility methods for loading files and images from the classpath or filesystem.
+ *
+ * <p><strong>Resource loading strategy:</strong> All game assets (shaders, textures, models)
+ * live in {@code src/main/resources/}. At runtime, they're accessed via the classloader which
+ * packages them inside the JAR. The methods here abstract over this — you pass a path relative
+ * to the resources root (e.g., "shaders/pbr.vert") and get back the file contents.
+ *
+ * <p><strong>Image loading:</strong> Uses the STB library (via LWJGL) to decode PNG/JPEG/BMP
+ * into raw RGBA pixel buffers suitable for GPU upload. STB is a single-header C library that
+ * LWJGL wraps — it's fast and supports all common formats.
+ *
+ * <p><strong>Thread safety:</strong> Image loading methods use a global STB flip setting
+ * ({@code stbi_set_flip_vertically_on_load}). All image loading MUST happen on the main
+ * thread. Do not load images from background threads — the global state will corrupt.
+ *
+ * @see org.chapzlock.core.render.TextureSystem
+ * @see org.chapzlock.core.render.RawImageData
+ */
 @UtilityClass
 public class FileUtils {
 
@@ -63,6 +82,10 @@ public class FileUtils {
      * @return raw image data
      */
     public static RawImageData loadRawImage(String resourcePath) {
+        return loadRawImage(resourcePath, true);
+    }
+
+    public static RawImageData loadRawImage(String resourcePath, boolean flipVertically) {
         ByteBuffer image;
         int width;
         int height;
@@ -74,7 +97,7 @@ public class FileUtils {
                 IntBuffer h = stack.mallocInt(1);
                 IntBuffer comp = stack.mallocInt(1);
 
-                STBImage.stbi_set_flip_vertically_on_load(true);
+                STBImage.stbi_set_flip_vertically_on_load(flipVertically);
                 image = STBImage.stbi_load_from_memory(resourceBuffer, w, h, comp, 4);
                 if (image == null) {
                     throw new RuntimeException("Failed to load texture: " + STBImage.stbi_failure_reason());
@@ -100,13 +123,24 @@ public class FileUtils {
      * @return decoded RGBA pixel data ready for GPU upload
      */
     public static RawImageData loadRawImageFromMemory(ByteBuffer imageBytes, String cacheKey) {
+        return loadRawImageFromMemory(imageBytes, cacheKey, true);
+    }
+
+    public static RawImageData loadRawImageFromMemory(ByteBuffer imageBytes, String cacheKey, boolean flipVertically) {
+        ByteBuffer directBuf = imageBytes;
+        if (!imageBytes.isDirect()) {
+            directBuf = ByteBuffer.allocateDirect(imageBytes.remaining());
+            directBuf.put(imageBytes.duplicate());
+            directBuf.flip();
+        }
+
         try (MemoryStack stack = MemoryStack.stackPush()) {
             IntBuffer w = stack.mallocInt(1);
             IntBuffer h = stack.mallocInt(1);
             IntBuffer comp = stack.mallocInt(1);
 
-            STBImage.stbi_set_flip_vertically_on_load(true);
-            ByteBuffer image = STBImage.stbi_load_from_memory(imageBytes, w, h, comp, 4);
+            STBImage.stbi_set_flip_vertically_on_load(flipVertically);
+            ByteBuffer image = STBImage.stbi_load_from_memory(directBuf, w, h, comp, 4);
             if (image == null) {
                 throw new RuntimeException("Failed to decode embedded texture '" + cacheKey + "': " + STBImage.stbi_failure_reason());
             }
