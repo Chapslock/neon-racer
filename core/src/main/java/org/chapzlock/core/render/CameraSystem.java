@@ -46,10 +46,13 @@ public class CameraSystem {
     }
 
     /**
-     * Calculates the perspective projection matrix based on the camera settings
+     * Returns the perspective projection matrix based on the camera settings.
      *
-     * @param camera
-     * @return perspective projection matrix
+     * <p>The returned matrix is owned by this system — do not mutate it. It is recalculated
+     * only when camera settings change (FOV, near/far planes, window resize).
+     *
+     * @param camera the camera component with FOV, near/far plane settings
+     * @return the cached projection matrix (read-only — do not modify)
      */
     public Matrix4f calculateProjectionMatrix(Camera camera) {
         if (camera.getFieldOfView() <= 0 || camera.getFieldOfView() > Math.PI) {
@@ -58,21 +61,20 @@ public class CameraSystem {
         if (windowSpec.getAspectRatio() <= 0) {
             Log.warn("CameraSystem: degenerate aspect ratio=" + windowSpec.getAspectRatio() + " (window may not be initialized yet).");
         }
-        if (isCameraSettingsSame(camera)) {
-            return new Matrix4f(projectionMatrix);
+        if (!isCameraSettingsSame(camera)) {
+            this.cachedFieldOfView = camera.getFieldOfView();
+            this.cachedNearPlane = camera.getNearPlane();
+            this.cachedFarPlane = camera.getFarPlane();
+            this.cachedAspectRatio = windowSpec.getAspectRatio();
+            this.projectionMatrix.identity();
+            this.projectionMatrix.perspective(
+                camera.getFieldOfView(),
+                cachedAspectRatio,
+                camera.getNearPlane(),
+                camera.getFarPlane()
+            );
         }
-        this.cachedFieldOfView = camera.getFieldOfView();
-        this.cachedNearPlane = camera.getNearPlane();
-        this.cachedFarPlane = camera.getFarPlane();
-        this.cachedAspectRatio = windowSpec.getAspectRatio();
-        this.projectionMatrix.identity();
-        this.projectionMatrix.perspective(
-            camera.getFieldOfView(),
-            cachedAspectRatio,
-            camera.getNearPlane(),
-            camera.getFarPlane()
-        );
-        return new Matrix4f(this.projectionMatrix);
+        return projectionMatrix;
     }
 
     private boolean isCameraSettingsSame(Camera camera) {
@@ -82,6 +84,15 @@ public class CameraSystem {
             cachedAspectRatio == windowSpec.getAspectRatio();
     }
 
+    /**
+     * Returns the view matrix based on the camera's position and direction.
+     *
+     * <p>The returned matrix is owned by this system — do not mutate it. It is
+     * recalculated every frame (camera movement is expected to be frequent).
+     *
+     * @param camera the camera component with position and direction
+     * @return the cached view matrix (read-only — do not modify)
+     */
     public Matrix4f calculateViewMatrix(Camera camera) {
         this.cameraViewMatrix.identity();
         this.cameraViewMatrix.lookAt(
@@ -89,7 +100,7 @@ public class CameraSystem {
             calculateCameraCenter(camera),
             camera.getCameraUp()
         );
-        return new Matrix4f(this.cameraViewMatrix);
+        return cameraViewMatrix;
     }
 
     private Vector3fc calculateCameraCenter(Camera camera) {
