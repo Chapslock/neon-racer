@@ -4,7 +4,6 @@ import org.chapzlock.core.component.Material;
 import org.chapzlock.core.component.Shader;
 import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.component.Transform;
-import org.chapzlock.core.ecs.EntityView;
 import org.chapzlock.core.window.WindowSpecification;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
@@ -51,9 +50,10 @@ public class UiMaterialRenderer implements MaterialRenderer {
     }
 
     @Override
-    public void prepareEntity(RenderContext ctx, EntityView entity) {
-        Transform transform = entity.get(Transform.class);
-        shaderSystem.setUniform(entity.get(Material.class).getShader(),
+    public void prepareEntity(RenderContext ctx, int entityId) {
+        Transform transform = ctx.getRegistry().getComponent(entityId, Transform.class);
+        Material material = ctx.getRegistry().getComponent(entityId, Material.class);
+        shaderSystem.setUniform(material.getShader(),
             UiShaderProps.UNIFORM_TRANSFORMATION_MATRIX, transform.getTransformationMatrix());
     }
 

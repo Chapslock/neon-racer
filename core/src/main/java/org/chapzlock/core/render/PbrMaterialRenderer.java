@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.chapzlock.core.component.*;
-import org.chapzlock.core.ecs.EntityView;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -94,7 +93,7 @@ public class PbrMaterialRenderer implements MaterialRenderer {
      * Binds the PBR shader and sets per-batch uniforms (projection, view, lighting, material).
      *
      * <p>Call this once per material batch before rendering entities that share this material.
-     * Then call {@link #prepareEntity(RenderContext, EntityView)} for each entity to set
+     * Then call {@link #prepareEntity(RenderContext, int)} for each entity to set
      * its model matrix.
      *
      * @param ctx the current frame's render context (camera, lights)
@@ -177,19 +176,19 @@ public class PbrMaterialRenderer implements MaterialRenderer {
      * shader uses the raw vertex positions unchanged.
      */
     @Override
-    public void prepareEntity(RenderContext ctx, EntityView entity) {
-        PbrMaterial material = ctx.getRegistry().getComponent(entity.getId(), PbrMaterial.class);
+    public void prepareEntity(RenderContext ctx, int entityId) {
+        PbrMaterial material = ctx.getRegistry().getComponent(entityId, PbrMaterial.class);
         if (material == null) return;
 
-        WorldTransform worldTransform = ctx.getRegistry().getComponent(entity.getId(), WorldTransform.class);
+        WorldTransform worldTransform = ctx.getRegistry().getComponent(entityId, WorldTransform.class);
         Matrix4f modelMatrix = worldTransform != null
             ? worldTransform.getWorldMatrix()
-            : entity.get(Transform.class).getTransformationMatrix();
+            : ctx.getRegistry().getComponent(entityId, Transform.class).getTransformationMatrix();
 
         shaderSystem.setUniform(material.getShader(), UNIFORM_MODEL_MATRIX, modelMatrix);
 
         // --- GPU Skinning: upload joint matrices if the entity has a skeleton ---
-        Skeleton skeleton = ctx.getRegistry().getComponent(entity.getId(), Skeleton.class);
+        Skeleton skeleton = ctx.getRegistry().getComponent(entityId, Skeleton.class);
         if (skeleton != null) {
             shaderSystem.setUniform(material.getShader(), UNIFORM_HAS_SKIN, true);
             int[] jointEntities = skeleton.getJointEntities();
@@ -213,8 +212,8 @@ public class PbrMaterialRenderer implements MaterialRenderer {
         }
 
         // --- Morph Targets: compute blended deltas on CPU and upload as vertex attributes ---
-        MorphTargets morphTargets = ctx.getRegistry().getComponent(entity.getId(), MorphTargets.class);
-        Mesh mesh = entity.get(Mesh.class);
+        MorphTargets morphTargets = ctx.getRegistry().getComponent(entityId, MorphTargets.class);
+        Mesh mesh = ctx.getRegistry().getComponent(entityId, Mesh.class);
         if (morphTargets != null && morphTargets.getPositionDeltaArrays() != null
                 && hasNonZeroWeight(morphTargets.getWeights()) && mesh != null) {
             shaderSystem.setUniform(material.getShader(), UNIFORM_HAS_MORPH_TARGETS, true);
