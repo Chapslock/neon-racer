@@ -28,7 +28,6 @@ import org.chapzlock.core.component.Shader;
 import org.chapzlock.core.component.Skeleton;
 import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.component.Transform;
-import org.chapzlock.core.component.WorldTransform;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.Entity;
 import org.chapzlock.core.render.MeshSystem;
@@ -46,7 +45,7 @@ import org.chapzlock.core.render.TextureSystem;
  *
  * <p><strong>How it works:</strong>
  * <ol>
- *   <li>For each glTF node: create an entity with Transform, Hierarchy, WorldTransform</li>
+ *   <li>For each glTF node: create an entity with Transform, Hierarchy</li>
  *   <li>If the node has a mesh: upload to GPU via MeshSystem, add Mesh + PbrMaterial + OpaqueLayer</li>
  *   <li>Wire up parent-child relationships in Hierarchy components</li>
  *   <li>Track named nodes for later lookup via GltfInstance</li>
@@ -108,7 +107,8 @@ public class GltfSceneInstantiator {
      * <ul>
      *   <li>An entity is created via {@link Entity#create(ComponentRegistry)}</li>
      *   <li>A {@link Transform} is set from the node's translation, rotation, and scale</li>
-     *   <li>A {@link WorldTransform} is added (computed later by TransformSystem)</li>
+     *   <li>World-space transform data is stored directly in the Transform component
+     *       (computed later by TransformSystem)</li>
      *   <li>A {@link Hierarchy} links it to its parent (or marks it as root)</li>
      *   <li>If the node has a mesh: {@link Mesh}, {@link PbrMaterial}, and {@link OpaqueLayer}
      *       are added for rendering</li>
@@ -134,11 +134,9 @@ public class GltfSceneInstantiator {
             Transform transform = new Transform();
             transform.setPosition(node.translation());
             transform.setRotationQuaternion(node.rotation());
-            transform.setScale(node.scale().x); // uniform scale (use X component)
+            transform.setScale(node.scale().x, node.scale().y, node.scale().z);
 
-            // WorldTransform is an empty placeholder computed by TransformSystem each frame
-            WorldTransform worldTransform = new WorldTransform();
-            registry.addComponents(entityId, transform, worldTransform);
+            registry.addComponent(entityId, transform);
 
             // Track named nodes for both GltfInstance lookup and registry name-based lookup
             if (node.name() != null && !node.name().isEmpty()) {
@@ -238,10 +236,9 @@ public class GltfSceneInstantiator {
             Transform transform = new Transform();
             transform.setPosition(node.translation());
             transform.setRotationQuaternion(node.rotation());
-            transform.setScale(node.scale().x);
+            transform.setScale(node.scale().x, node.scale().y, node.scale().z);
 
-            WorldTransform worldTransform = new WorldTransform();
-            registry.addComponents(entityId, transform, worldTransform);
+            registry.addComponent(entityId, transform);
 
             // Track named nodes for both GltfInstance lookup and registry name-based lookup
             if (node.name() != null && !node.name().isEmpty()) {
@@ -346,9 +343,8 @@ public class GltfSceneInstantiator {
                     // but a glTF mesh can have multiple sub-meshes with different materials.
                     int subEntity = Entity.create(registry);
                     Transform subTransform = new Transform(); // identity (same position as parent)
-                    WorldTransform subWt = new WorldTransform();
                     Hierarchy subHierarchy = Hierarchy.childOf(entityIds[i]);
-                    registry.addComponents(subEntity, subTransform, subWt, subHierarchy, mesh, pbrMaterial, new OpaqueLayer());
+                    registry.addComponents(subEntity, subTransform, subHierarchy, mesh, pbrMaterial, new OpaqueLayer());
 
                     // Also register this sub-entity as a child in the parent's hierarchy
                     Hierarchy parentHierarchy = registry.getComponent(entityIds[i], Hierarchy.class);

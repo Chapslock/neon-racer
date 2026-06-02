@@ -7,7 +7,6 @@ import org.chapzlock.core.asset.gltf.GltfAsset;
 import org.chapzlock.core.asset.gltf.GltfNodeData;
 import org.chapzlock.core.component.Hierarchy;
 import org.chapzlock.core.component.Transform;
-import org.chapzlock.core.component.WorldTransform;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -123,24 +122,7 @@ class GltfSceneInstantiatorTest {
         assertEquals(rootAId, instance.rootEntity());
     }
 
-    @Test
-    void worldTransformIsAddedToAllEntities() {
-        GltfNodeData node = new GltfNodeData(
-            "Node", new Vector3f(), new Quaternionf(), new Vector3f(2, 2, 2),
-            -1, -1, List.of());
-
-        GltfAsset asset = new GltfAsset(
-            List.of(node), List.of(0), List.of(), List.of(), List.of(), List.of());
-
-        GltfSceneInstantiator instantiator = new GltfSceneInstantiator(ctx);
-        GltfInstance instance = instantiator.instantiate(asset);
-
-        int nodeId = instance.entity("Node");
-        WorldTransform wt = registry.getComponent(nodeId, WorldTransform.class);
-        assertNotNull(wt, "WorldTransform should be present on every instantiated entity");
-    }
-
-    @Test
+@Test
     void rotationIsAppliedFromQuaternion() {
         // 90 degrees around Y axis as a quaternion
         Quaternionf rotation = new Quaternionf().rotateY((float) Math.toRadians(90));
@@ -180,7 +162,11 @@ class GltfSceneInstantiatorTest {
 
         int nodeId = instance.entity("Scaled");
         Transform transform = registry.getComponent(nodeId, Transform.class);
-        assertEquals(3f, transform.getScale(), 0.001f);
+        Vector3f scale = new Vector3f();
+        transform.getScale(scale);
+        assertEquals(3f, scale.x, 0.001f);
+        assertEquals(3f, scale.y, 0.001f);
+        assertEquals(3f, scale.z, 0.001f);
     }
 
     @Test

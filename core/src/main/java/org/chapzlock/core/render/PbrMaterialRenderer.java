@@ -151,8 +151,7 @@ public class PbrMaterialRenderer {
     /**
      * Sets the per-entity model (world) transformation matrix and skinning uniforms.
      *
-     * <p>Prefers {@link WorldTransform} (computed by TransformSystem for hierarchy support).
-     * Falls back to {@link Transform#getTransformationMatrix()} for standalone entities.
+     * <p>Uses {@link Transform#getWorldMatrix()} (computed by TransformSystem for hierarchy support).
      *
      * <p><strong>GPU Skinning:</strong> If the entity has a {@link Skeleton} component, this
      * method computes and uploads the joint matrices needed for vertex skinning. The skin
@@ -171,10 +170,10 @@ public class PbrMaterialRenderer {
         PbrMaterial material = ctx.getRegistry().getComponent(entityId, PbrMaterial.class);
         if (material == null) return;
 
-        WorldTransform worldTransform = ctx.getRegistry().getComponent(entityId, WorldTransform.class);
-        Matrix4f modelMatrix = worldTransform != null
-            ? worldTransform.getWorldMatrix()
-            : ctx.getRegistry().getComponent(entityId, Transform.class).getTransformationMatrix();
+        Transform transform = ctx.getRegistry().getComponent(entityId, Transform.class);
+        Matrix4f modelMatrix = transform != null
+            ? transform.getWorldMatrix()
+            : new Matrix4f();
 
         shaderSystem.setUniform(material.getShader(), UNIFORM_MODEL_MATRIX, modelMatrix);
 
@@ -186,11 +185,11 @@ public class PbrMaterialRenderer {
             Matrix4f[] inverseBindMatrices = skeleton.getInverseBindMatrices();
 
             for (int j = 0; j < skeleton.jointCount(); j++) {
-                WorldTransform jointWorld = ctx.getRegistry().getComponent(
-                    jointEntities[j], WorldTransform.class);
-                if (jointWorld != null) {
+                Transform jointTransform = ctx.getRegistry().getComponent(
+                    jointEntities[j], Transform.class);
+                if (jointTransform != null) {
                     // skinMatrix = jointWorldMatrix * inverseBindMatrix
-                    tempJointMatrix.set(jointWorld.getWorldMatrix()).mul(inverseBindMatrices[j]);
+                    tempJointMatrix.set(jointTransform.getWorldMatrix()).mul(inverseBindMatrices[j]);
                 } else {
                     // Joint has no world transform yet — use identity (bind pose)
                     tempJointMatrix.identity();

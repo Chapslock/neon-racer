@@ -15,7 +15,7 @@ import org.joml.Vector3f;
  * if a parent moves, all its children move with it.
  *
  * <p>During scene instantiation, each GltfNodeData becomes an entity with Transform,
- * Hierarchy, and WorldTransform components. The node tree becomes the entity hierarchy.
+ * Hierarchy components. The node tree becomes the entity hierarchy.
  *
  * <p><strong>Node naming:</strong> Nodes can have names (set in Blender or other tools).
  * These names are used for entity lookup at runtime — e.g., {@code instance.entity("Player")}

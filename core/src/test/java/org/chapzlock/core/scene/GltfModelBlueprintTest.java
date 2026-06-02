@@ -7,7 +7,6 @@ import org.chapzlock.core.asset.gltf.GltfNodeData;
 import org.chapzlock.core.component.AnimationClipSet;
 import org.chapzlock.core.component.Hierarchy;
 import org.chapzlock.core.component.Transform;
-import org.chapzlock.core.component.WorldTransform;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.Entity;
 import org.joml.Quaternionf;
@@ -231,8 +230,5 @@ class GltfModelBlueprintTest {
         assertEquals(expectedPos.y, childTransform.getPosition().y, 0.001f);
         assertEquals(expectedPos.z, childTransform.getPosition().z, 0.001f);
 
-        // WorldTransform should also be present (computed by TransformSystem later)
-        WorldTransform wt = registry.getComponent(childEntity, WorldTransform.class);
-        assertNotNull(wt, "Child entity should have a WorldTransform component");
     }
 }
