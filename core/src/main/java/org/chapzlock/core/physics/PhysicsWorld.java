@@ -47,12 +47,10 @@ import it.unimi.dsi.fastutil.ints.IntList;
  * collide and bounce, forces you applied take effect. Then we copy positions/rotations
  * back into the ECS so the renderer draws everything in its new spot.</p>
  *
- * <h3>Why deferred registration?</h3>
- * <p>When a scene loads, entities get their components one at a time. A PhysicsBody might
- * be added before the Transform, or before the glTF mesh finishes loading. Instead of
- * reacting immediately (which caused a bug where bodies were silently dropped), we queue
- * registrations and process them at a well-defined moment: the start of the physics step.
- * By then, all components are guaranteed present.</p>
+ * <h3>Immediate registration</h3>
+ * <p>Entities are registered immediately when ComponentAddedEvent fires. This is safe because
+ * EntitySystem guarantees all components are present before events fire (atomic commit).
+ * Removals remain deferred to avoid mid-iteration issues with the dynamics world.</p>
  *
  * <h3>Broadphase vs Narrowphase</h3>
  * <p>Collision detection is two-stage for performance:
@@ -78,7 +76,6 @@ class PhysicsWorld implements Disposable {
     private final Int2ObjectOpenHashMap<RigidBody> entityToBody = new Int2ObjectOpenHashMap<>();
     private final IdentityHashMap<RigidBody, Integer> bodyToEntity = new IdentityHashMap<>();
 
-    private final IntList pendingAdds = new IntArrayList();
     private final IntList pendingRemovals = new IntArrayList();
 
     private final CollisionCache collisionCache = new CollisionCache();
@@ -109,45 +106,42 @@ class PhysicsWorld implements Disposable {
         this.meshSystem = meshSystem;
     }
 
-    void queueRegistration(int entityId) {
-        pendingAdds.add(entityId);
+    /**
+     * Registers an entity's physics body immediately into the dynamics world.
+     *
+     * <p>Called from the ComponentAddedEvent handler. Safe because EntitySystem guarantees
+     * all components are present before events fire (atomic commit).
+     *
+     * @param entityId the entity to register
+     * @param registry the component registry to read PhysicsBody and Transform from
+     */
+    void register(int entityId, ComponentRegistry registry) {
+        if (entityToBody.containsKey(entityId)) return;
+
+        PhysicsBody config = registry.getComponent(entityId, PhysicsBody.class);
+        Transform transform = registry.getComponent(entityId, Transform.class);
+        if (config == null || transform == null) {
+            Log.warn("Physics registration skipped for entity " + entityId +
+                ": missing " + (config == null ? "PhysicsBody" : "Transform"));
+            return;
+        }
+
+        RawMeshData meshData = resolveMeshData(entityId, registry, meshSystem);
+        CollisionShape shape = shapeResolver.resolve(config.getGeometry(), meshData);
+
+        RigidBody body = createRigidBody(config, shape, transform);
+        dynamicsWorld.addRigidBody(body, (short) config.getLayer(), (short) config.getCollisionMask());
+
+        entityToBody.put(entityId, body);
+        bodyToEntity.put(body, entityId);
+        collisionCache.setEntityLayer(entityId, config.getLayer());
+
+        Log.debug("Physics body registered: entity=" + entityId +
+            " mass=" + config.getMass() + " shape=" + config.getGeometry().getClass().getSimpleName());
     }
 
     void queueRemoval(int entityId) {
         pendingRemovals.add(entityId);
-    }
-
-    void processPendingRegistrations(ComponentRegistry registry) {
-        for (int i = 0; i < pendingAdds.size(); i++) {
-            int entityId = pendingAdds.getInt(i);
-
-            if (entityToBody.containsKey(entityId)) {
-                continue;
-            }
-
-            PhysicsBody config = registry.getComponent(entityId, PhysicsBody.class);
-            Transform transform = registry.getComponent(entityId, Transform.class);
-
-            if (config == null || transform == null) {
-                Log.warn("Physics registration skipped for entity " + entityId +
-                    ": missing " + (config == null ? "PhysicsBody" : "Transform"));
-                continue;
-            }
-
-            RawMeshData meshData = resolveMeshData(entityId, registry, meshSystem);
-            CollisionShape shape = shapeResolver.resolve(config.getGeometry(), meshData);
-
-            RigidBody body = createRigidBody(config, shape, transform);
-            dynamicsWorld.addRigidBody(body, (short) config.getLayer(), (short) config.getCollisionMask());
-
-            entityToBody.put(entityId, body);
-            bodyToEntity.put(body, entityId);
-            collisionCache.setEntityLayer(entityId, config.getLayer());
-
-            Log.debug("Physics body registered: entity=" + entityId +
-                " mass=" + config.getMass() + " shape=" + config.getGeometry().getClass().getSimpleName());
-        }
-        pendingAdds.clear();
     }
 
     void processPendingRemovals() {
@@ -252,7 +246,6 @@ class PhysicsWorld implements Disposable {
         }
         entityToBody.clear();
         bodyToEntity.clear();
-        pendingAdds.clear();
         pendingRemovals.clear();
         debugDrawer.dispose();
     }

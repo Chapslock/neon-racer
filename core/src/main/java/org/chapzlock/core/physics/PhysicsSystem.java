@@ -17,8 +17,6 @@ import org.chapzlock.core.render.CameraSystem;
  *
  * <h3>What this system does each frame</h3>
  * <ol>
- *   <li><strong>Process registrations</strong> — any entities that gained a PhysicsBody since
- *       last frame get their Bullet rigid body created and added to the simulation.</li>
  *   <li><strong>Process removals</strong> — any entities that lost their PhysicsBody get
  *       removed from the simulation.</li>
  *   <li><strong>Step simulation</strong> — advances the physics world by deltaTime. Internally
@@ -29,11 +27,10 @@ import org.chapzlock.core.render.CameraSystem;
  *       fast entity-ID-based lookup used by {@code Physics.isColliding()}.</li>
  * </ol>
  *
- * <h3>Why deferred (not event-driven)</h3>
- * <p>The old system used ComponentAddedEvent to immediately register bodies. But during scene
- * loading, PhysicsBody might be added before Transform exists — causing silent registration
- * failures. The new approach queues registrations and processes them at a well-defined point
- * when all components are guaranteed present.</p>
+ * <h3>Registration strategy</h3>
+ * <p>Entities are registered immediately when ComponentAddedEvent fires. This is safe because
+ * EntitySystem guarantees all components are present before events fire (atomic commit).
+ * Removals remain deferred to avoid mid-iteration issues with the dynamics world.</p>
  *
  * @see Physics
  * @see PhysicsWorld
@@ -79,7 +76,6 @@ public class PhysicsSystem implements GameSystem {
 
     @Override
     public void onUpdate(float deltaTime) {
-        world.processPendingRegistrations(registry);
         world.processPendingRemovals();
         world.step(deltaTime);
         world.syncTransformsToEcs(registry);
@@ -108,7 +104,7 @@ public class PhysicsSystem implements GameSystem {
     private void subscribeToLifecycleEvents(EventBus eventBus) {
         componentAddedSub = eventBus.subscribe(ComponentAddedEvent.class, event -> {
             if (event.componentType() != PhysicsBody.class) return false;
-            world.queueRegistration(event.entityId());
+            world.register(event.entityId(), registry);
             return false;
         });
 

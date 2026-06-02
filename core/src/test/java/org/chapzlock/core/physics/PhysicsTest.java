@@ -28,8 +28,7 @@ class PhysicsTest {
     @Test
     void applyImpulse_changesVelocity() {
         int entity = createDynamicEntity(0, 10, 0);
-        world.queueRegistration(entity);
-        world.processPendingRegistrations(registry);
+        world.register(entity, registry);
 
         physics.applyImpulse(entity, new Vector3f(0, 10, 0));
         Vector3f velocity = physics.getLinearVelocity(entity);
@@ -39,8 +38,7 @@ class PhysicsTest {
     @Test
     void isRegistered_returnsTrueForRegisteredEntity() {
         int entity = createDynamicEntity(0, 5, 0);
-        world.queueRegistration(entity);
-        world.processPendingRegistrations(registry);
+        world.register(entity, registry);
 
         assertTrue(physics.isRegistered(entity));
     }
@@ -53,8 +51,7 @@ class PhysicsTest {
     @Test
     void stopMotion_zeroesBothVelocities() {
         int entity = createDynamicEntity(0, 10, 0);
-        world.queueRegistration(entity);
-        world.processPendingRegistrations(registry);
+        world.register(entity, registry);
 
         physics.applyImpulse(entity, new Vector3f(5, 5, 5));
         physics.stopMotion(entity);
@@ -81,8 +78,7 @@ class PhysicsTest {
     @Test
     void teleport_movesBodyInstantly() {
         int entity = createDynamicEntity(0, 0, 0);
-        world.queueRegistration(entity);
-        world.processPendingRegistrations(registry);
+        world.register(entity, registry);
 
         physics.teleport(entity, new Vector3f(100, 200, 300));
         world.syncTransformsToEcs(registry);

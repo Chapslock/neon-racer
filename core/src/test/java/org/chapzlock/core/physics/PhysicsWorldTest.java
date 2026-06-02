@@ -28,8 +28,7 @@ class PhysicsWorldTest {
     void registerBody_createsInternalRigidBody() {
         int entity = createPhysicsEntity(1f, CollisionGeometry.sphere(1f), 0, 5, 0);
 
-        world.queueRegistration(entity);
-        world.processPendingRegistrations(registry);
+        world.register(entity, registry);
 
         assertTrue(world.isRegistered(entity));
     }
@@ -38,8 +37,7 @@ class PhysicsWorldTest {
     void dynamicBody_fallsUnderGravity() {
         int entity = createPhysicsEntity(1f, CollisionGeometry.sphere(1f), 0, 10, 0);
 
-        world.queueRegistration(entity);
-        world.processPendingRegistrations(registry);
+        world.register(entity, registry);
 
         for (int i = 0; i < 60; i++) {
             world.step(1f / 60f);
@@ -57,8 +55,7 @@ class PhysicsWorldTest {
     void staticBody_doesNotMove() {
         int entity = createPhysicsEntity(0f, CollisionGeometry.sphere(1f), 0, 5, 0);
 
-        world.queueRegistration(entity);
-        world.processPendingRegistrations(registry);
+        world.register(entity, registry);
 
         for (int i = 0; i < 60; i++) {
             world.step(1f / 60f);
@@ -75,8 +72,7 @@ class PhysicsWorldTest {
     void queueRemoval_removesBodyFromWorld() {
         int entity = createPhysicsEntity(1f, CollisionGeometry.sphere(1f), 0, 5, 0);
 
-        world.queueRegistration(entity);
-        world.processPendingRegistrations(registry);
+        world.register(entity, registry);
         assertTrue(world.isRegistered(entity));
 
         world.queueRemoval(entity);
@@ -85,7 +81,7 @@ class PhysicsWorldTest {
     }
 
     @Test
-    void deferredRegistration_worksRegardlessOfComponentOrder() {
+    void register_worksWhenBothComponentsPresent() {
         int entity = Entity.create(registry);
         registry.addComponent(entity, PhysicsBody.builder()
             .mass(1f)
@@ -93,8 +89,7 @@ class PhysicsWorldTest {
             .build());
         registry.addComponent(entity, Transform.at(0, 5, 0));
 
-        world.queueRegistration(entity);
-        world.processPendingRegistrations(registry);
+        world.register(entity, registry);
 
         assertTrue(world.isRegistered(entity));
     }
@@ -104,9 +99,8 @@ class PhysicsWorldTest {
         int e1 = createPhysicsEntity(1f, CollisionGeometry.sphere(1f), 0, 5, 0);
         int e2 = createPhysicsEntity(0f, CollisionGeometry.box(1, 1, 1), 3, 0, 0);
 
-        world.queueRegistration(e1);
-        world.queueRegistration(e2);
-        world.processPendingRegistrations(registry);
+        world.register(e1, registry);
+        world.register(e2, registry);
 
         world.dispose();
 
