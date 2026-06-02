@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.List;
+
 /**
  * CPU-side mesh data before GPU upload.
  *
@@ -87,4 +89,159 @@ public class RawMeshData {
 
     /** True if a secondary UV set is present. */
     public boolean hasTexCoords1() { return texCoords1 != null && texCoords1.length > 0; }
+
+    /**
+     * Combines multiple meshes into a single mesh by concatenating vertex/index buffers.
+     *
+     * <p>Index values are adjusted so that each mesh's indices correctly reference
+     * vertices within the combined positions array. The offset for mesh N equals the
+     * total vertex count of all preceding meshes (vertex count = positions.length / 3).
+     *
+     * <p>Optional attributes (normals, tangents, joints, weights, colors, texCoords1) are
+     * only included in the result if ALL input meshes have them. If any mesh is missing
+     * an optional attribute, it is omitted from the merged result.
+     *
+     * @param meshes non-empty list of meshes to combine
+     * @return a single merged mesh
+     * @throws IllegalArgumentException if the list is empty
+     */
+    public static RawMeshData merge(List<RawMeshData> meshes) {
+        if (meshes.isEmpty()) {
+            throw new IllegalArgumentException("Cannot merge an empty list of meshes");
+        }
+        if (meshes.size() == 1) {
+            return meshes.get(0);
+        }
+
+        // Calculate total sizes
+        int totalPositions = 0;
+        int totalTexCoords = 0;
+        int totalIndices = 0;
+        int totalNormals = 0;
+        int totalTangents = 0;
+        int totalJoints = 0;
+        int totalWeights = 0;
+        int totalColors = 0;
+        int totalTexCoords1 = 0;
+
+        boolean allHaveNormals = true;
+        boolean allHaveTangents = true;
+        boolean allHaveJoints = true;
+        boolean allHaveWeights = true;
+        boolean allHaveColors = true;
+        boolean allHaveTexCoords1 = true;
+
+        for (RawMeshData mesh : meshes) {
+            totalPositions += mesh.positions.length;
+            totalTexCoords += mesh.texCoords.length;
+            totalIndices += mesh.indices.length;
+
+            if (mesh.hasNormals()) {
+                totalNormals += mesh.normals.length;
+            } else {
+                allHaveNormals = false;
+            }
+            if (mesh.hasTangents()) {
+                totalTangents += mesh.tangents.length;
+            } else {
+                allHaveTangents = false;
+            }
+            if (mesh.hasJoints()) {
+                totalJoints += mesh.joints.length;
+            } else {
+                allHaveJoints = false;
+            }
+            if (mesh.hasWeights()) {
+                totalWeights += mesh.weights.length;
+            } else {
+                allHaveWeights = false;
+            }
+            if (mesh.hasColors()) {
+                totalColors += mesh.colors.length;
+            } else {
+                allHaveColors = false;
+            }
+            if (mesh.hasTexCoords1()) {
+                totalTexCoords1 += mesh.texCoords1.length;
+            } else {
+                allHaveTexCoords1 = false;
+            }
+        }
+
+        // Allocate merged arrays
+        float[] mergedPositions = new float[totalPositions];
+        float[] mergedTexCoords = new float[totalTexCoords];
+        int[] mergedIndices = new int[totalIndices];
+        float[] mergedNormals = allHaveNormals ? new float[totalNormals] : new float[0];
+        float[] mergedTangents = allHaveTangents ? new float[totalTangents] : new float[0];
+        int[] mergedJoints = allHaveJoints ? new int[totalJoints] : new int[0];
+        float[] mergedWeights = allHaveWeights ? new float[totalWeights] : new float[0];
+        float[] mergedColors = allHaveColors ? new float[totalColors] : new float[0];
+        float[] mergedTexCoords1 = allHaveTexCoords1 ? new float[totalTexCoords1] : new float[0];
+
+        // Copy data
+        int posOffset = 0;
+        int texOffset = 0;
+        int idxOffset = 0;
+        int normOffset = 0;
+        int tanOffset = 0;
+        int jointOffset = 0;
+        int weightOffset = 0;
+        int colorOffset = 0;
+        int tc1Offset = 0;
+        int vertexOffset = 0; // running vertex count for index adjustment
+
+        for (RawMeshData mesh : meshes) {
+            System.arraycopy(mesh.positions, 0, mergedPositions, posOffset, mesh.positions.length);
+            posOffset += mesh.positions.length;
+
+            System.arraycopy(mesh.texCoords, 0, mergedTexCoords, texOffset, mesh.texCoords.length);
+            texOffset += mesh.texCoords.length;
+
+            // Copy indices with offset adjustment
+            for (int i = 0; i < mesh.indices.length; i++) {
+                mergedIndices[idxOffset + i] = mesh.indices[i] + vertexOffset;
+            }
+            idxOffset += mesh.indices.length;
+
+            if (allHaveNormals) {
+                System.arraycopy(mesh.normals, 0, mergedNormals, normOffset, mesh.normals.length);
+                normOffset += mesh.normals.length;
+            }
+            if (allHaveTangents) {
+                System.arraycopy(mesh.tangents, 0, mergedTangents, tanOffset, mesh.tangents.length);
+                tanOffset += mesh.tangents.length;
+            }
+            if (allHaveJoints) {
+                System.arraycopy(mesh.joints, 0, mergedJoints, jointOffset, mesh.joints.length);
+                jointOffset += mesh.joints.length;
+            }
+            if (allHaveWeights) {
+                System.arraycopy(mesh.weights, 0, mergedWeights, weightOffset, mesh.weights.length);
+                weightOffset += mesh.weights.length;
+            }
+            if (allHaveColors) {
+                System.arraycopy(mesh.colors, 0, mergedColors, colorOffset, mesh.colors.length);
+                colorOffset += mesh.colors.length;
+            }
+            if (allHaveTexCoords1) {
+                System.arraycopy(mesh.texCoords1, 0, mergedTexCoords1, tc1Offset, mesh.texCoords1.length);
+                tc1Offset += mesh.texCoords1.length;
+            }
+
+            vertexOffset += mesh.positions.length / 3;
+        }
+
+        return RawMeshData.builder()
+            .positions(mergedPositions)
+            .texCoords(mergedTexCoords)
+            .indices(mergedIndices)
+            .normals(mergedNormals)
+            .tangents(mergedTangents)
+            .joints(mergedJoints)
+            .weights(mergedWeights)
+            .colors(mergedColors)
+            .texCoords1(mergedTexCoords1)
+            .build();
+    }
 }
