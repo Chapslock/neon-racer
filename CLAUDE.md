@@ -23,51 +23,63 @@ Two Gradle modules (Kotlin DSL):
 
 ### Core Packages
 
-- `ecs/` — GameSystem, SystemPhase, Component, Tag, Entity, EntityView, ComponentRegistry, ComponentStore
+- `ecs/` — GameSystem, SystemPhase, Component, Tag, Entity, ComponentRegistry, ComponentStore, ComponentRule
 - `application/` — Application, EngineContext, ApplicationSpecification, Disposable, ApplicationUtil
-- `scene/` — Scene, SceneManager, SceneBuilder, EntityBlueprint, EntityBlueprintBuilder, ComponentFactory, MaterialType, SceneLoadedEvent, SceneUnloadedEvent
-- `render/` — RenderSystem, CameraSystem, MaterialSystem, MeshSystem, TextureSystem, ShaderSystem, MaterialRendererRegistry, MaterialRenderer impls, ShaderProps, GL utilities
-- `component/` — All data components (Camera, Transform, Mesh, Material, PhysicsBody, etc.)
+- `scene/` — Scene, SceneManager, SceneInstantiator, SceneInstance, SceneBuilder, EntityBlueprint, EntityBlueprintBuilder, DescriptorResolver, GltfSceneInstantiator, SceneLoadedEvent, SceneUnloadedEvent
+- `render/` — RenderSystem, RenderPass, RenderContext, OpaquePass, SpritePass, PbrMaterialRenderer, SpriteRenderer, CameraSystem, MeshSystem, TextureSystem, ShaderSystem, RefCounted, ShaderProps, GL utilities
+- `component/` — All data components (Camera, Transform, Mesh, PbrMaterial, SpriteMaterial, PointLight, DirectionalLight, PhysicsBody, Skeleton, etc.)
 - `physics/` — PhysicsSystem and all physics utilities
 - `event/` — EventBus, Event, lifecycle events
-- `input/` — Keyboard/mouse event classes
+- `input/` — InputMap, Keyboard/mouse event classes
 - `window/` — Window, WindowSpecification
-- `asset/` — FileUtils, RawMeshData, RawMeshDataFactory
+- `asset/` — FileUtils, RawMeshData, RawMeshDataFactory, gltf/ (GltfLoader, GltfAssetRegistry)
 - `logging/` — Log
+- `tween/` — TweenManager, Ease
 
 ## Architecture
 
 ### ECS (Entity-Component-System)
 
-Entities are plain integer IDs (`Entity.create(registry)`). Components are marker-interface data holders (`implements Component`). Tags are empty components used for querying (`implements Tag`). Systems implement `GameSystem` and receive dependencies via `onInit(EngineContext ctx)`. They operate on entities via `registry.view(ComponentA.class, ComponentB.class, ...)` which returns entities possessing all listed components.
+Entities are plain integer IDs (`Entity.create(registry)`). Components are marker-interface data holders (`implements Component`). Tags are empty components used for querying (`implements Tag`). Systems implement `GameSystem` and receive dependencies via `onInit(EngineContext ctx)`. They operate on entities via typed `forEach` overloads: `registry.forEach(A.class, B.class, (entityId, a, b) -> { ... })`.
 
-`ComponentRegistry` stores components in typed `ComponentStore` maps, indexed by entity ID. It uses bitset masks for fast archetype queries. Query results are cached internally and invalidated on component mutations — `view()` is O(1) on stable frames.
+`ComponentRegistry` stores components in typed `ComponentStore` maps, indexed by entity ID. It uses bitset masks for fast archetype queries. Query results are cached internally and invalidated on component mutations — queries are O(1) on stable frames. Other query methods: `getSingleton(T.class)` for singleton components, `getEntityByName("name")` for named entity lookup, `count(T.class)` for entity counting, `entityExists(id)` for existence checks.
 
 ### EngineContext
 
 `EngineContext` is a plain object created by `Application` that holds all engine subsystems. No singletons exist — all dependencies flow through the context.
 
-**Contents:** ComponentRegistry, EventBus, MeshSystem, TextureSystem, ShaderSystem, MaterialSystem, MaterialRendererRegistry, CameraSystem, Window, SceneManager.
+**Contents:** ComponentRegistry, EventBus, MeshSystem, TextureSystem, ShaderSystem, CameraSystem, Window, Time, TweenManager, GltfAssetRegistry, SceneManager.
 
 **Lifecycle:** Application creates the context at startup, passes it to systems and SceneManager. Application calls `ctx.dispose()` on shutdown.
 
-**Testing:** `EngineContext.testContext()` creates a minimal context with fresh ComponentRegistry + EventBus (GPU systems null) for unit tests.
+**Testing:** `EngineContext.testContext()` creates a minimal context with fresh ComponentRegistry + EventBus + Time + TweenManager (GPU systems null) for unit tests.
 
 ### Scene System
 
-A `Scene` is an immutable blueprint describing entities (via `EntityBlueprint` + `ComponentFactory` lambdas) and game-logic systems. Scenes are built via a fluent builder: `Scene.builder("name").entity("x", e -> e.mesh(...).texture(...)).systems(...).build()`.
+A `Scene` is an immutable blueprint describing entities (via `EntityBlueprint` + `EntityBlueprintBuilder`) and game-logic systems. Scenes are built via a fluent builder where everything is an entity:
 
-`SceneManager` manages scene lifecycle: one primary scene plus zero or more additive scenes. Engine systems (PhysicsSystem, RenderSystem) are always active; scene systems are added/removed with their scene. `getActiveSystems()` returns engine + scene systems sorted by phase.
+```java
+Scene.builder("name")
+    .entity("terrain", e -> e.gltfModel("models/track.glb"))
+    .entity("sun", e -> e.directionalLight(light))
+    .entity("player", e -> e.transform(Transform.at(0, 0, 0)).gltfModel("glb/car.glb").tag(new PlayerTag()))
+    .entity(e -> e.camera(cam))  // nameless entity
+    .systems(new PlayerSystem())
+    .inputMap(controls)
+    .build();
+```
+
+`SceneManager` manages scene lifecycle: one primary scene plus zero or more additive scenes. It delegates instantiation to `SceneInstantiator` which resolves descriptors, validates component rules, and returns a `SceneInstance`.
 
 **Transitions:** `loadImmediate(scene)` for initial load (synchronous). `load(scene)` queues a deferred transition (old scene unloaded, new scene instantiated at end-of-frame via `processPendingTransitions()`). `loadAdditive(scene)` adds a persistent overlay scene. `unload(scene)` removes an additive scene.
 
-**Asset ownership:** GPU asset systems (MeshSystem, TextureSystem, ShaderSystem) use reference counting (`retain()`/`release()`). SceneManager retains assets when instantiating a scene and releases them on unload. Shared assets (same path across scenes) survive until all referencing scenes are unloaded.
+**Asset ownership:** GPU asset systems (MeshSystem, TextureSystem, ShaderSystem) use `RefCounted` for reference counting (`retain()`/`release()`). SceneInstantiator retains assets when instantiating a scene and releases them on teardown. Shared assets (same path across scenes) survive until all referencing scenes are unloaded.
 
-**Material defaults:** `MaterialType` enum (ENTITY, TERRAIN, UI) maps to pre-registered `MaterialRenderer` instances via `MaterialRendererRegistry.registerDefault()`. The scene builder auto-selects the appropriate default based on entity setup (e.g., `.mesh() + .texture()` → ENTITY).
+**Component validation:** `SceneInstantiator` checks `ComponentRule` dependencies (e.g., Mesh requires Transform, PointLight requires Transform). Invalid entities are skipped with a clear error message.
 
 ### Application Lifecycle
 
-`Application.create(spec)` builds the application. `ApplicationSpecification` declares `engineSystems` (always-active infrastructure) and `initialScene` (first scene to load). `run()` creates `EngineContext`, registers default material renderers, creates `SceneManager`, inits engine systems, then loads the initial scene.
+`Application.create(spec)` builds the application. `ApplicationSpecification` declares `engineSystems` (always-active infrastructure) and `initialScene` (first scene to load). `run()` creates `EngineContext`, creates `SceneManager`, inits engine systems, then loads the initial scene.
 
 **Main loop order per frame:** `onUpdate(delta)` → `onRender(delta)` → `onDebugRender(delta)` on all active systems (sorted by SystemPhase), then `sceneManager.processPendingTransitions()`.
 
@@ -77,12 +89,14 @@ Systems declare their execution phase via `default SystemPhase phase()`. The enu
 
 ### Rendering Pipeline
 
-Materials pair a `Shader` (vertex+fragment GLSL paths) with textures and properties. Each material type has a corresponding `MaterialRenderer` implementation that knows how to bind uniforms and textures. New material types require:
-1. A `*ShaderProps` class pointing to GLSL files
-2. A `*MaterialRenderer` implementing `MaterialRenderer`
-3. Registration via `MaterialSystem.registerNewMaterial(material, renderer)`
+Two independent render passes, each owning its renderer directly:
 
-`RenderSystem` batches entities by material to minimize shader switches.
+- **OpaquePass** (order 200) — renders 3D world geometry. Queries `OpaqueLayer + PbrMaterial + Mesh + Transform`, batches by material, uses `PbrMaterialRenderer` (Cook-Torrance BRDF with metallic-roughness workflow).
+- **SpritePass** (order 800) — renders 2D sprites/HUD. Queries `SpriteLayer + SpriteMaterial + Mesh + Transform`, batches by material, uses `SpriteRenderer` (orthographic projection, alpha blending).
+
+Each renderer owns its shader lifecycle internally. `PbrMaterial` is a data component with texture maps and factors. `SpriteMaterial` is a record holding texture + tint. No shared `MaterialRenderer` interface — each pass has its own concrete renderer.
+
+`RenderContext` is populated once per frame with camera matrices, lights (position read from Transform), fog, and ambient settings. Passes read from it rather than querying the registry directly.
 
 ### Physics
 
@@ -94,7 +108,7 @@ JBullet (Bullet physics Java port). `PhysicsSystem` owns a `DiscreteDynamicsWorl
 
 ### Resource Cleanup
 
-GPU systems (MeshSystem, TextureSystem, ShaderSystem) implement `Disposable`. They track all allocated OpenGL resources and free them in `dispose()`. `EngineContext.dispose()` cascades to all disposable subsystems on shutdown. Reference counting (`retain()`/`release()`) handles per-scene asset ownership during transitions; `dispose()` frees everything unconditionally at shutdown.
+GPU systems (MeshSystem, TextureSystem, ShaderSystem) implement `Disposable`. They track all allocated OpenGL resources and free them in `dispose()`. `EngineContext.dispose()` cascades to all disposable subsystems on shutdown. Each GPU system uses a `RefCounted` instance for reference counting (`retain()`/`release()`) with a type-specific cleanup callback. `dispose()` frees everything unconditionally at shutdown regardless of ref counts.
 
 ## Tech Stack
 
