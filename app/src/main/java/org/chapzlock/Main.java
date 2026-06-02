@@ -2,7 +2,7 @@ package org.chapzlock;
 
 import java.util.List;
 
-import org.chapzlock.app.scene.RaceTrackScene;
+import org.chapzlock.app.scene.ForestScene;
 import org.chapzlock.core.animation.AnimationSystem;
 import org.chapzlock.core.application.Application;
 import org.chapzlock.core.application.ApplicationSpecification;
@@ -32,7 +32,7 @@ public class Main {
                         .isDebugEnabled(true)
                         .build()),
                     new RenderSystem()))
-                .initialScene(RaceTrackScene.create())
+                .initialScene(ForestScene.create())
                 .build());
         app.run();
     }

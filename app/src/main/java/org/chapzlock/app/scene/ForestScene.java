@@ -18,11 +18,11 @@ import org.chapzlock.core.render.CameraFreeRoamSystem;
 import org.chapzlock.core.scene.Scene;
 import org.joml.Vector3f;
 
-public class RaceTrackScene {
+public class ForestScene {
 
     public static Scene create() {
-        return Scene.builder("race-track")
-            .fromGltf("glb/forest-scene.glb")
+        return Scene.builder("forest")
+            .fromGltf("glb/terrain.glb")
             .inputMap(InputMap.builder()
                 .action("quit", Key.ESCAPE)
                 .axis("moveForward", Key.S, Key.W)
@@ -51,13 +51,14 @@ public class RaceTrackScene {
             .ambient(AmbientLight.builder().strength(0.5f)
                 .build())
             .entity("player", e -> e
-                .transform(Transform.at(0, 0, -3, 0, 90, 0))
+                .transform(Transform.at(0, 1, -3, 0, 90, 0))
                 .tag(new PlayerTag())
                 .component(new PlayerInputComponent()))
-            .entity("speedometer", e -> e
-                .transform(Transform.at(0, 0, 0, 0, 0, 0, 200))
-                .sprite(SpriteDescriptor.of("textures/speedometer.png")))
-            .camera(0, 0, 5)
+            .entity("healthbar", e -> e
+                .transform(Transform.at(0, 0, 0, 0, 0, 0, 250))
+                .sprite(SpriteDescriptor.of("textures/health-bar.png"))
+            )
+            .camera(0, 3, 5)
             .sky()
             .systems(
                 new PlayerInputSystem(),
