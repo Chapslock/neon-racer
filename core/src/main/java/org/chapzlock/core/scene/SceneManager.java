@@ -288,21 +288,6 @@ public class SceneManager {
         List<Integer> entityIds = new ArrayList<>();
         SceneAssets assets = new SceneAssets();
 
-        // If the scene has a glTF base, load it first.
-        // The glTF nodes become entities alongside the programmatic blueprints.
-        if (scene.getGltfPath() != null) {
-            Log.debug("  Loading glTF base: " + scene.getGltfPath());
-            GltfInstance gltfInstance = loadGltf(scene.getGltfPath());
-            // Track all glTF entity IDs so they are destroyed when the scene is unloaded
-            for (int entityId : gltfInstance.allEntities().values()) {
-                entityIds.add(entityId);
-            }
-            // Also include the root entity if it wasn't already captured by name
-            if (!entityIds.contains(gltfInstance.rootEntity())) {
-                entityIds.add(gltfInstance.rootEntity());
-            }
-        }
-
         for (EntityBlueprint blueprint : scene.getEntities()) {
             int entityId = Entity.create(registry);
             try {
