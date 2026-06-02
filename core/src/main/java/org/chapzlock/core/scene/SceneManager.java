@@ -9,16 +9,6 @@ import java.util.Map;
 import java.util.Queue;
 
 import org.chapzlock.core.application.EngineContext;
-import org.chapzlock.core.asset.gltf.GltfAsset;
-import org.chapzlock.core.component.Mesh;
-import org.chapzlock.core.component.Name;
-import org.chapzlock.core.component.PhysicsBody;
-import org.chapzlock.core.component.SpriteMaterial;
-import org.chapzlock.core.component.Texture;
-import org.chapzlock.core.component.Transform;
-import org.chapzlock.core.ecs.Component;
-import org.chapzlock.core.ecs.ComponentRegistry;
-import org.chapzlock.core.ecs.Entity;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.input.InputMap;
@@ -29,44 +19,72 @@ import lombok.Getter;
 /**
  * Manages scene lifecycle: loading, unloading, and transitions.
  *
- * <p>Supports one primary scene plus zero or more additive scenes.
- * Engine systems (PhysicsSystem, RenderSystem) are always active;
- * scene systems are added/removed with their scene.
+ * <p><strong>What this does:</strong> Orchestrates when scenes load and unload, manages
+ * the transition queue, maintains the active systems cache, and handles input map
+ * activation/deactivation. The actual work of creating entities, tracking GPU assets,
+ * and initializing systems is delegated to {@link SceneInstantiator}.
  *
- * <p>Transitions:
+ * <p><strong>Scene types:</strong>
  * <ul>
- *   <li>{@code load(scene)} — queue deferred transition (old scene unloaded, new scene instantiated at end-of-frame)</li>
- *   <li>{@code loadAdditive(scene)} — add a persistent overlay scene</li>
- *   <li>{@code unload(scene)} — remove an additive scene</li>
+ *   <li><em>Primary scene</em> — the main gameplay scene (only one at a time)</li>
+ *   <li><em>Additive scenes</em> — overlays that layer on top (HUD, pause menu, debug)</li>
  * </ul>
  *
- * <p>GPU assets (meshes, textures, shaders) use reference counting.
- * Shared assets survive until all referencing scenes are unloaded.
+ * <p><strong>Transition modes:</strong>
+ * <ul>
+ *   <li>{@code load(scene)} — queue deferred transition (old scene unloaded, new scene
+ *       instantiated at end-of-frame via {@link #processPendingTransitions()})</li>
+ *   <li>{@code loadImmediate(scene)} — synchronous load (used for initial scene)</li>
+ *   <li>{@code loadAdditive(scene)} — add a persistent overlay scene</li>
+ *   <li>{@code unload(scene)} — remove a scene (primary or additive)</li>
+ * </ul>
+ *
+ * <p><strong>GPU asset lifecycle:</strong> GPU assets (meshes, textures, shaders) use
+ * reference counting managed by {@link SceneInstantiator}. Shared assets survive until
+ * all referencing scenes are unloaded.
+ *
+ * @see SceneInstantiator
+ * @see SceneInstance
+ * @see Scene
  */
 public class SceneManager {
 
     private final EngineContext context;
-    private final ComponentRegistry registry;
     private final EventBus eventBus;
+    private final SceneInstantiator instantiator;
 
     @Getter
     private Scene primaryScene;
     private final List<Scene> additiveScenes = new ArrayList<>();
-    private final Map<Scene, List<Integer>> sceneEntities = new HashMap<>();
-    private final Map<Scene, SceneAssets> sceneAssets = new HashMap<>();
-    private final Map<Scene, List<GameSystem>> sceneSystems = new HashMap<>();
+    private final Map<Scene, SceneInstance> loadedScenes = new HashMap<>();
     private final List<GameSystem> engineSystems = new ArrayList<>();
     private final Queue<Runnable> pendingTransitions = new ArrayDeque<>();
 
     private List<GameSystem> cachedActiveSystems;
     private boolean activeSystemsDirty = true;
 
+    /**
+     * Creates a new scene manager bound to the given engine context.
+     *
+     * <p>Internally creates a {@link SceneInstantiator} that handles the mechanics of
+     * entity creation, asset tracking, and system initialization.
+     *
+     * @param context the engine context providing access to all subsystems
+     */
     public SceneManager(EngineContext context) {
         this.context = context;
-        this.registry = context.getRegistry();
         this.eventBus = context.getEventBus();
+        this.instantiator = new SceneInstantiator(context);
     }
 
+    /**
+     * Registers always-active engine systems (e.g., PhysicsSystem, RenderSystem).
+     *
+     * <p>Engine systems run regardless of which scene is loaded. They are included in
+     * {@link #getActiveSystems()} alongside scene-specific systems.
+     *
+     * @param systems the engine systems to register
+     */
     public void registerEngineSystems(List<GameSystem> systems) {
         engineSystems.addAll(systems);
         activeSystemsDirty = true;
@@ -76,7 +94,12 @@ public class SceneManager {
      * Queues a deferred scene transition. The old scene is unloaded and the new scene
      * is loaded at end-of-frame via {@link #processPendingTransitions()}.
      *
+     * <p><strong>When to use:</strong> During gameplay, when you want to switch scenes
+     * without disrupting the current frame's update/render cycle. The transition happens
+     * cleanly between frames.
+     *
      * @param scene the scene to load
+     * @throws IllegalArgumentException if scene is null
      */
     public void load(Scene scene) {
         if (scene == null) {
@@ -88,9 +111,12 @@ public class SceneManager {
 
     /**
      * Queues loading an additive scene. Additive scenes layer on top of the primary scene.
-     * Use for HUD, pause menus, or debug overlays.
+     *
+     * <p><strong>When to use:</strong> For HUD overlays, pause menus, debug panels, or
+     * any content that should coexist with the primary scene rather than replace it.
      *
      * @param scene the scene to load additively
+     * @throws IllegalArgumentException if scene is null
      */
     public void loadAdditive(Scene scene) {
         if (scene == null) {
@@ -109,6 +135,15 @@ public class SceneManager {
         pendingTransitions.add(() -> doUnload(scene));
     }
 
+    /**
+     * Loads a scene synchronously (blocks until fully instantiated).
+     *
+     * <p><strong>When to use:</strong> For the initial scene load at application startup,
+     * or in tests. During gameplay, prefer {@link #load(Scene)} for deferred transitions.
+     *
+     * @param scene the scene to load immediately
+     * @throws IllegalArgumentException if scene is null
+     */
     public void loadImmediate(Scene scene) {
         if (scene == null) {
             throw new IllegalArgumentException(
@@ -117,6 +152,12 @@ public class SceneManager {
         doLoad(scene);
     }
 
+    /**
+     * Loads an additive scene synchronously.
+     *
+     * @param scene the scene to load additively
+     * @throws IllegalArgumentException if scene is null
+     */
     public void loadAdditiveImmediate(Scene scene) {
         if (scene == null) {
             throw new IllegalArgumentException(
@@ -125,6 +166,11 @@ public class SceneManager {
         doLoadAdditive(scene);
     }
 
+    /**
+     * Unloads a scene synchronously.
+     *
+     * @param scene the scene to unload
+     */
     public void unloadImmediate(Scene scene) {
         doUnload(scene);
     }
@@ -156,10 +202,7 @@ public class SceneManager {
      * @throws org.chapzlock.core.asset.gltf.GltfLoadException if the file cannot be loaded or parsed
      */
     public GltfInstance loadGltf(String resourcePath) {
-        Log.debug("Loading glTF: " + resourcePath);
-        GltfAsset asset = context.getGltfAssetRegistry().getOrLoad(resourcePath);
-        GltfSceneInstantiator instantiator = new GltfSceneInstantiator(context);
-        return instantiator.instantiate(asset);
+        return instantiator.loadGltf(resourcePath);
     }
 
     /**
@@ -192,6 +235,11 @@ public class SceneManager {
 
     /**
      * Processes all queued scene transitions. Called by the main loop at end-of-frame.
+     *
+     * <p><strong>How it works:</strong> Transitions queued via {@link #load(Scene)},
+     * {@link #loadAdditive(Scene)}, and {@link #unload(Scene)} are stored in a FIFO queue.
+     * This method drains the queue, executing each transition in order. This ensures
+     * transitions happen at a safe point between frames, not mid-update.
      */
     public void processPendingTransitions() {
         while (!pendingTransitions.isEmpty()) {
@@ -216,7 +264,10 @@ public class SceneManager {
     /**
      * Returns all active systems (engine + scene systems), sorted by phase.
      *
-     * @return list of active systems
+     * <p>The result is cached and only rebuilt when scenes are loaded/unloaded.
+     * Engine systems always come before scene systems of the same phase.
+     *
+     * @return immutable list of active systems sorted by {@code SystemPhase} ordinal
      */
     public List<GameSystem> getActiveSystems() {
         if (activeSystemsDirty || cachedActiveSystems == null) {
@@ -225,13 +276,19 @@ public class SceneManager {
         return cachedActiveSystems;
     }
 
+    /**
+     * Unloads all scenes (primary and all additive).
+     *
+     * <p><strong>When to use:</strong> During application shutdown or when resetting
+     * the entire game state.
+     */
     public void unloadAll() {
         if (primaryScene != null) {
-            teardownScene(primaryScene);
+            doTeardown(primaryScene);
             primaryScene = null;
         }
         for (Scene scene : new ArrayList<>(additiveScenes)) {
-            teardownScene(scene);
+            doTeardown(scene);
         }
         additiveScenes.clear();
         activeSystemsDirty = true;
@@ -240,11 +297,11 @@ public class SceneManager {
     private void doLoad(Scene scene) {
         Log.debug("Loading scene \"" + scene.getName() + "\" (" + scene.getEntities().size() + " entities, " + scene.getSystems().size() + " systems)");
         if (primaryScene != null) {
-            teardownScene(primaryScene);
+            doTeardown(primaryScene);
             eventBus.publish(new SceneUnloadedEvent(primaryScene.getName()));
         }
         primaryScene = scene;
-        instantiateScene(scene);
+        doInstantiate(scene);
         eventBus.publish(new SceneLoadedEvent(scene.getName()));
         activeSystemsDirty = true;
     }
@@ -259,21 +316,21 @@ public class SceneManager {
             }
         }
         additiveScenes.add(scene);
-        instantiateScene(scene);
+        doInstantiate(scene);
         eventBus.publish(new SceneLoadedEvent(scene.getName()));
         activeSystemsDirty = true;
     }
 
     private void doUnload(Scene scene) {
         if (scene == primaryScene) {
-            teardownScene(scene);
+            doTeardown(scene);
             primaryScene = null;
             eventBus.publish(new SceneUnloadedEvent(scene.getName()));
             activeSystemsDirty = true;
             return;
         }
         if (additiveScenes.remove(scene)) {
-            teardownScene(scene);
+            doTeardown(scene);
             eventBus.publish(new SceneUnloadedEvent(scene.getName()));
             activeSystemsDirty = true;
         } else {
@@ -283,93 +340,30 @@ public class SceneManager {
         }
     }
 
-    private void instantiateScene(Scene scene) {
-        DescriptorResolver resolver = new DescriptorResolver(context);
-        List<Integer> entityIds = new ArrayList<>();
-        SceneAssets assets = new SceneAssets();
-
-        for (EntityBlueprint blueprint : scene.getEntities()) {
-            int entityId = Entity.create(registry);
-            try {
-                List<Component> resolved = resolver.resolve(blueprint);
-                for (Component component : resolved) {
-                    registry.addComponent(entityId, component);
-                    trackAsset(component, assets);
-                }
-                entityIds.add(entityId);
-
-                if (!blueprint.getName().startsWith("_")) {
-                    registry.addComponent(entityId, new Name(blueprint.getName()));
-                }
-
-                // If this entity has a glTF model path, instantiate the model as children.
-                // The glTF nodes become children of this entity, making it the "owner" of
-                // the model. Animation clips are attached to this entity for easy access.
-                if (blueprint.getGltfModelPath() != null) {
-                    GltfAsset modelAsset = context.getGltfAssetRegistry().getOrLoad(blueprint.getGltfModelPath());
-                    GltfSceneInstantiator instantiator = new GltfSceneInstantiator(context);
-                    GltfInstance modelInstance = instantiator.instantiateAsChild(modelAsset, entityId);
-                    for (int childId : modelInstance.allEntities().values()) {
-                        entityIds.add(childId);
-                    }
-                    if (!entityIds.contains(modelInstance.rootEntity())) {
-                        entityIds.add(modelInstance.rootEntity());
-                    }
-                }
-
-                Log.debug("  Entity \"" + blueprint.getName() + "\" created (id=" + entityId + ")");
-            } catch (Exception e) {
-                registry.destroyEntity(entityId);
-                Log.error("Scene \"" + scene.getName() + "\", entity \"" + blueprint.getName() +
-                    "\": Failed to instantiate. " + e.getMessage() +
-                    " Ensure asset files exist in src/main/resources/ and paths are relative to the resources root.");
-            }
-        }
-        retainAll(assets);
-        sceneEntities.put(scene, entityIds);
-        sceneAssets.put(scene, assets);
-
-        for (int entityId : entityIds) {
-            boolean hasMesh = registry.getComponent(entityId, Mesh.class) != null;
-            boolean hasTransform = registry.getComponent(entityId, Transform.class) != null;
-            boolean hasPhysicsBody = registry.getComponent(entityId, PhysicsBody.class) != null;
-
-            if (hasMesh && !hasTransform) {
-                Log.warn("Entity " + entityId + " has Mesh but no Transform — it won't be rendered.");
-            }
-            if (hasPhysicsBody && !hasTransform) {
-                Log.warn("Entity " + entityId + " has PhysicsBody but no Transform — physics registration will be skipped.");
-            }
-        }
-
-        List<GameSystem> systems = new ArrayList<>(scene.getSystems());
-        List<GameSystem> failedSystems = new ArrayList<>();
-        for (GameSystem system : systems) {
-            try {
-                system.onInit(context);
-            } catch (Exception e) {
-                Log.error("Scene \"" + scene.getName() + "\": " + system.getClass().getSimpleName() +
-                    ".onInit() threw exception. This system will be disabled. " +
-                    "Fix the error in onInit() and reload the scene. Error: " + e.getMessage());
-                failedSystems.add(system);
-            }
-        }
-        systems.removeAll(failedSystems);
-        sceneSystems.put(scene, systems);
+    /**
+     * Delegates to the instantiator and handles input map activation.
+     *
+     * <p>Input map activation is a lifecycle concern (it ties the scene's input bindings
+     * to the event bus), so it stays here in SceneManager rather than in SceneInstantiator.
+     */
+    private void doInstantiate(Scene scene) {
+        SceneInstance instance = instantiator.instantiate(scene);
+        loadedScenes.put(scene, instance);
 
         InputMap inputMap = scene.getInputMap();
         if (inputMap != null) {
             inputMap.activate(eventBus);
             context.setActiveInputMap(inputMap);
         }
-
-        if (scene.getEntities().isEmpty()) {
-            Log.warn("Scene \"" + scene.getName() + "\" has no entities. " +
-                "Did you forget to add .entity() calls to the builder?");
-        }
     }
 
-    private void teardownScene(Scene scene) {
+    /**
+     * Handles input map deactivation and delegates teardown to the instantiator.
+     *
+     * <p>Input map deactivation must happen before entity destruction, since input
+     * handlers may reference entities that are about to be destroyed.
+     */
+    private void doTeardown(Scene scene) {
         Log.debug("Tearing down scene \"" + scene.getName() + "\"");
         InputMap inputMap = scene.getInputMap();
         if (inputMap != null) {
@@ -379,73 +373,25 @@ public class SceneManager {
             }
         }
 
-        List<GameSystem> systems = sceneSystems.remove(scene);
-        if (systems != null) {
-            systems.forEach(GameSystem::onDestroy);
-        }
-
-        List<Integer> entityIds = sceneEntities.remove(scene);
-        if (entityIds != null) {
-            for (int entityId : entityIds) {
-                registry.destroyEntity(entityId);
-            }
-        }
-
-        SceneAssets assets = sceneAssets.remove(scene);
-        if (assets != null) {
-            releaseAll(assets);
+        SceneInstance instance = loadedScenes.remove(scene);
+        if (instance != null) {
+            instantiator.teardown(instance);
         }
     }
 
+    /**
+     * Rebuilds the cached active systems list from engine systems + all loaded scene systems.
+     *
+     * <p>Systems are sorted by their {@code SystemPhase} ordinal, ensuring INPUT systems
+     * run before LOGIC, which runs before PHYSICS, which runs before RENDER.
+     */
     private void rebuildActiveSystemsList() {
         List<GameSystem> all = new ArrayList<>(engineSystems);
-        for (List<GameSystem> systems : sceneSystems.values()) {
-            all.addAll(systems);
+        for (SceneInstance instance : loadedScenes.values()) {
+            all.addAll(instance.systems());
         }
         all.sort(Comparator.comparingInt(s -> s.phase().ordinal()));
         cachedActiveSystems = List.copyOf(all);
         activeSystemsDirty = false;
-    }
-
-    private void trackAsset(Component component, SceneAssets assets) {
-        if (component instanceof Mesh mesh) {
-            assets.meshIds.add(mesh.getId());
-        } else if (component instanceof SpriteMaterial spriteMaterial) {
-            if (spriteMaterial.texture() != null) {
-                assets.textureIds.add(spriteMaterial.texture().getId());
-            }
-        }
-    }
-
-    private void retainAll(SceneAssets assets) {
-        if (context.getMeshSystem() == null) return;
-        for (int id : assets.meshIds) {
-            context.getMeshSystem().retain(id);
-        }
-        for (int id : assets.textureIds) {
-            context.getTextureSystem().retain(id);
-        }
-        for (int id : assets.shaderProgramIds) {
-            context.getShaderSystem().retain(id);
-        }
-    }
-
-    private void releaseAll(SceneAssets assets) {
-        if (context.getMeshSystem() == null) return;
-        for (int id : assets.meshIds) {
-            context.getMeshSystem().release(id);
-        }
-        for (int id : assets.textureIds) {
-            context.getTextureSystem().release(id);
-        }
-        for (int id : assets.shaderProgramIds) {
-            context.getShaderSystem().release(id);
-        }
-    }
-
-    private static class SceneAssets {
-        final List<Integer> meshIds = new ArrayList<>();
-        final List<Integer> textureIds = new ArrayList<>();
-        final List<Integer> shaderProgramIds = new ArrayList<>();
     }
 }

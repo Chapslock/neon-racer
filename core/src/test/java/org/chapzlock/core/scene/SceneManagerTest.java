@@ -234,6 +234,7 @@ class SceneManagerTest {
 
         Scene scene = new Scene("asset-test", List.of(
             new EntityBlueprintBuilder("entity")
+                .transform(Transform.at(0, 0, 0))
                 .component(fakeMesh, new SpriteMaterial(fakeTexture))
                 .build()
         ), List.of(), null);
