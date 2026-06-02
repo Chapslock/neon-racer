@@ -197,6 +197,48 @@ public class ComponentRegistry {
     }
 
     /**
+     * Adds multiple components to an entity without firing any events.
+     *
+     * <p>Use this for atomic entity assembly where all components must be in place before
+     * systems are notified. After calling this, fire events explicitly (e.g. via
+     * {@link #publishEvent(Event)}) once the entity is fully assembled.
+     *
+     * <p>Components are stored, bitset masks are updated, and query caches are invalidated,
+     * but no {@link ComponentAddedEvent} is published. This guarantees that systems only see
+     * fully-assembled entities when events are eventually fired.
+     *
+     * @param entityId   the entity to add components to
+     * @param components the components to add
+     */
+    @SuppressWarnings("unchecked")
+    public void addComponentsSilent(int entityId, List<? extends Component> components) {
+        if (!entityExists(entityId)) {
+            Log.warn("ComponentRegistry", "Attempted to silently add components to non-existent entity " +
+                entityId + ". Ignoring. Ensure the entity was created via Entity.create() and " +
+                "has not been destroyed.");
+            return;
+        }
+        BitSet mask = entityComponentMasks.computeIfAbsent(entityId, e -> new BitSet());
+        for (Component component : components) {
+            int typeId = getOrRegisterTypeId(component.getClass());
+            ComponentStore<Component> store = (ComponentStore<Component>) stores.get(typeId);
+            store.put(entityId, component);
+            mask.set(typeId);
+            if (component instanceof Name nameComp) {
+                String nameValue = nameComp.getValue();
+                if (nameIndex.containsKey(nameValue)) {
+                    Log.debug("ComponentRegistry", "Name \"" + nameValue + "\" already in use by entity " +
+                        nameIndex.get(nameValue) + " — overwriting with entity " + entityId);
+                }
+                nameIndex.put(nameValue, entityId);
+            }
+        }
+        for (Component component : components) {
+            invalidateCachesForType(getOrRegisterTypeId(component.getClass()));
+        }
+    }
+
+    /**
      * Retrieves a component from an entity.
      */
     @SuppressWarnings("unchecked")

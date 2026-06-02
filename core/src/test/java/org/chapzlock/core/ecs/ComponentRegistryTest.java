@@ -135,4 +135,71 @@ class ComponentRegistryTest {
 
         assertTrue(events.isEmpty());
     }
+
+    @Test
+    void addComponentsSilent_addsComponentsWithoutFiringEvents() {
+        List<ComponentAddedEvent> events = new ArrayList<>();
+        subscriptions.add(eventBus.subscribe(ComponentAddedEvent.class, event -> {
+            events.add(event);
+            return false;
+        }));
+
+        int entityId = Entity.create(registry);
+        registry.addComponentsSilent(entityId, List.of(
+            new PositionComponent(10, 20),
+            new VelocityComponent(1, 2)
+        ));
+
+        assertEquals(0, events.size(), "No ComponentAddedEvent should be fired by addComponentsSilent");
+
+        PositionComponent pos = registry.getComponent(entityId, PositionComponent.class);
+        assertNotNull(pos, "PositionComponent should be retrievable after silent add");
+        assertEquals(10, pos.x());
+        assertEquals(20, pos.y());
+
+        VelocityComponent vel = registry.getComponent(entityId, VelocityComponent.class);
+        assertNotNull(vel, "VelocityComponent should be retrievable after silent add");
+        assertEquals(1, vel.dx());
+        assertEquals(2, vel.dy());
+
+        registry.destroyEntity(entityId);
+    }
+
+    @Test
+    void addComponentsSilent_invalidatesQueryCache() {
+        int existingEntity = Entity.create(registry);
+        registry.addComponent(existingEntity, new PositionComponent(0, 0));
+
+        // Prime the query cache by running a forEach
+        List<Integer> foundBefore = new ArrayList<>();
+        registry.forEach(PositionComponent.class, (entityId, pos) -> foundBefore.add(entityId));
+        assertEquals(1, foundBefore.size());
+
+        // Now add a component silently to a new entity
+        int newEntity = Entity.create(registry);
+        registry.addComponentsSilent(newEntity, List.of(new PositionComponent(5, 5)));
+
+        // The query should now find both entities (cache was invalidated)
+        List<Integer> foundAfter = new ArrayList<>();
+        registry.forEach(PositionComponent.class, (entityId, pos) -> foundAfter.add(entityId));
+        assertEquals(2, foundAfter.size(), "Query cache should be invalidated so new entity is found");
+
+        registry.destroyEntity(existingEntity);
+        registry.destroyEntity(newEntity);
+    }
+
+    @Test
+    void addComponentsSilent_warnsAndReturnsEarlyForNonExistentEntity() {
+        List<ComponentAddedEvent> events = new ArrayList<>();
+        subscriptions.add(eventBus.subscribe(ComponentAddedEvent.class, event -> {
+            events.add(event);
+            return false;
+        }));
+
+        // Should not throw, just warn and return
+        registry.addComponentsSilent(99999, List.of(new PositionComponent(1, 1)));
+
+        assertEquals(0, events.size());
+        assertNull(registry.getComponent(99999, PositionComponent.class));
+    }
 }
