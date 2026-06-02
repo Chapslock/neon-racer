@@ -2,12 +2,14 @@ package org.chapzlock.core.physics;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
+import java.util.List;
 
 import javax.vecmath.Quat4f;
 import javax.vecmath.Vector3f;
 
 import org.chapzlock.core.application.Disposable;
 import org.chapzlock.core.asset.RawMeshData;
+import org.chapzlock.core.component.Hierarchy;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.Transform;
@@ -132,7 +134,7 @@ class PhysicsWorld implements Disposable {
                 continue;
             }
 
-            RawMeshData meshData = resolveMeshData(entityId, registry);
+            RawMeshData meshData = resolveMeshData(entityId, registry, meshSystem);
             CollisionShape shape = shapeResolver.resolve(config.getGeometry(), meshData);
 
             RigidBody body = createRigidBody(config, shape, transform);
@@ -281,10 +283,46 @@ class PhysicsWorld implements Disposable {
         return body;
     }
 
-    private RawMeshData resolveMeshData(int entityId, ComponentRegistry registry) {
+    /**
+     * Resolves mesh data for an entity, traversing child entities if needed.
+     *
+     * <p>When a glTF model is loaded, the parent entity gets a PhysicsBody but no Mesh component.
+     * The actual mesh data lives on child entities linked via the Hierarchy component. This method
+     * first checks the entity's own Mesh, then falls back to merging child meshes.
+     *
+     * @param entityId   the entity to resolve mesh data for
+     * @param registry   the component registry to query
+     * @param meshSystem the mesh system that holds raw mesh data (may be null in headless mode)
+     * @return the resolved mesh data, or null if no mesh data is available
+     */
+    static RawMeshData resolveMeshData(int entityId, ComponentRegistry registry, MeshSystem meshSystem) {
         if (meshSystem == null) return null;
+
+        // 1. Check entity's own mesh
         Mesh mesh = registry.getComponent(entityId, Mesh.class);
-        if (mesh == null) return null;
-        return meshSystem.getRawMeshById(mesh.getId());
+        if (mesh != null) {
+            return meshSystem.getRawMeshById(mesh.getId());
+        }
+
+        // 2. Traverse child entities via Hierarchy
+        Hierarchy hierarchy = registry.getComponent(entityId, Hierarchy.class);
+        if (hierarchy == null || hierarchy.getChildCount() == 0) return null;
+
+        List<RawMeshData> childMeshes = new ArrayList<>();
+        int[] children = hierarchy.getChildren();
+        for (int i = 0; i < children.length; i++) {
+            int childId = children[i];
+            Mesh childMesh = registry.getComponent(childId, Mesh.class);
+            if (childMesh != null) {
+                RawMeshData data = meshSystem.getRawMeshById(childMesh.getId());
+                if (data != null) {
+                    childMeshes.add(data);
+                }
+            }
+        }
+
+        if (childMeshes.isEmpty()) return null;
+        if (childMeshes.size() == 1) return childMeshes.get(0);
+        return RawMeshData.merge(childMeshes);
     }
 }
