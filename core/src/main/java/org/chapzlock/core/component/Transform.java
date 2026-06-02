@@ -1,303 +1,251 @@
 package org.chapzlock.core.component;
 
-
 import org.chapzlock.core.ecs.Component;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
-
 /**
- * Position, rotation, and scale of an entity.
+ * Position, rotation, and scale of an entity in local space, plus its computed world matrix.
+ *
+ * <p>Local-space data (position, rotation, scale) is set by game code. The world matrix
+ * is computed by {@link org.chapzlock.core.render.TransformSystem} each frame for entities
+ * in a hierarchy. For standalone entities (no hierarchy), {@link #getWorldMatrix()} returns
+ * the local matrix directly with zero overhead.
  *
  * <p>Rotation is stored in both Euler angles (degrees, for gameplay code) and quaternion
  * (for engine/physics). Synchronization is lazy — converting only when the other
  * representation is accessed.
- *
- * <p>Use {@code getRotationEuler()} and {@code setRotationEuler()} for gameplay code.
- * The quaternion is used internally by physics and rendering.
  */
-@Getter
-@Setter
-@NoArgsConstructor
 public class Transform implements Component {
-    /**
-     * position in world space
-     */
+
     private final Vector3f position = new Vector3f(0, 0, 0);
-
-    /**
-     * Euler rotation stored in degrees (order: X -> Y -> Z)
-     * This is what gameplay code will typically use via set/getRotationEuler(...)
-     */
+    private final Vector3f scale = new Vector3f(1, 1, 1);
     private final Vector3f rotationEuler = new Vector3f(0, 0, 0);
-
-    /**
-     * Quaternion representation (JOML) used for math/physics
-     */
     private final Quaternionf rotationQuat = new Quaternionf().identity();
-    /**
-     * Cached transformation matrix reused to avoid allocations
-     */
-    private final Matrix4f transformationMatrix = new Matrix4f();
-    /**
-     * Uniform scale
-     */
-    private float scale = 1.0f;
-    /* Dirty flags to avoid redundant conversions / matrix recalculation */
-    private boolean matrixDirty = true;
-    private boolean quatDirty = false;   // true: quaternion is out of date with rotationEuler
-    private boolean eulerDirty = false;  // true: euler is out of date with rotationQuat
 
-    /* --- constructors --- */
+    private final Matrix4f localMatrix = new Matrix4f();
+    private final Matrix4f worldMatrix = new Matrix4f();
+
+    private boolean localDirty = true;
+    private boolean quatDirty = false;
+    private boolean eulerDirty = false;
+    private boolean inHierarchy = false;
+
+    public Transform() {}
+
     public Transform(Vector3f position) {
         this.position.set(position);
-        markMatrixDirty();
     }
 
-    public Transform(Vector3f position, Vector3f rotationEuler) {
+    public Transform(Vector3f position, Vector3f rotationEulerDeg) {
         this.position.set(position);
-        this.rotationEuler.set(rotationEuler);
-        this.quatFromEuler(); // build quaternion from euler immediately
-        markMatrixDirty();
+        this.rotationEuler.set(rotationEulerDeg);
+        quatFromEuler();
     }
 
-    public Transform(Vector3f position, Vector3f rotationEuler, float scale) {
+    public Transform(Vector3f position, Vector3f rotationEulerDeg, float uniformScale) {
         this.position.set(position);
-        this.rotationEuler.set(rotationEuler);
-        this.scale = scale;
-        this.quatFromEuler();
-        markMatrixDirty();
+        this.rotationEuler.set(rotationEulerDeg);
+        this.scale.set(uniformScale, uniformScale, uniformScale);
+        quatFromEuler();
     }
 
-    /* --- static factory methods --- */
+    public Transform(Vector3f position, Vector3f rotationEulerDeg, Vector3f scale) {
+        this.position.set(position);
+        this.rotationEuler.set(rotationEulerDeg);
+        this.scale.set(scale);
+        quatFromEuler();
+    }
 
-    /** Creates a Transform with initial position. */
+    // --- Factory methods ---
+
     public static Transform at(float x, float y, float z) {
         return new Transform(new Vector3f(x, y, z));
     }
 
-    /** Creates a Transform with initial position and euler rotation (degrees). */
     public static Transform at(float x, float y, float z, float rotX, float rotY, float rotZ) {
         return new Transform(new Vector3f(x, y, z), new Vector3f(rotX, rotY, rotZ));
     }
 
-    /** Creates a Transform with initial position, euler rotation, and uniform scale. */
-    public static Transform at(float x, float y, float z, float rotX, float rotY, float rotZ, float scale) {
-        return new Transform(new Vector3f(x, y, z), new Vector3f(rotX, rotY, rotZ), scale);
+    public static Transform at(float x, float y, float z, float rotX, float rotY, float rotZ, float uniformScale) {
+        return new Transform(new Vector3f(x, y, z), new Vector3f(rotX, rotY, rotZ), uniformScale);
     }
 
-    /* --- helpers to mark dirty --- */
-    private void markMatrixDirty() {
-        this.matrixDirty = true;
+    public static Transform at(float x, float y, float z, float rotX, float rotY, float rotZ, float sx, float sy, float sz) {
+        return new Transform(new Vector3f(x, y, z), new Vector3f(rotX, rotY, rotZ), new Vector3f(sx, sy, sz));
     }
 
-    /**
-     * Convert rotationEuler (degrees) -> rotationQuat (radians, order X then Y then Z)
-     */
-    private void quatFromEuler() {
-        // Convert degrees to radians
-        float rx = (float) Math.toRadians(this.rotationEuler.x);
-        float ry = (float) Math.toRadians(this.rotationEuler.y);
-        float rz = (float) Math.toRadians(this.rotationEuler.z);
+    // --- Position ---
 
-        // Build quaternion with the same rotation order used in earlier code (X -> Y -> Z)
-        // We reset to identity then rotate X then Y then Z to match matrix.rotateX().rotateY().rotateZ()
-        this.rotationQuat.identity()
-            .rotateX(rx)
-            .rotateY(ry)
-            .rotateZ(rz);
-
-        this.quatDirty = false;
-        this.eulerDirty = false;
+    public void getPosition(Vector3f dest) {
+        dest.set(position);
     }
 
-    private void markQuatDirty() {
-        this.quatDirty = true;
-        this.eulerDirty = false; // we consider euler authoritative until quaternion read
-    }
+    public float getX() { return position.x; }
+    public float getY() { return position.y; }
+    public float getZ() { return position.z; }
 
-    private void markEulerDirty() {
-        this.eulerDirty = true;
-        this.quatDirty = false;  // quaternion authoritative until euler read
-    }
-
-    /* --- Euler rotation API (degrees) --- */
-
-    /* --- position setters --- */
     public void setPosition(float x, float y, float z) {
-        this.position.set(x, y, z);
-        markMatrixDirty();
+        position.set(x, y, z);
+        localDirty = true;
     }
 
-    public void setPosition(Vector3f newPos) {
-        this.position.set(newPos);
-        markMatrixDirty();
+    public void setPosition(Vector3f pos) {
+        position.set(pos);
+        localDirty = true;
     }
 
-    /**
-     * Set rotation using Euler angles in degrees (X, Y, Z). This will mark the quaternion
-     * out of date and only update it when the quaternion is requested.
-     */
-    public void setRotationEuler(float xDeg, float yDeg, float zDeg) {
-        this.rotationEuler.set(xDeg, yDeg, zDeg);
-        this.quatDirty = true;
-        this.eulerDirty = false;
-        markMatrixDirty();
+    // --- Scale (non-uniform) ---
+
+    public void getScale(Vector3f dest) {
+        dest.set(scale);
     }
 
-    /* --- Quaternion API --- */
+    public void setScale(float x, float y, float z) {
+        scale.set(x, y, z);
+        localDirty = true;
+    }
 
-    /**
-     * Get Euler angles in degrees. If the euler vector is stale (because quaternion was changed),
-     * convert lazily.
-     */
-    public Vector3f getRotationEuler() {
-        if (this.eulerDirty) {
-            this.eulerFromQuat();
+    public void setScale(float uniform) {
+        scale.set(uniform, uniform, uniform);
+        localDirty = true;
+    }
+
+    // --- Rotation: Euler (degrees) ---
+
+    public void getRotationEuler(Vector3f dest) {
+        if (eulerDirty) {
+            eulerFromQuat();
         }
-        return this.rotationEuler;
+        dest.set(rotationEuler);
     }
 
-    public void setRotationEuler(Vector3f eulerDegrees) {
-        this.rotationEuler.set(eulerDegrees);
-        this.quatDirty = true;
-        this.eulerDirty = false;
-        markMatrixDirty();
+    public void setRotationEuler(float xDeg, float yDeg, float zDeg) {
+        rotationEuler.set(xDeg, yDeg, zDeg);
+        quatDirty = true;
+        eulerDirty = false;
+        localDirty = true;
     }
 
-    /* --- conversions (lazy) --- */
+    // --- Rotation: Quaternion ---
+
+    public void getRotationQuaternion(Quaternionf dest) {
+        if (quatDirty) {
+            quatFromEuler();
+        }
+        dest.set(rotationQuat);
+    }
+
+    public void setRotationQuaternion(Quaternionf q) {
+        rotationQuat.set(q);
+        eulerDirty = true;
+        quatDirty = false;
+        localDirty = true;
+    }
+
+    // --- Matrices ---
+
+    public Matrix4f getLocalMatrix() {
+        if (localDirty) {
+            recomputeLocalMatrix();
+        }
+        return localMatrix;
+    }
+
+    public Matrix4f getWorldMatrix() {
+        if (!inHierarchy) {
+            return getLocalMatrix();
+        }
+        return worldMatrix;
+    }
+
+    // --- Hierarchy flag (set by TransformSystem) ---
+
+    public boolean isInHierarchy() {
+        return inHierarchy;
+    }
+
+    public void setInHierarchy(boolean inHierarchy) {
+        this.inHierarchy = inHierarchy;
+    }
+
+    // --- Deprecated shims (removed in subsequent tasks) ---
 
     /**
-     * Convert rotationQuat -> rotationEuler (degrees), using Tait-Bryan angles X (pitch), Y (yaw), Z (roll)
-     * Formula:
-     * X = atan2(2*(w*x + y*z), 1 - 2*(x*x + y*y))
-     * Y = asin( clamp(2*(w*y - z*x), -1, 1) )
-     * Z = atan2(2*(w*z + x*y), 1 - 2*(y*y + z*z))
-     * <p>
-     * This produces the Euler angles in radians for order X->Y->Z and we convert to degrees.
+     * @deprecated Use {@link #getPosition(Vector3f)} instead. This leaks mutable internal state.
      */
-    private void eulerFromQuat() {
-        float x = rotationQuat.x;
-        float y = rotationQuat.y;
-        float z = rotationQuat.z;
-        float w = rotationQuat.w;
+    @Deprecated
+    public Vector3f getPosition() {
+        return position;
+    }
 
+    /**
+     * @deprecated Use {@link #getRotationQuaternion(Quaternionf)} instead. This leaks mutable internal state.
+     */
+    @Deprecated
+    public Quaternionf getRotationQuaternion() {
+        if (quatDirty) {
+            quatFromEuler();
+        }
+        return rotationQuat;
+    }
+
+    /**
+     * @deprecated Use {@link #getScale(Vector3f)} instead. Returns x-component only (assumes uniform).
+     */
+    @Deprecated
+    public float getScale() {
+        return scale.x;
+    }
+
+    /**
+     * @deprecated Use {@link #getLocalMatrix()} instead.
+     */
+    @Deprecated
+    public Matrix4f getTransformationMatrix() {
+        return getLocalMatrix();
+    }
+
+    // --- Internal ---
+
+    private void recomputeLocalMatrix() {
+        if (quatDirty) {
+            quatFromEuler();
+        }
+        localMatrix.identity()
+            .translate(position)
+            .rotate(rotationQuat)
+            .scale(scale);
+        localDirty = false;
+    }
+
+    private void quatFromEuler() {
+        float rx = (float) Math.toRadians(rotationEuler.x);
+        float ry = (float) Math.toRadians(rotationEuler.y);
+        float rz = (float) Math.toRadians(rotationEuler.z);
+        rotationQuat.identity().rotateX(rx).rotateY(ry).rotateZ(rz);
+        quatDirty = false;
+    }
+
+    private void eulerFromQuat() {
+        float x = rotationQuat.x, y = rotationQuat.y, z = rotationQuat.z, w = rotationQuat.w;
         double t0 = 2.0 * (w * x + y * z);
         double t1 = 1.0 - 2.0 * (x * x + y * y);
         double rx = Math.atan2(t0, t1);
 
-        double t2 = 2.0 * (w * y - z * x);
-        t2 = Math.max(-1.0, Math.min(1.0, t2));
+        double t2 = Math.max(-1.0, Math.min(1.0, 2.0 * (w * y - z * x)));
         double ry = Math.asin(t2);
 
         double t3 = 2.0 * (w * z + x * y);
         double t4 = 1.0 - 2.0 * (y * y + z * z);
         double rz = Math.atan2(t3, t4);
 
-        // convert to degrees and store
-        this.rotationEuler.set(
+        rotationEuler.set(
             (float) Math.toDegrees(rx),
             (float) Math.toDegrees(ry),
             (float) Math.toDegrees(rz)
         );
-
-        this.eulerDirty = false;
-        this.quatDirty = false;
-    }
-
-    /**
-     * Get the rotation quaternion. If quaternion is stale (because Euler was changed),
-     * convert lazily.
-     */
-    public Quaternionf getRotationQuaternion() {
-        if (this.quatDirty) {
-            this.quatFromEuler();
-        }
-        return this.rotationQuat;
-    }
-
-    /* --- transformation matrix (cached) --- */
-
-    /**
-     * Set rotation using a JOML Quaternionf (assumed normalized). Marks Euler dirty.
-     */
-    public void setRotationQuaternion(Quaternionf q) {
-        this.rotationQuat.set(q);
-        this.eulerDirty = true;
-        this.quatDirty = false;
-        markMatrixDirty();
-    }
-
-    /* --- direction helpers (re-use vectors to avoid allocations) --- */
-
-    /**
-     * Returns cached transformation matrix. Recomputes only when necessary.
-     * Order is: translate -> rotate (via quaternion) -> scale.
-     */
-    public Matrix4f getTransformationMatrix() {
-        if (this.matrixDirty) {
-            // Start fresh
-            this.transformationMatrix.identity();
-
-            // translate
-            this.transformationMatrix.translate(this.position);
-
-            // ensure quaternion up-to-date
-            if (this.quatDirty) {
-                this.quatFromEuler();
-            }
-            this.transformationMatrix.rotate(this.rotationQuat);
-
-            // scale
-            this.transformationMatrix.scale(this.scale);
-
-            this.matrixDirty = false;
-        }
-        return this.transformationMatrix;
-    }
-
-    /**
-     * Forward vector in world space (canonical forward is +Z).
-     * Writes result into dest and returns it.
-     */
-    public Vector3f getForwardVector(Vector3f dest) {
-        dest.set(0, 0, 1);
-        if (this.quatDirty) {
-            this.quatFromEuler();
-        }
-        this.rotationQuat.transform(dest);
-        return dest.normalize();
-    }
-
-    /**
-     * Forward vector in world space (canonical forward is +Z).
-     */
-    public Vector3f getForwardVector() {
-        return getForwardVector(new Vector3f());
-    }
-
-    /**
-     * Right vector in world space (canonical right is +X).
-     * Writes result into dest and returns it.
-     */
-    public Vector3f getRightVector(Vector3f dest) {
-        dest.set(1, 0, 0);
-        if (this.quatDirty) {
-            this.quatFromEuler();
-        }
-        this.rotationQuat.transform(dest);
-        return dest.normalize();
-    }
-
-    /**
-     * Right vector in world space (canonical right is +X).
-     */
-    public Vector3f getRightVector() {
-        return getRightVector(new Vector3f());
+        eulerDirty = false;
     }
 }
