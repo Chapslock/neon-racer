@@ -226,9 +226,9 @@ class GltfModelBlueprintTest {
         int childEntity = instance.entity("Positioned");
         Transform childTransform = registry.getComponent(childEntity, Transform.class);
         assertNotNull(childTransform);
-        assertEquals(expectedPos.x, childTransform.getPosition().x, 0.001f);
-        assertEquals(expectedPos.y, childTransform.getPosition().y, 0.001f);
-        assertEquals(expectedPos.z, childTransform.getPosition().z, 0.001f);
+        assertEquals(expectedPos.x, childTransform.getX(), 0.001f);
+        assertEquals(expectedPos.y, childTransform.getY(), 0.001f);
+        assertEquals(expectedPos.z, childTransform.getZ(), 0.001f);
 
     }
 }

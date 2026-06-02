@@ -83,8 +83,10 @@ public class RenderContext {
         }
         registry.forEach(PointLight.class, Transform.class, (entityId, light, transform) -> {
             if (pointLights.size() < PointLight.MAX_COUNT) {
+                Vector3f pos = new Vector3f();
+                transform.getPosition(pos);
                 pointLights.add(new PointLightInstance(
-                    transform.getPosition(), light.getColor(), light.getAttenuation()));
+                    pos, light.getColor(), light.getAttenuation()));
             }
         });
 

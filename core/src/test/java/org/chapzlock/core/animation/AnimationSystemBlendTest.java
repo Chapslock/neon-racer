@@ -56,9 +56,9 @@ class AnimationSystemBlendTest {
         // Blended: lerp(0, 12.5, 0.5) = 6.25
         system.onUpdate(0.5f);
 
-        assertEquals(6.25f, transform.getPosition().x, 0.1f);
-        assertEquals(6.25f, transform.getPosition().y, 0.1f);
-        assertEquals(6.25f, transform.getPosition().z, 0.1f);
+        assertEquals(6.25f, transform.getX(), 0.1f);
+        assertEquals(6.25f, transform.getY(), 0.1f);
+        assertEquals(6.25f, transform.getZ(), 0.1f);
         assertTrue(state.isBlending());
     }
 
@@ -88,6 +88,6 @@ class AnimationSystemBlendTest {
         assertFalse(state.isBlending());
         assertNull(state.getPreviousAnimation());
         // Should now be purely clip B: (10,10,10)
-        assertEquals(10f, transform.getPosition().x, 0.1f);
+        assertEquals(10f, transform.getX(), 0.1f);
     }
 }

@@ -62,9 +62,9 @@ class GltfSceneInstantiatorTest {
         int rootId = instance.entity("Root");
         Transform rootTransform = registry.getComponent(rootId, Transform.class);
         assertNotNull(rootTransform);
-        assertEquals(1f, rootTransform.getPosition().x, 0.001f);
-        assertEquals(2f, rootTransform.getPosition().y, 0.001f);
-        assertEquals(3f, rootTransform.getPosition().z, 0.001f);
+        assertEquals(1f, rootTransform.getX(), 0.001f);
+        assertEquals(2f, rootTransform.getY(), 0.001f);
+        assertEquals(3f, rootTransform.getZ(), 0.001f);
 
         // Verify hierarchy: root has no parent and has the child
         Hierarchy rootH = registry.getComponent(rootId, Hierarchy.class);
@@ -139,7 +139,8 @@ class GltfSceneInstantiatorTest {
 
         int nodeId = instance.entity("Rotated");
         Transform transform = registry.getComponent(nodeId, Transform.class);
-        Quaternionf resultQuat = transform.getRotationQuaternion();
+        Quaternionf resultQuat = new Quaternionf();
+        transform.getRotationQuaternion(resultQuat);
 
         // Verify the quaternion matches (approximately)
         assertEquals(rotation.x, resultQuat.x, 0.001f);

@@ -6,6 +6,7 @@ import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.Entity;
 import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -45,9 +46,9 @@ class AnimationSystemTest {
 
         system.onUpdate(0.5f);
 
-        assertEquals(5f, transform.getPosition().x, 0.001f);
-        assertEquals(10f, transform.getPosition().y, 0.001f);
-        assertEquals(15f, transform.getPosition().z, 0.001f);
+        assertEquals(5f, transform.getX(), 0.001f);
+        assertEquals(10f, transform.getY(), 0.001f);
+        assertEquals(15f, transform.getZ(), 0.001f);
     }
 
     @Test
@@ -68,9 +69,9 @@ class AnimationSystemTest {
 
         system.onUpdate(0.5f);
 
-        assertEquals(0f, transform.getPosition().x, 0.001f);
-        assertEquals(0f, transform.getPosition().y, 0.001f);
-        assertEquals(0f, transform.getPosition().z, 0.001f);
+        assertEquals(0f, transform.getX(), 0.001f);
+        assertEquals(0f, transform.getY(), 0.001f);
+        assertEquals(0f, transform.getZ(), 0.001f);
     }
 
     @Test
@@ -96,7 +97,7 @@ class AnimationSystemTest {
 
         assertEquals(0.5f, state.getTime(), 0.001f);
         // At t=0.5 out of 2.0 duration -> 25% through -> x=5
-        assertEquals(5f, transform.getPosition().x, 0.001f);
+        assertEquals(5f, transform.getX(), 0.001f);
     }
 
     @Test
@@ -121,7 +122,7 @@ class AnimationSystemTest {
 
         assertEquals(1.0f, state.getTime(), 0.001f);
         // At t=1.0 (last keyframe) -> x=10
-        assertEquals(10f, transform.getPosition().x, 0.001f);
+        assertEquals(10f, transform.getX(), 0.001f);
     }
 
     @Test
@@ -147,7 +148,8 @@ class AnimationSystemTest {
 
         // At midpoint, should be roughly 45-degree Y rotation
         Quaternionf expected = new Quaternionf().rotationY((float) Math.toRadians(45));
-        Quaternionf actual = transform.getRotationQuaternion();
+        Quaternionf actual = new Quaternionf();
+        transform.getRotationQuaternion(actual);
         assertEquals(expected.x, actual.x, 0.01f);
         assertEquals(expected.y, actual.y, 0.01f);
         assertEquals(expected.z, actual.z, 0.01f);
@@ -173,7 +175,9 @@ class AnimationSystemTest {
         system.onUpdate(0.5f);
 
         // Midpoint: scale x = lerp(1, 3, 0.5) = 2.0
-        assertEquals(2f, transform.getScale(), 0.001f);
+        Vector3f scale = new Vector3f();
+        transform.getScale(scale);
+        assertEquals(2f, scale.x, 0.001f);
     }
 
     @Test

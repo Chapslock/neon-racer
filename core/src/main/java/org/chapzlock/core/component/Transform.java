@@ -172,41 +172,6 @@ public class Transform implements Component {
 
     // --- Deprecated shims (removed in subsequent tasks) ---
 
-    /**
-     * @deprecated Use {@link #getPosition(Vector3f)} instead. This leaks mutable internal state.
-     */
-    @Deprecated
-    public Vector3f getPosition() {
-        return position;
-    }
-
-    /**
-     * @deprecated Use {@link #getRotationQuaternion(Quaternionf)} instead. This leaks mutable internal state.
-     */
-    @Deprecated
-    public Quaternionf getRotationQuaternion() {
-        if (quatDirty) {
-            quatFromEuler();
-        }
-        return rotationQuat;
-    }
-
-    /**
-     * @deprecated Use {@link #getScale(Vector3f)} instead. Returns x-component only (assumes uniform).
-     */
-    @Deprecated
-    public float getScale() {
-        return scale.x;
-    }
-
-    /**
-     * @deprecated Use {@link #getLocalMatrix()} instead.
-     */
-    @Deprecated
-    public Matrix4f getTransformationMatrix() {
-        return getLocalMatrix();
-    }
-
     // --- Internal ---
 
     private void recomputeLocalMatrix() {
