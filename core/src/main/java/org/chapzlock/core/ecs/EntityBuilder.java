@@ -212,6 +212,29 @@ public class EntityBuilder {
     }
 
     /**
+     * Spawns a live entity into the world using the linked {@link EntitySystem}.
+     *
+     * <p>This is the terminal operation for runtime entity creation. It builds the blueprint
+     * from the current builder state, then passes it through the EntitySystem's phased
+     * assembly pipeline (resolve, validate, commit).
+     *
+     * <p>Requires that this builder was created via {@link EntitySystem#builder(String)}.
+     * Builders created directly (e.g., for scene declarations) do not have an EntitySystem
+     * linked and should use {@link #build()} instead.
+     *
+     * @return the new entity ID, or -1 if validation failed
+     * @throws IllegalStateException if no EntitySystem is linked to this builder
+     */
+    public int instantiate() {
+        if (entitySystem == null) {
+            throw new IllegalStateException(
+                "Cannot call instantiate() without an EntitySystem. " +
+                "Use EntitySystem.builder() for runtime spawning, or call build() for scene declarations.");
+        }
+        return entitySystem.instantiate(build());
+    }
+
+    /**
      * Package-private setter for the EntitySystem reference.
      *
      * <p>Called by EntitySystem when creating builders, enabling the {@code instantiate()}
