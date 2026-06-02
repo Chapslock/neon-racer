@@ -22,142 +22,126 @@ neon-racer/
 
 ## Engine Architecture
 
-### Core Systems Overview
+### Core Systems
 
-```
-+-------------------+       +------------------+
-|   Application     |------>|  EngineContext   |
-| (creates & runs)  |       | (holds all subs) |
-+-------------------+       +--------+---------+
-                                     |
-         +-------+-------+-------+--+--+-------+-------+-------+
-         |       |       |       |     |       |       |       |
-         v       v       v       v     v       v       v       v
-     +------+ +-----+ +------+ +---+ +----+ +-----+ +-----+ +----+
-     |Comp  | |Event| |Mesh  | |Tex| |Shdr| |Cam  | |Scene| |Win |
-     |Regis | |Bus  | |Sys   | |Sys| |Sys | |Sys  | |Mgr  | |dow |
-     +------+ +-----+ +------+ +---+ +----+ +-----+ +-----+ +----+
-                        |        |     |
-                        +---+----+-----+
-                            |
-                       +----+-----+
-                       |RefCounted|  (shared ref-counting)
-                       +----------+
+```mermaid
+graph TD
+    App[Application] --> EC[EngineContext]
+    EC --> CR[ComponentRegistry]
+    EC --> EB[EventBus]
+    EC --> MS[MeshSystem]
+    EC --> TS[TextureSystem]
+    EC --> SS[ShaderSystem]
+    EC --> CS[CameraSystem]
+    EC --> SM[SceneManager]
+    EC --> Win[Window]
+    EC --> GAR[GltfAssetRegistry]
 
-Scene System:
-  SceneManager ──delegates──> SceneInstantiator ──uses──> DescriptorResolver
-       |                            |                         GltfSceneInstantiator
-       |                            |
-       v                            v
-  SceneInstance              ComponentRule (validation)
-  (entityIds, assets, systems)
+    MS --> RC[RefCounted]
+    TS --> RC
+    SS --> RC
 
-Rendering Pipeline:
-  RenderSystem
-       |
-       +──> OpaquePass ──> PbrMaterialRenderer  (3D world geometry)
-       |
-       +──> SpritePass ──> SpriteRenderer       (2D sprites/HUD)
+    SM --> SI[SceneInstantiator]
+    SI --> DR[DescriptorResolver]
+    SI --> GI[GltfSceneInstantiator]
+    SI --> CV[ComponentRule]
 ```
 
 ### Rendering Pipeline
 
+```mermaid
+graph LR
+    RS[RenderSystem] --> RCtx[RenderContext]
+    RCtx --> OP[OpaquePass]
+    RCtx --> SP[SpritePass]
+    OP --> PBR[PbrMaterialRenderer]
+    SP --> SR[SpriteRenderer]
 ```
-Each frame:
-  RenderContext.beginFrame()     Collect camera, lights, fog from registry
-       |
-       v
-  OpaquePass.collectVisibles()  Query: OpaqueLayer + PbrMaterial + Mesh + Transform
-  OpaquePass.execute()          Batch by PbrMaterial, render each entity
-       |
-       v
-  SpritePass.collectVisibles()  Query: SpriteLayer + SpriteMaterial + Mesh + Transform
-  SpritePass.execute()          Batch by SpriteMaterial, render each sprite
+
+Per frame:
+
+```mermaid
+sequenceDiagram
+    participant RS as RenderSystem
+    participant RC as RenderContext
+    participant OP as OpaquePass
+    participant SP as SpritePass
+
+    RS->>RC: beginFrame
+    Note over RC: Collect camera, lights, fog
+    RS->>OP: collectVisibles
+    Note over OP: Query OpaqueLayer + PbrMaterial + Mesh + Transform
+    RS->>OP: execute
+    Note over OP: Batch by PbrMaterial, draw
+    RS->>SP: collectVisibles
+    Note over SP: Query SpriteLayer + SpriteMaterial + Mesh + Transform
+    RS->>SP: execute
+    Note over SP: Batch by SpriteMaterial, draw
 ```
 
 ### Scene System
 
-```
-Scene Definition (compile-time):
-  Scene.builder("name")
-    .entity("terrain", e -> e.gltfModel("track.glb"))
-    .entity("sun", e -> e.directionalLight(...))
-    .entity("player", e -> e.transform(...).gltfModel("car.glb"))
-    .entity(e -> e.camera(...))
-    .systems(new PlayerSystem())
-    .inputMap(controls)
-    .build()
-
-Scene Instantiation (runtime):
-  SceneBuilder ──build()──> Scene ──load()──> SceneManager
-                                                    |
-                                              SceneInstantiator
-                                                    |
-                                    +---------------+---------------+
-                                    |               |               |
-                              Resolve          Load glTF        Validate
-                             descriptors        models        ComponentRules
-                                    |               |               |
-                                    v               v               v
-                              Components      Child entities   Skip invalid
-                              added to         parented to     entities with
-                              registry         owner entity    error message
-                                    |               |
-                                    +-------+-------+
-                                            |
-                                            v
-                                      SceneInstance
-                                   (entityIds, assets, systems)
+```mermaid
+graph TD
+    SB[SceneBuilder] --> BP[EntityBlueprint]
+    SB --> SC[Scene]
+    SC --> SM[SceneManager]
+    SM --> SI[SceneInstantiator]
+    SI --> DR[DescriptorResolver]
+    SI --> GI[GltfSceneInstantiator]
+    SI --> VAL[ComponentRule Validation]
+    SI --> INST[SceneInstance]
 ```
 
 ### Engine Lifecycle
 
-```
-STARTUP
-  1. ApplicationUtil.init()         Initialize GLFW
-  2. createSubsystems()             Create all engine systems
-  3. SceneManager created           Holds SceneInstantiator
-  4. Engine systems onInit()        PhysicsSystem, RenderSystem, TransformSystem, etc.
-  5. loadImmediate(initialScene)    First scene instantiated
+```mermaid
+sequenceDiagram
+    participant App as Application
+    participant EC as EngineContext
+    participant SM as SceneManager
+    participant SI as SceneInstantiator
+    participant ES as EngineSystems
 
-MAIN LOOP (every frame)
-  1. Time.update(delta)
-  2. InputMap.frameReset()
-  3. For all active systems (sorted by SystemPhase):
-       onUpdate(delta)              [INPUT -> LOGIC -> PHYSICS -> RENDER]
-  4. For all active systems:
-       onRender(delta)              RenderSystem executes passes here
-  5. For all active systems:
-       onDebugRender(delta)         Physics debug visualization
-  6. processPendingTransitions()    Deferred scene load/unload
-  7. swapBuffers + pollEvents       Present frame, process OS events
+    Note over App: STARTUP
+    App->>EC: createSubsystems
+    App->>SM: new SceneManager
+    App->>ES: onInit
+    App->>SM: loadImmediate
+    SM->>SI: instantiate
+    SI-->>SM: SceneInstance
 
-SHUTDOWN
-  1. SceneManager.unloadAll()       Destroy scene entities, release assets
-  2. Engine systems onDestroy()
-  3. EngineContext.dispose()        Free all GPU resources
-  4. Window.destroy()
-  5. ApplicationUtil.terminate()    Cleanup GLFW
+    Note over App: MAIN LOOP
+    loop Every Frame
+        App->>ES: onUpdate
+        App->>ES: onRender
+        App->>ES: onDebugRender
+        App->>SM: processPendingTransitions
+    end
+
+    Note over App: SHUTDOWN
+    App->>SM: unloadAll
+    App->>ES: onDestroy
+    App->>EC: dispose
 ```
 
 ### System Execution Order
 
-```
-Per frame, systems execute in SystemPhase order:
-
-  INPUT          InputMap.frameReset()
-     |
-     v
-  LOGIC          TransformSystem, AnimationSystem, game systems (default phase)
-     |
-     v
-  PHYSICS        PhysicsSystem (fixed 60Hz timestep)
-     |
-     v
-  RENDER         RenderSystem -> OpaquePass -> SpritePass
+```mermaid
+graph LR
+    I[INPUT] --> L[LOGIC]
+    L --> P[PHYSICS]
+    P --> R[RENDER]
 ```
 
-### ECS (Entity-Component-System)
+| Phase | Systems |
+|-------|---------|
+| INPUT | InputMap.frameReset |
+| LOGIC | TransformSystem, AnimationSystem, game systems |
+| PHYSICS | PhysicsSystem |
+| RENDER | RenderSystem |
+
+### ECS
 
 - **Entities** are plain integer IDs (`Entity.create(registry)`)
 - **Components** implement `Component` — data holders (Transform, Mesh, PbrMaterial, PointLight, etc.)
@@ -181,12 +165,15 @@ int player = registry.getEntityByName("player");
 ### Component Validation
 
 Scene instantiation validates component dependencies:
-- `Mesh` requires `Transform`
-- `PhysicsBody` requires `Transform`
-- `PointLight` requires `Transform`
-- `SpriteMaterial` requires `Mesh`
-- `PbrMaterial` requires `Mesh`
-- `Skeleton` requires `Mesh`
+
+| Component | Requires |
+|-----------|----------|
+| Mesh | Transform |
+| PhysicsBody | Transform |
+| PointLight | Transform |
+| SpriteMaterial | Mesh |
+| PbrMaterial | Mesh |
+| Skeleton | Mesh |
 
 Entities violating these rules are skipped with a clear error message.
 
