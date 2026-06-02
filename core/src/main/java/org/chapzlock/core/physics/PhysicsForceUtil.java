@@ -26,7 +26,7 @@ public final class PhysicsForceUtil {
      * Applies a continuous world-space force.
      */
     public static void applyForce(RigidBody body, org.joml.Vector3f force) {
-        Vector3f vec = PhysicsMapper.vector3f(force);
+        Vector3f vec = PhysicsUtil.toVecmath(force);
         if (!isValidDynamic(body, vec)) {
             return;
         }
@@ -56,7 +56,7 @@ public final class PhysicsForceUtil {
      * Applies a continuous force in the body's local space (e.g., forward).
      */
     public static void applyLocalForce(RigidBody body, org.joml.Vector3f localForce) {
-        Vector3f force = PhysicsMapper.vector3f(localForce);
+        Vector3f force = PhysicsUtil.toVecmath(localForce);
         if (!isValidDynamic(body, force)) {
             return;
         }
@@ -70,8 +70,8 @@ public final class PhysicsForceUtil {
      * Useful to push at wheel positions: will produce torque (steering roll/yaw).
      */
     public static void applyLocalForceAtPosition(RigidBody body, org.joml.Vector3f localForce, org.joml.Vector3f localPosition) {
-        Vector3f force = PhysicsMapper.vector3f(localForce);
-        Vector3f posLocal = PhysicsMapper.vector3f(localPosition);
+        Vector3f force = PhysicsUtil.toVecmath(localForce);
+        Vector3f posLocal = PhysicsUtil.toVecmath(localPosition);
         if (!isValidDynamic(body, force) || posLocal == null) {
             return;
         }
@@ -139,7 +139,7 @@ public final class PhysicsForceUtil {
      * e.g., rotate around the local up axis.
      */
     public static void applyLocalTorque(RigidBody body, org.joml.Vector3f localTorque) {
-        Vector3f t = PhysicsMapper.vector3f(localTorque);
+        Vector3f t = PhysicsUtil.toVecmath(localTorque);
         if (!isValidDynamic(body, t)) {
             return;
         }

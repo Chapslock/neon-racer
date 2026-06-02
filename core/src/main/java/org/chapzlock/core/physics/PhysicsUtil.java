@@ -226,4 +226,18 @@ public class PhysicsUtil {
         javax.vecmath.Vector3f c = computeCentroid(raw);
         return new Vector3f(c.x, c.y, c.z);
     }
+
+    /**
+     * Converts JOML Vector3f to javax.vecmath.Vector3f (used by JBullet).
+     */
+    public static javax.vecmath.Vector3f toVecmath(org.joml.Vector3f v) {
+        return new javax.vecmath.Vector3f(v.x, v.y, v.z);
+    }
+
+    /**
+     * Converts javax.vecmath.Vector3f to JOML Vector3f.
+     */
+    public static org.joml.Vector3f toJoml(javax.vecmath.Vector3f v) {
+        return new org.joml.Vector3f(v.x, v.y, v.z);
+    }
 }
