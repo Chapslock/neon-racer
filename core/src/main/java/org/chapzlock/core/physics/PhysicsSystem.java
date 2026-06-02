@@ -56,10 +56,10 @@ public class PhysicsSystem implements GameSystem {
     private Subscription componentRemovedSub;
 
     public PhysicsSystem() {
-        this(PhysicsSystemSpecs.builder().build());
+        this(false);
     }
 
-    public PhysicsSystem(PhysicsSystemSpecs specs) {
+    public PhysicsSystem(boolean isDebugEnabled) {
         this.collisionConfig = new DefaultCollisionConfiguration();
         this.dispatcher = new CollisionDispatcher(collisionConfig);
         this.broadPhase = new AxisSweep3(WORLD_AABB_MIN, WORLD_AABB_MAX);
@@ -67,7 +67,7 @@ public class PhysicsSystem implements GameSystem {
         this.dynamicsWorld = new DiscreteDynamicsWorld(dispatcher, broadPhase, solver, collisionConfig);
 
         this.debugger = new PhysicsDebugger();
-        this.isDebugEnabled = specs.isDebugEnabled();
+        this.isDebugEnabled = isDebugEnabled;
     }
 
     @Override
@@ -109,6 +109,9 @@ public class PhysicsSystem implements GameSystem {
     }
 
     private void subscribeToLifecycleEvents() {
+        // TODO: Task 12 will rewrite this system to work with new PhysicsBody API
+        // Temporarily disabled until PhysicsWorld (Task 10) is implemented
+        /*
         componentAddedSub = eventBus.subscribe(ComponentAddedEvent.class, event -> {
             if (event.componentType() != PhysicsBody.class) return false;
 
@@ -119,8 +122,8 @@ public class PhysicsSystem implements GameSystem {
             }
 
             PhysicsBody body = registry.getComponent(event.entityId(), PhysicsBody.class);
-            body.getRigidBody().setMotionState(new EntityMotionState(transform));
-            dynamicsWorld.addRigidBody(body.getRigidBody());
+            // Old API: body.getRigidBody().setMotionState(new EntityMotionState(transform));
+            // Old API: dynamicsWorld.addRigidBody(body.getRigidBody());
             Log.debug("Physics body registered: entity=" + event.entityId() + " mass=" + body.getMass());
             return false;
         });
@@ -130,11 +133,12 @@ public class PhysicsSystem implements GameSystem {
 
             PhysicsBody body = registry.getComponent(event.entityId(), PhysicsBody.class);
             if (body != null) {
-                dynamicsWorld.removeRigidBody(body.getRigidBody());
+                // Old API: dynamicsWorld.removeRigidBody(body.getRigidBody());
                 Log.debug("Physics body removed: entity=" + event.entityId());
             }
             return false;
         });
+        */
     }
 
     private void renderDebugInfo() {
