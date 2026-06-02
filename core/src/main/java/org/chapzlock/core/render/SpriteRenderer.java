@@ -90,7 +90,7 @@ public class SpriteRenderer {
      */
     public void renderEntity(Transform transform) {
         shaderSystem.setUniform(shader,
-            SpriteShaderProps.UNIFORM_TRANSFORMATION_MATRIX, transform.getTransformationMatrix());
+            SpriteShaderProps.UNIFORM_TRANSFORMATION_MATRIX, transform.getLocalMatrix());
     }
 
     /**
