@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.chapzlock.core.application.EngineContext;
-import org.chapzlock.core.asset.RawMeshData;
 import org.chapzlock.core.asset.RawMeshDataFactory;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.PhysicsBody;
@@ -15,8 +14,6 @@ import org.chapzlock.core.component.SpriteLayer;
 import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.ecs.Component;
 import org.chapzlock.core.ecs.Tag;
-import org.chapzlock.core.physics.CollisionShapeFactory;
-import org.chapzlock.core.physics.PhysicsSpecs;
 import org.chapzlock.core.render.MeshSystem;
 import org.chapzlock.core.render.TextureSystem;
 
@@ -51,7 +48,7 @@ public class DescriptorResolver {
         }
 
         if (blueprint.getPhysicsDescriptor() != null) {
-            resolvePhysics(blueprint.getPhysicsDescriptor(), mesh, result);
+            resolvePhysics(blueprint.getPhysicsDescriptor(), result);
         }
 
         for (Tag tag : blueprint.getTags()) {
@@ -76,21 +73,23 @@ public class DescriptorResolver {
         return mesh;
     }
 
-    private void resolvePhysics(PhysicsDescriptor desc, Mesh mesh, List<Component> result) {
-        com.bulletphysics.collision.shapes.CollisionShape shape = desc.getShape();
-
-        if (shape == null && mesh != null) {
-            RawMeshData rawData = ctx.getMeshSystem().getRawMeshById(mesh.getId());
-            shape = desc.isDynamic()
-                ? CollisionShapeFactory.createConvexHullShape(rawData)
-                : CollisionShapeFactory.createBvhTriangleMeshShapeFromRaw(rawData, true);
+    private void resolvePhysics(PhysicsDescriptor desc, List<Component> result) {
+        if (desc.getGeometry() == null) {
+            throw new IllegalStateException(
+                "PhysicsDescriptor has no CollisionGeometry. " +
+                "Call .shape(CollisionGeometry.capsule(...)) or similar on the descriptor. " +
+                "Available shapes: box, sphere, capsule, convexHull, triangleMesh, compound.");
         }
 
-        PhysicsSpecs specs = PhysicsSpecs.builder()
+        result.add(PhysicsBody.builder()
             .mass(desc.getMass())
+            .friction(desc.getFriction())
             .restitution(desc.getRestitution())
-            .build();
-
-        result.add(new PhysicsBody(shape, specs));
+            .linearDamping(desc.getLinearDamping())
+            .angularDamping(desc.getAngularDamping())
+            .geometry(desc.getGeometry())
+            .layer(desc.getLayer())
+            .collisionMask(desc.getCollisionMask())
+            .build());
     }
 }
