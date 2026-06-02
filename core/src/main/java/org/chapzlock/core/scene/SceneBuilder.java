@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import org.chapzlock.core.ecs.EntityBuilder;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.input.InputMap;
 
@@ -12,7 +13,7 @@ import org.chapzlock.core.input.InputMap;
  *
  * <p>A scene is a collection of entity blueprints, game systems, and optional input bindings.
  * Every piece of scene content (lights, cameras, fog, terrain, players) is defined as an entity
- * using the {@link EntityBlueprintBuilder}.
+ * using the {@link EntityBuilder}.
  *
  * <p><strong>Usage example:</strong>
  * <pre>{@code
@@ -49,8 +50,8 @@ public class SceneBuilder {
      * @param configurator lambda to configure the entity's components
      * @return this builder for chaining
      */
-    public SceneBuilder entity(String entityName, Consumer<EntityBlueprintBuilder> configurator) {
-        EntityBlueprintBuilder builder = new EntityBlueprintBuilder(entityName);
+    public SceneBuilder entity(String entityName, Consumer<EntityBuilder> configurator) {
+        EntityBuilder builder = new EntityBuilder(entityName);
         configurator.accept(builder);
         entities.add(builder.build());
         return this;
@@ -66,9 +67,9 @@ public class SceneBuilder {
      * @param configurator lambda to configure the entity's components
      * @return this builder for chaining
      */
-    public SceneBuilder entity(Consumer<EntityBlueprintBuilder> configurator) {
+    public SceneBuilder entity(Consumer<EntityBuilder> configurator) {
         String internalName = "_entity_" + namelessCounter++;
-        EntityBlueprintBuilder builder = new EntityBlueprintBuilder(internalName);
+        EntityBuilder builder = new EntityBuilder(internalName);
         configurator.accept(builder);
         entities.add(builder.build());
         return this;

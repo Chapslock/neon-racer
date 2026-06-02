@@ -11,7 +11,7 @@ import org.chapzlock.core.ecs.Tag;
 import lombok.Getter;
 
 /**
- * Immutable blueprint for an entity, produced by {@link EntityBlueprintBuilder}.
+ * Immutable blueprint for an entity, produced by {@link org.chapzlock.core.ecs.EntityBuilder}.
  *
  * <p>Contains the entity's rendering descriptor, physics descriptor, tags,
  * and game-logic components. Transform is now a regular component in the

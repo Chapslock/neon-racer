@@ -18,7 +18,7 @@ import org.chapzlock.core.physics.CollisionGeometry;
 import org.chapzlock.core.input.InputMap;
 import org.chapzlock.core.input.Key;
 import org.chapzlock.core.render.CameraFreeRoamSystem;
-import org.chapzlock.core.scene.EntityBlueprintBuilder;
+import org.chapzlock.core.ecs.EntityBuilder;
 import org.chapzlock.core.scene.Scene;
 import org.joml.Vector3f;
 
@@ -69,7 +69,7 @@ public class ForestScene {
 
             .entity(e -> e.camera(new Camera(new Vector3f(0, 3, 5))))
 
-            .entity(EntityBlueprintBuilder::sky)
+            .entity(EntityBuilder::sky)
             .systems(
                 new PlayerInputSystem(),
                 new PlayerAnimationSystem(),

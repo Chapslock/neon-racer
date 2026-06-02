@@ -44,7 +44,7 @@ class SceneManagerTest {
 
     private Scene simpleScene(String name) {
         return new Scene(name, List.of(
-            new EntityBlueprintBuilder("entity1")
+            new org.chapzlock.core.ecs.EntityBuilder("entity1")
                 .transform(Transform.at(0, 0, 0))
                 .build()
         ), List.of(), null);
@@ -233,7 +233,7 @@ class SceneManagerTest {
         Texture fakeTexture = Texture.builder().id(7).build();
 
         Scene scene = new Scene("asset-test", List.of(
-            new EntityBlueprintBuilder("entity")
+            new org.chapzlock.core.ecs.EntityBuilder("entity")
                 .transform(Transform.at(0, 0, 0))
                 .component(fakeMesh, new SpriteMaterial(fakeTexture))
                 .build()
@@ -253,7 +253,7 @@ class SceneManagerTest {
     @Test
     void loadImmediateAddsNameComponentForNamedBlueprints() {
         Scene scene = new Scene("test", List.of(
-            new EntityBlueprintBuilder("player")
+            new org.chapzlock.core.ecs.EntityBuilder("player")
                 .transform(Transform.at(0, 0, 0))
                 .build()
         ), List.of(), null);
@@ -268,10 +268,10 @@ class SceneManagerTest {
     @Test
     void failedEntityInstantiationDoesNotLeavePartialEntity() {
         Scene scene = new Scene("bad-entity", List.of(
-            new EntityBlueprintBuilder("good")
+            new org.chapzlock.core.ecs.EntityBuilder("good")
                 .transform(Transform.at(0, 0, 0))
                 .build(),
-            new EntityBlueprintBuilder("bad")
+            new org.chapzlock.core.ecs.EntityBuilder("bad")
                 .transform(Transform.at(1, 1, 1))
                 .sprite(SpriteDescriptor.of("nonexistent.png"))
                 .build()

@@ -12,7 +12,7 @@ import lombok.Getter;
  *
  * <p>A Scene is a pure data description that can be loaded, unloaded, and reloaded without
  * side effects. All content (terrain, lights, players) is defined as entities through the
- * {@link SceneBuilder}. Use {@link EntityBlueprintBuilder#gltfModel(String)} to load 3D
+ * {@link SceneBuilder}. Use {@link org.chapzlock.core.ecs.EntityBuilder#gltfModel(String)} to load 3D
  * models as part of an entity.
  *
  * <p><strong>Immutability:</strong> Once built via {@link SceneBuilder#build()}, a Scene

@@ -33,7 +33,7 @@ class SceneTest {
         Scene scene = Scene.builder("empty").build();
 
         assertThrows(UnsupportedOperationException.class, () ->
-            scene.getEntities().add(new EntityBlueprintBuilder("x").build()));
+            scene.getEntities().add(new org.chapzlock.core.ecs.EntityBuilder("x").build()));
         assertThrows(UnsupportedOperationException.class, () ->
             scene.getSystems().add(new DummySystem()));
     }
