@@ -31,12 +31,12 @@ import lombok.experimental.UtilityClass;
  * - Convex hull creation may be slow for very large meshes; consider simplified collision meshes for complex models.
  */
 @UtilityClass
-public final class CollisionShapeFactory {
+final class CollisionShapeFactory {
 
     /**
      * Overload: accepts an org.joml.Vector3f offset (your engine uses JOML in transforms).
      */
-    public static CompoundShape createCompoundShapeWithOffset(RawMeshData raw, Vector3f jomlOffset) {
+    static CompoundShape createCompoundShapeWithOffset(RawMeshData raw, Vector3f jomlOffset) {
         javax.vecmath.Vector3f off = new javax.vecmath.Vector3f(jomlOffset.x, jomlOffset.y, jomlOffset.z);
         return createCompoundShapeWithOffset(raw, off);
     }
@@ -47,7 +47,7 @@ public final class CollisionShapeFactory {
      *
      * The offset is the translation applied to the child shape relative to the rigid body's local origin.
      */
-    public static CompoundShape createCompoundShapeWithOffset(RawMeshData raw, javax.vecmath.Vector3f offset) {
+    static CompoundShape createCompoundShapeWithOffset(RawMeshData raw, javax.vecmath.Vector3f offset) {
         CollisionShape base = createConvexHullShape(raw);
         CompoundShape compound = new CompoundShape();
         Transform child = new Transform();
@@ -61,7 +61,7 @@ public final class CollisionShapeFactory {
      * Create a ConvexHullShape from raw mesh positions.
      * This uses the raw positions array (assumed x,y,z triples) and will ignore normals/uvs.
      */
-    public static CollisionShape createConvexHullShape(RawMeshData raw) {
+    static CollisionShape createConvexHullShape(RawMeshData raw) {
         List<javax.vecmath.Vector3f> points = extractVertices(raw);
         if (points.isEmpty()) {
             throw new IllegalArgumentException("RawMeshData contains no position vertices");
@@ -121,7 +121,7 @@ public final class CollisionShapeFactory {
      * <p>
      * Uses TriangleIndexVertexArray / IndexedMesh which is the standard JBullet wrapper for triangle meshes.
      */
-    public static BvhTriangleMeshShape createBvhTriangleMeshShapeFromRaw(RawMeshData raw, boolean useQuantizedAabbCompression) {
+    static BvhTriangleMeshShape createBvhTriangleMeshShapeFromRaw(RawMeshData raw, boolean useQuantizedAabbCompression) {
         float[] positions = raw.getPositions();
         int[] indices = raw.getIndices();
 
