@@ -19,6 +19,7 @@ public class Entity {
      */
     public static int create(ComponentRegistry registry) {
         int id = EntityIdGenerator.nextId();
+        registry.registerEntity(id);
         registry.publishEvent(new EntityCreatedEvent(id));
         return id;
     }

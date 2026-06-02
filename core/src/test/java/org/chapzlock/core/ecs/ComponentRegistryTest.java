@@ -44,7 +44,7 @@ class ComponentRegistryTest {
             return false;
         }));
 
-        int entityId = 9000;
+        int entityId = Entity.create(registry);
         registry.addComponent(entityId, new PositionComponent(1, 2));
 
         assertEquals(1, events.size());
@@ -66,7 +66,7 @@ class ComponentRegistryTest {
             return false;
         }));
 
-        int entityId = 9001;
+        int entityId = Entity.create(registry);
         registry.addComponents(entityId, new PositionComponent(1, 2), new VelocityComponent(3, 4));
 
         assertEquals(2, events.size());
@@ -76,7 +76,7 @@ class ComponentRegistryTest {
 
     @Test
     void removeComponentPublishesEventBeforeRemoval() {
-        int entityId = 9002;
+        int entityId = Entity.create(registry);
         registry.addComponent(entityId, new PositionComponent(5, 6));
 
         List<ComponentRemovedEvent> events = new ArrayList<>();
@@ -98,7 +98,7 @@ class ComponentRegistryTest {
 
     @Test
     void destroyEntityPublishesComponentRemovedThenEntityDestroyed() {
-        int entityId = 9003;
+        int entityId = Entity.create(registry);
         registry.addComponents(entityId, new PositionComponent(1, 1), new VelocityComponent(2, 2));
 
         List<Object> eventOrder = new ArrayList<>();

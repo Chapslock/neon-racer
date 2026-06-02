@@ -97,10 +97,48 @@ public class ComponentRegistry {
     }
 
     /**
+     * Returns whether an entity exists in the registry.
+     *
+     * <p>An entity "exists" if it has been created via {@link Entity#create(ComponentRegistry)}
+     * and has not been destroyed via {@link #destroyEntity(int)}. After creation, an empty
+     * component mask is registered — this is what makes the entity "exist" even before any
+     * components are added.
+     *
+     * <p><strong>When to use:</strong> Check this before operating on an entity ID that may
+     * be stale (e.g., stored from a previous frame or scene). Avoids silently adding components
+     * to destroyed entities.
+     *
+     * @param entityId the entity ID to check
+     * @return true if the entity has a component mask in the registry
+     */
+    public boolean entityExists(int entityId) {
+        return entityComponentMasks.containsKey(entityId);
+    }
+
+    /**
+     * Registers an entity ID in the registry with an empty component mask.
+     *
+     * <p>Called by {@link Entity#create(ComponentRegistry)} to ensure the entity is recognized
+     * as "existing" before any components are added. Without this, the guard in
+     * {@link #addComponent(int, Component)} would reject the first component.
+     *
+     * @param entityId the newly created entity ID
+     */
+    public void registerEntity(int entityId) {
+        entityComponentMasks.computeIfAbsent(entityId, e -> new java.util.BitSet());
+    }
+
+    /**
      * Adds a component to an entity.
      */
     @SuppressWarnings("unchecked")
     public <T extends Component> void addComponent(int entityId, T component) {
+        if (!entityExists(entityId)) {
+            Log.warn("ComponentRegistry", "Attempted to add " + component.getClass().getSimpleName() +
+                " to non-existent entity " + entityId + ". Ignoring. Ensure the entity was created " +
+                "via Entity.create() and has not been destroyed.");
+            return;
+        }
         int typeId = getOrRegisterTypeId(component.getClass());
         ComponentStore<T> store = (ComponentStore<T>) stores.get(typeId);
         store.put(entityId, component);
@@ -126,6 +164,12 @@ public class ComponentRegistry {
      */
     @SuppressWarnings("unchecked")
     public <T extends Component> void addComponents(int entityId, T... components) {
+        if (!entityExists(entityId)) {
+            Log.warn("ComponentRegistry", "Attempted to add components to non-existent entity " +
+                entityId + ". Ignoring. Ensure the entity was created via Entity.create() and " +
+                "has not been destroyed.");
+            return;
+        }
         for (T component : components) {
             int typeId = getOrRegisterTypeId(component.getClass());
             ComponentStore<T> store = (ComponentStore<T>) stores.get(typeId);
