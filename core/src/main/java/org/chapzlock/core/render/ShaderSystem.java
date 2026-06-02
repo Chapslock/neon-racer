@@ -16,8 +16,6 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-
 /**
  * Compiles, caches, and manages shader programs throughout their lifecycle.
  *
@@ -63,8 +61,13 @@ public class ShaderSystem implements Disposable {
     /** The currently active program — tracked to skip redundant glUseProgram calls. */
     private int currentlyActiveProgramId = 0;
 
-    /** Reference count per program ID. Program is deleted when count reaches zero. */
-    private final Int2IntOpenHashMap refCounts = new Int2IntOpenHashMap();
+    /**
+     * Reference counting tracker for shader program lifecycle.
+     *
+     * <p>When the reference count for a program ID drops to zero (no scenes use it anymore),
+     * the {@link #deleteProgram(int)} callback is fired to clean up GPU resources.
+     */
+    private final RefCounted refCounted = new RefCounted(this::deleteProgram);
 
     public ShaderSystem() {
     }
@@ -218,7 +221,7 @@ public class ShaderSystem implements Disposable {
      * @param programId the program's OpenGL ID
      */
     public void retain(int programId) {
-        refCounts.put(programId, refCounts.getOrDefault(programId, 0) + 1);
+        refCounted.retain(programId);
     }
 
     /**
@@ -230,20 +233,7 @@ public class ShaderSystem implements Disposable {
      * @param programId the program's OpenGL ID
      */
     public void release(int programId) {
-        int count = refCounts.getOrDefault(programId, 0) - 1;
-        if (count <= 0) {
-            refCounts.remove(programId);
-            if (allProgramIds.remove(Integer.valueOf(programId))) {
-                ShaderUtil.deleteProgram(programId);
-            }
-            uniformCache.remove(programId);
-            if (currentlyActiveProgramId == programId) {
-                currentlyActiveProgramId = 0;
-            }
-            Log.debug("Shader program released and deleted: programId=" + programId);
-        } else {
-            refCounts.put(programId, count);
-        }
+        refCounted.release(programId);
     }
 
     /**
@@ -253,7 +243,26 @@ public class ShaderSystem implements Disposable {
      * @return the number of scenes currently using this program
      */
     public int getRefCount(int programId) {
-        return refCounts.getOrDefault(programId, 0);
+        return refCounted.getRefCount(programId);
+    }
+
+    /**
+     * Deletes a shader program from GPU memory and clears all associated caches.
+     *
+     * <p>Called by the {@link RefCounted} tracker when a program's reference count drops to zero.
+     * Removes the program from all internal maps and frees GPU resources via {@link ShaderUtil#deleteProgram}.
+     *
+     * @param programId the program's OpenGL ID to delete
+     */
+    private void deleteProgram(int programId) {
+        if (allProgramIds.remove(Integer.valueOf(programId))) {
+            ShaderUtil.deleteProgram(programId);
+        }
+        uniformCache.remove(programId);
+        if (currentlyActiveProgramId == programId) {
+            currentlyActiveProgramId = 0;
+        }
+        Log.debug("Shader program released and deleted: programId=" + programId);
     }
 
     /**
