@@ -1,0 +1,290 @@
+package org.chapzlock.core.physics;
+
+import java.util.ArrayList;
+import java.util.IdentityHashMap;
+
+import javax.vecmath.Quat4f;
+import javax.vecmath.Vector3f;
+
+import org.chapzlock.core.application.Disposable;
+import org.chapzlock.core.asset.RawMeshData;
+import org.chapzlock.core.component.Mesh;
+import org.chapzlock.core.component.PhysicsBody;
+import org.chapzlock.core.component.Transform;
+import org.chapzlock.core.ecs.ComponentRegistry;
+import org.chapzlock.core.logging.Log;
+import org.chapzlock.core.render.MeshSystem;
+import org.joml.Quaternionf;
+
+import com.bulletphysics.collision.broadphase.AxisSweep3;
+import com.bulletphysics.collision.broadphase.BroadphaseInterface;
+import com.bulletphysics.collision.dispatch.CollisionConfiguration;
+import com.bulletphysics.collision.dispatch.CollisionDispatcher;
+import com.bulletphysics.collision.dispatch.CollisionObject;
+import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration;
+import com.bulletphysics.collision.narrowphase.ManifoldPoint;
+import com.bulletphysics.collision.narrowphase.PersistentManifold;
+import com.bulletphysics.collision.shapes.CollisionShape;
+import com.bulletphysics.dynamics.DiscreteDynamicsWorld;
+import com.bulletphysics.dynamics.RigidBody;
+import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
+import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver;
+import com.bulletphysics.linearmath.DefaultMotionState;
+
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
+
+/**
+ * Owns the Bullet physics simulation and all rigid bodies within it.
+ *
+ * <h3>What this is (mental model)</h3>
+ * <p>Think of PhysicsWorld as a "mirror universe" running alongside your visible game.
+ * Each entity with a PhysicsBody gets a corresponding rigid body in this universe.
+ * Every frame, the mirror universe advances time: gravity pulls things down, objects
+ * collide and bounce, forces you applied take effect. Then we copy positions/rotations
+ * back into the ECS so the renderer draws everything in its new spot.</p>
+ *
+ * <h3>Why deferred registration?</h3>
+ * <p>When a scene loads, entities get their components one at a time. A PhysicsBody might
+ * be added before the Transform, or before the glTF mesh finishes loading. Instead of
+ * reacting immediately (which caused a bug where bodies were silently dropped), we queue
+ * registrations and process them at a well-defined moment: the start of the physics step.
+ * By then, all components are guaranteed present.</p>
+ *
+ * <h3>Broadphase vs Narrowphase</h3>
+ * <p>Collision detection is two-stage for performance:
+ * <ol>
+ *   <li><strong>Broadphase</strong> — uses axis-aligned bounding boxes (AABBs) to quickly
+ *       find pairs of bodies that MIGHT be colliding. Very fast but imprecise.</li>
+ *   <li><strong>Narrowphase</strong> — for each candidate pair from broadphase, computes
+ *       exact collision geometry (contact points, penetration depth). Expensive but precise.</li>
+ * </ol>
+ * The {@code worldBoundsMin/Max} in config define the broadphase's spatial extent.</p>
+ *
+ * @see Physics
+ * @see PhysicsSystem
+ */
+class PhysicsWorld implements Disposable {
+
+    private final DiscreteDynamicsWorld dynamicsWorld;
+    private final CollisionConfiguration collisionConfig;
+    private final CollisionDispatcher dispatcher;
+    private final BroadphaseInterface broadphase;
+    private final SequentialImpulseConstraintSolver solver;
+
+    private final Int2ObjectOpenHashMap<RigidBody> entityToBody = new Int2ObjectOpenHashMap<>();
+    private final IdentityHashMap<RigidBody, Integer> bodyToEntity = new IdentityHashMap<>();
+
+    private final IntList pendingAdds = new IntArrayList();
+    private final IntList pendingRemovals = new IntArrayList();
+
+    private final CollisionCache collisionCache = new CollisionCache();
+    private final CollisionShapeResolver shapeResolver = new CollisionShapeResolver();
+    private final PhysicsDebugDrawer debugDrawer = new PhysicsDebugDrawer();
+
+    private final PhysicsWorldConfig config;
+    private MeshSystem meshSystem;
+
+    PhysicsWorld(PhysicsWorldConfig config) {
+        this.config = config;
+        this.collisionConfig = new DefaultCollisionConfiguration();
+        this.dispatcher = new CollisionDispatcher(collisionConfig);
+        this.broadphase = new AxisSweep3(
+            PhysicsUtil.toVecmath(config.worldBoundsMin()),
+            PhysicsUtil.toVecmath(config.worldBoundsMax())
+        );
+        this.solver = new SequentialImpulseConstraintSolver();
+        this.dynamicsWorld = new DiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfig);
+        this.dynamicsWorld.setGravity(PhysicsUtil.toVecmath(config.gravity()));
+
+        if (config.debugEnabled()) {
+            this.dynamicsWorld.setDebugDrawer(debugDrawer);
+        }
+    }
+
+    void setMeshSystem(MeshSystem meshSystem) {
+        this.meshSystem = meshSystem;
+    }
+
+    void queueRegistration(int entityId) {
+        pendingAdds.add(entityId);
+    }
+
+    void queueRemoval(int entityId) {
+        pendingRemovals.add(entityId);
+    }
+
+    void processPendingRegistrations(ComponentRegistry registry) {
+        for (int i = 0; i < pendingAdds.size(); i++) {
+            int entityId = pendingAdds.getInt(i);
+
+            if (entityToBody.containsKey(entityId)) {
+                continue;
+            }
+
+            PhysicsBody config = registry.getComponent(entityId, PhysicsBody.class);
+            Transform transform = registry.getComponent(entityId, Transform.class);
+
+            if (config == null || transform == null) {
+                Log.warn("Physics registration skipped for entity " + entityId +
+                    ": missing " + (config == null ? "PhysicsBody" : "Transform"));
+                continue;
+            }
+
+            RawMeshData meshData = resolveMeshData(entityId, registry);
+            CollisionShape shape = shapeResolver.resolve(config.getGeometry(), meshData);
+
+            RigidBody body = createRigidBody(config, shape, transform);
+            dynamicsWorld.addRigidBody(body, (short) config.getLayer(), (short) config.getCollisionMask());
+
+            entityToBody.put(entityId, body);
+            bodyToEntity.put(body, entityId);
+            collisionCache.setEntityLayer(entityId, config.getLayer());
+
+            Log.debug("Physics body registered: entity=" + entityId +
+                " mass=" + config.getMass() + " shape=" + config.getGeometry().getClass().getSimpleName());
+        }
+        pendingAdds.clear();
+    }
+
+    void processPendingRemovals() {
+        for (int i = 0; i < pendingRemovals.size(); i++) {
+            int entityId = pendingRemovals.getInt(i);
+            RigidBody body = entityToBody.remove(entityId);
+            if (body != null) {
+                bodyToEntity.remove(body);
+                dynamicsWorld.removeRigidBody(body);
+                body.destroy();
+                Log.debug("Physics body removed: entity=" + entityId);
+            }
+        }
+        pendingRemovals.clear();
+    }
+
+    void step(float deltaTime) {
+        dynamicsWorld.stepSimulation(deltaTime, config.maxSubSteps(), config.fixedTimeStep());
+    }
+
+    void syncTransformsToEcs(ComponentRegistry registry) {
+        com.bulletphysics.linearmath.Transform bulletTransform = new com.bulletphysics.linearmath.Transform();
+
+        entityToBody.forEach((entityId, body) -> {
+            if (body.isStaticObject()) return;
+            if (!body.isActive()) return;
+
+            body.getWorldTransform(bulletTransform);
+            Transform transform = registry.getComponent(entityId, Transform.class);
+            if (transform == null) return;
+
+            transform.setPosition(
+                bulletTransform.origin.x,
+                bulletTransform.origin.y,
+                bulletTransform.origin.z);
+
+            Quat4f q = bulletTransform.getRotation(new Quat4f());
+            transform.setRotationQuaternion(PhysicsUtil.toQuaternionf(q));
+        });
+    }
+
+    void rebuildCollisionCache() {
+        collisionCache.clear();
+
+        int numManifolds = dispatcher.getNumManifolds();
+        for (int i = 0; i < numManifolds; i++) {
+            PersistentManifold manifold = dispatcher.getManifoldByIndexInternal(i);
+            if (manifold == null || manifold.getNumContacts() == 0) continue;
+
+            CollisionObject objA = (CollisionObject) manifold.getBody0();
+            CollisionObject objB = (CollisionObject) manifold.getBody1();
+            if (objA == null || objB == null) continue;
+
+            boolean touching = false;
+            for (int j = 0; j < manifold.getNumContacts(); j++) {
+                ManifoldPoint mp = manifold.getContactPoint(j);
+                if (mp.getDistance() <= 0f) {
+                    touching = true;
+                    break;
+                }
+            }
+
+            if (touching) {
+                Integer entityA = bodyToEntity.get(objA);
+                Integer entityB = bodyToEntity.get(objB);
+                if (entityA != null && entityB != null) {
+                    collisionCache.recordContact(entityA, entityB);
+                }
+            }
+        }
+    }
+
+    void debugDrawWorld() {
+        dynamicsWorld.debugDrawWorld();
+    }
+
+    PhysicsDebugDrawer getDebugDrawer() {
+        return debugDrawer;
+    }
+
+    CollisionCache getCollisionCache() {
+        return collisionCache;
+    }
+
+    boolean isRegistered(int entityId) {
+        return entityToBody.containsKey(entityId);
+    }
+
+    RigidBody getBody(int entityId) {
+        return entityToBody.get(entityId);
+    }
+
+    Integer getEntityForBody(RigidBody body) {
+        return bodyToEntity.get(body);
+    }
+
+    @Override
+    public void dispose() {
+        for (RigidBody body : new ArrayList<>(entityToBody.values())) {
+            dynamicsWorld.removeRigidBody(body);
+            body.destroy();
+        }
+        entityToBody.clear();
+        bodyToEntity.clear();
+        pendingAdds.clear();
+        pendingRemovals.clear();
+        debugDrawer.dispose();
+    }
+
+    private RigidBody createRigidBody(PhysicsBody config, CollisionShape shape, Transform transform) {
+        Vector3f localInertia = new Vector3f(0f, 0f, 0f);
+        if (config.getMass() != 0) {
+            shape.calculateLocalInertia(config.getMass(), localInertia);
+        }
+
+        com.bulletphysics.linearmath.Transform startTransform = new com.bulletphysics.linearmath.Transform();
+        startTransform.setIdentity();
+        org.joml.Vector3f pos = new org.joml.Vector3f();
+        transform.getPosition(pos);
+        startTransform.origin.set(pos.x, pos.y, pos.z);
+
+        Quaternionf engineQuat = new Quaternionf();
+        transform.getRotationQuaternion(engineQuat);
+        startTransform.setRotation(PhysicsUtil.toQuat4f(engineQuat));
+
+        DefaultMotionState motionState = new DefaultMotionState(startTransform);
+        RigidBodyConstructionInfo rbInfo = new RigidBodyConstructionInfo(
+            config.getMass(), motionState, shape, localInertia);
+        RigidBody body = new RigidBody(rbInfo);
+        body.setFriction(config.getFriction());
+        body.setRestitution(config.getRestitution());
+        body.setDamping(config.getLinearDamping(), config.getAngularDamping());
+        return body;
+    }
+
+    private RawMeshData resolveMeshData(int entityId, ComponentRegistry registry) {
+        if (meshSystem == null) return null;
+        Mesh mesh = registry.getComponent(entityId, Mesh.class);
+        if (mesh == null) return null;
+        return meshSystem.getRawMeshById(mesh.getId());
+    }
+}
