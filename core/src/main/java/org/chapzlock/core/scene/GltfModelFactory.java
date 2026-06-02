@@ -73,7 +73,7 @@ import org.chapzlock.core.render.TextureSystem;
  * @see GltfAsset
  * @see GltfInstance
  */
-public class GltfSceneInstantiator {
+public class GltfModelFactory {
 
     private final ComponentRegistry registry;
     private final MeshSystem meshSystem;
@@ -89,7 +89,7 @@ public class GltfSceneInstantiator {
      *
      * @param ctx the engine context providing access to all subsystems
      */
-    public GltfSceneInstantiator(EngineContext ctx) {
+    public GltfModelFactory(EngineContext ctx) {
         this.registry = ctx.getRegistry();
         this.meshSystem = ctx.getMeshSystem();
         this.textureSystem = ctx.getTextureSystem();

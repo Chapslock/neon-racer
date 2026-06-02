@@ -14,17 +14,17 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class GltfSceneInstantiatorSkeletonTest {
+class GltfModelFactorySkeletonTest {
 
     private EngineContext ctx;
     private ComponentRegistry registry;
-    private GltfSceneInstantiator instantiator;
+    private GltfModelFactory instantiator;
 
     @BeforeEach
     void setUp() {
         ctx = EngineContext.testContext();
         registry = ctx.getRegistry();
-        instantiator = new GltfSceneInstantiator(ctx);
+        instantiator = new GltfModelFactory(ctx);
     }
 
     @Test

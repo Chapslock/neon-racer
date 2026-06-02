@@ -37,7 +37,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
  * reference count drops to zero.
  *
  * <p><strong>Usage:</strong> Game code does not interact with this system directly. The
- * {@link org.chapzlock.core.scene.GltfSceneInstantiator} and
+ * {@link org.chapzlock.core.scene.GltfModelFactory} and
  * {@link org.chapzlock.core.scene.DescriptorResolver} use it during scene instantiation.
  *
  * @see Mesh

@@ -144,7 +144,7 @@ public class SceneInstantiator {
                 // the model. Animation clips are attached to this entity for easy access.
                 if (blueprint.getGltfModelPath() != null) {
                     GltfAsset modelAsset = context.getGltfAssetRegistry().getOrLoad(blueprint.getGltfModelPath());
-                    GltfSceneInstantiator gltfInstantiator = new GltfSceneInstantiator(context);
+                    GltfModelFactory gltfInstantiator = new GltfModelFactory(context);
                     GltfInstance modelInstance = gltfInstantiator.instantiateAsChild(modelAsset, entityId);
                     for (int childId : modelInstance.allEntities().values()) {
                         entityIds.add(childId);
@@ -231,7 +231,7 @@ public class SceneInstantiator {
     public GltfInstance loadGltf(String resourcePath) {
         Log.debug("Loading glTF: " + resourcePath);
         GltfAsset asset = context.getGltfAssetRegistry().getOrLoad(resourcePath);
-        GltfSceneInstantiator gltfInstantiator = new GltfSceneInstantiator(context);
+        GltfModelFactory gltfInstantiator = new GltfModelFactory(context);
         return gltfInstantiator.instantiate(asset);
     }
 

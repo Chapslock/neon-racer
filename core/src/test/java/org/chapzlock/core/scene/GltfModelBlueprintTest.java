@@ -20,7 +20,7 @@ import java.util.stream.IntStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for {@link GltfSceneInstantiator#instantiateAsChild(GltfAsset, int)}.
+ * Tests for {@link GltfModelFactory#instantiateAsChild(GltfAsset, int)}.
  *
  * <p>Verifies that glTF models instantiated as children of an existing entity are
  * correctly parented in the hierarchy, and that animation components are attached
@@ -30,13 +30,13 @@ class GltfModelBlueprintTest {
 
     private EngineContext ctx;
     private ComponentRegistry registry;
-    private GltfSceneInstantiator instantiator;
+    private GltfModelFactory instantiator;
 
     @BeforeEach
     void setUp() {
         ctx = EngineContext.testContext();
         registry = ctx.getRegistry();
-        instantiator = new GltfSceneInstantiator(ctx);
+        instantiator = new GltfModelFactory(ctx);
     }
 
     @Test

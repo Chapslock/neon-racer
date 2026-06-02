@@ -21,7 +21,7 @@ import org.chapzlock.core.ecs.Component;
  * state.play(run, 0.2f); // crossfade to "Run" over 200ms
  * }</pre>
  *
- * <p><strong>Lifecycle:</strong> Created by {@link org.chapzlock.core.scene.GltfSceneInstantiator}
+ * <p><strong>Lifecycle:</strong> Created by {@link org.chapzlock.core.scene.GltfModelFactory}
  * during Phase 5 (animation instantiation). The clips are shared immutable data — multiple
  * entities instantiated from the same model reference the same Animation objects.
  *

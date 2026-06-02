@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit tests for {@link GltfSceneInstantiator}.
+ * Unit tests for {@link GltfModelFactory}.
  *
  * <p>These tests verify the non-GPU code paths: entity creation, hierarchy setup,
  * transform propagation, and name mapping. GPU-dependent paths (mesh upload, texture
@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * <p>All test nodes use {@code meshIndex = -1} so the instantiator never attempts
  * GPU operations.
  */
-class GltfSceneInstantiatorTest {
+class GltfModelFactoryTest {
 
     private EngineContext ctx;
     private ComponentRegistry registry;
@@ -51,7 +51,7 @@ class GltfSceneInstantiatorTest {
             List.of(root, child), List.of(0), List.of(), List.of(), List.of(), List.of());
 
         // Instantiate without GPU systems (no meshes to upload)
-        GltfSceneInstantiator instantiator = new GltfSceneInstantiator(ctx);
+        GltfModelFactory instantiator = new GltfModelFactory(ctx);
         GltfInstance instance = instantiator.instantiate(asset);
 
         // Verify name mapping
@@ -88,7 +88,7 @@ class GltfSceneInstantiatorTest {
         GltfAsset asset = new GltfAsset(
             List.of(node), List.of(0), List.of(), List.of(), List.of(), List.of());
 
-        GltfSceneInstantiator instantiator = new GltfSceneInstantiator(ctx);
+        GltfModelFactory instantiator = new GltfModelFactory(ctx);
         GltfInstance instance = instantiator.instantiate(asset);
 
         assertEquals(instance.entity("OnlyNode"), instance.rootEntity());
@@ -107,7 +107,7 @@ class GltfSceneInstantiatorTest {
         GltfAsset asset = new GltfAsset(
             List.of(rootA, rootB), List.of(0, 1), List.of(), List.of(), List.of(), List.of());
 
-        GltfSceneInstantiator instantiator = new GltfSceneInstantiator(ctx);
+        GltfModelFactory instantiator = new GltfModelFactory(ctx);
         GltfInstance instance = instantiator.instantiate(asset);
 
         // Both should be root nodes
@@ -134,7 +134,7 @@ class GltfSceneInstantiatorTest {
         GltfAsset asset = new GltfAsset(
             List.of(node), List.of(0), List.of(), List.of(), List.of(), List.of());
 
-        GltfSceneInstantiator instantiator = new GltfSceneInstantiator(ctx);
+        GltfModelFactory instantiator = new GltfModelFactory(ctx);
         GltfInstance instance = instantiator.instantiate(asset);
 
         int nodeId = instance.entity("Rotated");
@@ -158,7 +158,7 @@ class GltfSceneInstantiatorTest {
         GltfAsset asset = new GltfAsset(
             List.of(node), List.of(0), List.of(), List.of(), List.of(), List.of());
 
-        GltfSceneInstantiator instantiator = new GltfSceneInstantiator(ctx);
+        GltfModelFactory instantiator = new GltfModelFactory(ctx);
         GltfInstance instance = instantiator.instantiate(asset);
 
         int nodeId = instance.entity("Scaled");
@@ -186,7 +186,7 @@ class GltfSceneInstantiatorTest {
         GltfAsset asset = new GltfAsset(
             List.of(grandparent, parent, child), List.of(0), List.of(), List.of(), List.of(), List.of());
 
-        GltfSceneInstantiator instantiator = new GltfSceneInstantiator(ctx);
+        GltfModelFactory instantiator = new GltfModelFactory(ctx);
         GltfInstance instance = instantiator.instantiate(asset);
 
         int gpId = instance.entity("Grandparent");
@@ -224,7 +224,7 @@ class GltfSceneInstantiatorTest {
         GltfAsset asset = new GltfAsset(
             List.of(unnamed, named), List.of(0, 1), List.of(), List.of(), List.of(), List.of());
 
-        GltfSceneInstantiator instantiator = new GltfSceneInstantiator(ctx);
+        GltfModelFactory instantiator = new GltfModelFactory(ctx);
         GltfInstance instance = instantiator.instantiate(asset);
 
         assertFalse(instance.hasEntity(null != null ? null : "__null__"));
@@ -243,7 +243,7 @@ class GltfSceneInstantiatorTest {
         GltfAsset asset = new GltfAsset(
             List.of(emptyName), List.of(0), List.of(), List.of(), List.of(), List.of());
 
-        GltfSceneInstantiator instantiator = new GltfSceneInstantiator(ctx);
+        GltfModelFactory instantiator = new GltfModelFactory(ctx);
         GltfInstance instance = instantiator.instantiate(asset);
 
         assertFalse(instance.hasEntity(""));
