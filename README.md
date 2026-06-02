@@ -1,25 +1,3 @@
-# Neon Racer
-
-A 3D game engine and racing game built from scratch in Java with LWJGL 3/OpenGL.
-
-## Build & Run
-
-```bash
-./gradlew build              # Build both modules
-./gradlew :app:run           # Run the game (requires display/GPU)
-./gradlew :app:shadowJar     # Create fat JAR
-./gradlew :core:test         # Run core unit tests
-./gradlew test               # Run all tests
-```
-
-## Project Structure
-
-```
-neon-racer/
-  core/   — Reusable game engine library (org.chapzlock.core)
-  app/    — The neon-racer game (org.chapzlock.app)
-```
-
 ## Engine Architecture
 
 ### Core Systems

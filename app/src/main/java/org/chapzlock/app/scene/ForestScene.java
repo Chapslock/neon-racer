@@ -10,9 +10,11 @@ import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.Color;
 import org.chapzlock.core.component.DirectionalLight;
 import org.chapzlock.core.component.Fog;
+import org.chapzlock.core.component.PhysicsDescriptor;
 import org.chapzlock.core.component.PointLight;
 import org.chapzlock.core.component.SpriteDescriptor;
 import org.chapzlock.core.component.Transform;
+import org.chapzlock.core.physics.CollisionGeometry;
 import org.chapzlock.core.input.InputMap;
 import org.chapzlock.core.input.Key;
 import org.chapzlock.core.render.CameraFreeRoamSystem;
@@ -25,7 +27,10 @@ public class ForestScene {
     public static Scene create() {
         return Scene.builder("forest")
             .entity("terrain", e -> e
-                .gltfModel("glb/terrain.glb"))
+                .transform(Transform.at(0,0,0))
+                .gltfModel("glb/terrain.glb")
+                .physics(PhysicsDescriptor.asStatic()
+                    .shape(CollisionGeometry.triangleMesh())))
             .entity("sun", e -> e
                 .directionalLight(DirectionalLight.builder()
                     .direction(new Vector3f(-0.2f, -1f, -0.3f))
@@ -52,8 +57,10 @@ public class ForestScene {
             .entity(e -> e.fog(Fog.builder().density(0.012f).gradient(2.0f).build()))
             .entity(e -> e.ambient(AmbientLight.builder().strength(0.5f).build()))
             .entity("player", e -> e
-                .transform(Transform.at(0, 10, -3, 0, 90, 0))
+                .transform(Transform.at(0, 3, -3, 0, 90, 0))
                 .gltfModel("glb/player-character.glb")
+                .physics(PhysicsDescriptor.dynamic(1)
+                    .shape(CollisionGeometry.capsule(0.4f, 1.8f)))
                 .tag(new PlayerTag())
                 .component(new PlayerInputComponent()))
             .entity("healthbar", e -> e
