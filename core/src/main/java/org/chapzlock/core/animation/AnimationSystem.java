@@ -268,7 +268,7 @@ public class AnimationSystem implements GameSystem {
             }
             case SCALE -> {
                 KeyframeSampler.sampleVec3(channel, time, tempVec3);
-                target.setScale(tempVec3.x);
+                target.setScale(tempVec3.x, tempVec3.y, tempVec3.z);
             }
             case WEIGHTS -> {
                 // Morph target weight sampling — future work
@@ -318,7 +318,7 @@ public class AnimationSystem implements GameSystem {
                 if (currChannel.path() == TargetPath.TRANSLATION) {
                     target.setPosition(tempVec3);
                 } else {
-                    target.setScale(tempVec3.x);
+                    target.setScale(tempVec3.x, tempVec3.y, tempVec3.z);
                 }
             }
             case ROTATION -> {

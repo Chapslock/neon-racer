@@ -2,6 +2,9 @@ package org.chapzlock.core.physics;
 
 import javax.vecmath.Quat4f;
 
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+
 import com.bulletphysics.linearmath.MotionState;
 import com.bulletphysics.linearmath.Transform;
 
@@ -15,10 +18,12 @@ public class EntityMotionState extends MotionState {
     public EntityMotionState(org.chapzlock.core.component.Transform tc) {
         this.transformComponent = tc;
         initialTransform.setIdentity();
-        // set bullet transform origin
-        initialTransform.origin.set(tc.getPosition().x, tc.getPosition().y, tc.getPosition().z);
-        // convert engine quaternion (JOML) to javax.vecmath.Quat4f
-        Quat4f q = PhysicsUtil.toQuat4f(tc.getRotationQuaternion());
+        Vector3f pos = new Vector3f();
+        tc.getPosition(pos);
+        initialTransform.origin.set(pos.x, pos.y, pos.z);
+        Quaternionf engineQuat = new Quaternionf();
+        tc.getRotationQuaternion(engineQuat);
+        Quat4f q = PhysicsUtil.toQuat4f(engineQuat);
         initialTransform.setRotation(q);
     }
 
