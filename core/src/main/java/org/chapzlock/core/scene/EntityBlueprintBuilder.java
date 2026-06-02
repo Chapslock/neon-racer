@@ -3,9 +3,7 @@ package org.chapzlock.core.scene;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.chapzlock.core.component.PhysicsDescriptor;
-import org.chapzlock.core.component.SpriteDescriptor;
-import org.chapzlock.core.component.Transform;
+import org.chapzlock.core.component.*;
 import org.chapzlock.core.ecs.Component;
 import org.chapzlock.core.ecs.Tag;
 
@@ -29,7 +27,6 @@ import org.chapzlock.core.ecs.Tag;
 public class EntityBlueprintBuilder {
 
     private final String name;
-    private Transform transform;
     private SpriteDescriptor spriteDescriptor;
     private PhysicsDescriptor physicsDescriptor;
     private final List<Tag> tags = new ArrayList<>();
@@ -42,8 +39,7 @@ public class EntityBlueprintBuilder {
 
     /** Sets the initial transform for this entity. */
     public EntityBlueprintBuilder transform(Transform transform) {
-        this.transform = transform;
-        return this;
+        return component(transform);
     }
 
     /** Declares a 2D sprite for this entity. */
@@ -68,6 +64,36 @@ public class EntityBlueprintBuilder {
     public EntityBlueprintBuilder component(Component... components) {
         this.components.addAll(List.of(components));
         return this;
+    }
+
+    /** Adds a directional light component. */
+    public EntityBlueprintBuilder directionalLight(DirectionalLight light) {
+        return component(light);
+    }
+
+    /** Adds a point light component. */
+    public EntityBlueprintBuilder pointLight(PointLight light) {
+        return component(light);
+    }
+
+    /** Adds a fog component. */
+    public EntityBlueprintBuilder fog(Fog fog) {
+        return component(fog);
+    }
+
+    /** Adds an ambient light component. */
+    public EntityBlueprintBuilder ambient(AmbientLight ambient) {
+        return component(ambient);
+    }
+
+    /** Adds a camera component. */
+    public EntityBlueprintBuilder camera(Camera camera) {
+        return component(camera);
+    }
+
+    /** Adds a sky component with default settings. */
+    public EntityBlueprintBuilder sky() {
+        return component(new Sky());
     }
 
     /**
@@ -108,8 +134,7 @@ public class EntityBlueprintBuilder {
      */
     public EntityBlueprint build() {
         validate();
-        return new EntityBlueprint(name, transform,
-            spriteDescriptor, physicsDescriptor, tags, components, gltfModelPath);
+        return new EntityBlueprint(name, spriteDescriptor, physicsDescriptor, tags, components, gltfModelPath);
     }
 
     private void validate() {

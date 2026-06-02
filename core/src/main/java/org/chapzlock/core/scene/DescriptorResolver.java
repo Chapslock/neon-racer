@@ -44,10 +44,6 @@ public class DescriptorResolver {
     public List<Component> resolve(EntityBlueprint blueprint) {
         List<Component> result = new ArrayList<>();
 
-        if (blueprint.getTransform() != null) {
-            result.add(blueprint.getTransform());
-        }
-
         Mesh mesh = null;
 
         if (blueprint.getSpriteDescriptor() != null) {

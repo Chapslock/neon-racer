@@ -21,12 +21,12 @@ class EntityBlueprintBuilderTest {
     }
 
     @Test
-    void transformIsStored() {
+    void transformIsStoredInComponents() {
         Transform t = Transform.at(1, 2, 3);
         EntityBlueprint bp = new EntityBlueprintBuilder("test")
             .transform(t)
             .build();
-        assertSame(t, bp.getTransform());
+        assertTrue(bp.getComponents().contains(t));
     }
 
     @Test

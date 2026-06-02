@@ -13,10 +13,10 @@ import lombok.Getter;
 /**
  * Immutable blueprint for an entity, produced by {@link EntityBlueprintBuilder}.
  *
- * <p>Contains the entity's initial transform, rendering descriptor,
- * physics descriptor, tags, and game-logic components. The
- * {@link DescriptorResolver} consumes descriptors at scene load time
- * to produce runtime components.</p>
+ * <p>Contains the entity's rendering descriptor, physics descriptor, tags,
+ * and game-logic components. Transform is now a regular component in the
+ * components list. The {@link DescriptorResolver} consumes descriptors at
+ * scene load time to produce runtime components.</p>
  *
  * <p>Optionally carries a {@code gltfModelPath} indicating that a glTF model
  * should be instantiated as children of this entity during scene loading. This
@@ -26,7 +26,6 @@ import lombok.Getter;
 @Getter
 public final class EntityBlueprint {
     private final String name;
-    private final Transform transform;
     private final SpriteDescriptor spriteDescriptor;
     private final PhysicsDescriptor physicsDescriptor;
     private final List<Tag> tags;
@@ -46,20 +45,20 @@ public final class EntityBlueprint {
      * Full constructor including the glTF model path.
      *
      * @param name              human-readable entity name for debugging and lookup
-     * @param transform         initial transform (position, rotation, scale), or null for identity
      * @param spriteDescriptor  2D sprite configuration, or null if not a sprite entity
      * @param physicsDescriptor physics body configuration, or null if not a physics entity
      * @param tags              query-filtering tags to add to this entity
-     * @param components        game-logic components to add directly
+     * @param components        game-logic components to add directly (Transform should be in this list)
      * @param gltfModelPath     resource path to a glTF/GLB file to instantiate as children,
      *                          or null if this entity does not own a model
      */
-    public EntityBlueprint(String name, Transform transform,
+    public EntityBlueprint(String name,
                            SpriteDescriptor spriteDescriptor,
-                           PhysicsDescriptor physicsDescriptor, List<Tag> tags,
-                           List<Component> components, String gltfModelPath) {
+                           PhysicsDescriptor physicsDescriptor,
+                           List<Tag> tags,
+                           List<Component> components,
+                           String gltfModelPath) {
         this.name = name;
-        this.transform = transform;
         this.spriteDescriptor = spriteDescriptor;
         this.physicsDescriptor = physicsDescriptor;
         this.tags = List.copyOf(tags);
@@ -75,16 +74,16 @@ public final class EntityBlueprint {
      * is set to {@code null}.
      *
      * @param name              human-readable entity name for debugging and lookup
-     * @param transform         initial transform (position, rotation, scale), or null for identity
      * @param spriteDescriptor  2D sprite configuration, or null if not a sprite entity
      * @param physicsDescriptor physics body configuration, or null if not a physics entity
      * @param tags              query-filtering tags to add to this entity
-     * @param components        game-logic components to add directly
+     * @param components        game-logic components to add directly (Transform should be in this list)
      */
-    public EntityBlueprint(String name, Transform transform,
+    public EntityBlueprint(String name,
                            SpriteDescriptor spriteDescriptor,
-                           PhysicsDescriptor physicsDescriptor, List<Tag> tags,
+                           PhysicsDescriptor physicsDescriptor,
+                           List<Tag> tags,
                            List<Component> components) {
-        this(name, transform, spriteDescriptor, physicsDescriptor, tags, components, null);
+        this(name, spriteDescriptor, physicsDescriptor, tags, components, null);
     }
 }

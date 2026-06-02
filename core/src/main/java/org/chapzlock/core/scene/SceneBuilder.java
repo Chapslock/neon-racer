@@ -71,50 +71,43 @@ public class SceneBuilder {
      */
     public SceneBuilder entity(Component... components) {
         String internalName = "_entity_" + namelessCounter++;
-        entities.add(new EntityBlueprint(internalName, null, null, null,
-            List.of(), List.of(components)));
+        entities.add(new EntityBlueprint(internalName, null, null, List.of(), List.of(components)));
         return this;
     }
 
     /** Adds a directional light entity to the scene. */
     public SceneBuilder directionalLight(DirectionalLight light) {
-        entities.add(new EntityBlueprint("directional-light", null, null, null,
-            List.of(), List.of(light)));
+        entities.add(new EntityBlueprint("directional-light", null, null, List.of(), List.of(light)));
         return this;
     }
 
     /** Adds a point light entity to the scene. */
     public SceneBuilder pointLight(PointLight light) {
-        entities.add(new EntityBlueprint("point-light", null, null, null,
-            List.of(), List.of(light)));
+        entities.add(new EntityBlueprint("point-light", null, null, List.of(), List.of(light)));
         return this;
     }
 
     /** Adds a fog entity to the scene. No call = fog disabled. */
     public SceneBuilder fog(Fog fog) {
-        entities.add(new EntityBlueprint("fog", null, null, null,
-            List.of(), List.of(fog)));
+        entities.add(new EntityBlueprint("fog", null, null, List.of(), List.of(fog)));
         return this;
     }
 
     /** Adds an ambient light entity to the scene. No call = uses AmbientLight.DEFAULT_STRENGTH. */
     public SceneBuilder ambient(AmbientLight ambient) {
-        entities.add(new EntityBlueprint("ambient-light", null, null, null,
-            List.of(), List.of(ambient)));
+        entities.add(new EntityBlueprint("ambient-light", null, null, List.of(), List.of(ambient)));
         return this;
     }
 
     /** Adds a camera entity at the given position. */
     public SceneBuilder camera(float x, float y, float z) {
-        entities.add(new EntityBlueprint("camera", null, null, null,
-            List.of(), List.of(new Camera(new Vector3f(x, y, z)))));
+        entities.add(new EntityBlueprint("camera", null, null, List.of(), List.of(new Camera(new Vector3f(x, y, z)))));
         return this;
     }
 
     /** Adds a sky entity (background color). */
     public SceneBuilder sky() {
-        entities.add(new EntityBlueprint("sky", null, null, null,
-            List.of(), List.of(new Sky())));
+        entities.add(new EntityBlueprint("sky", null, null, List.of(), List.of(new Sky())));
         return this;
     }
 
