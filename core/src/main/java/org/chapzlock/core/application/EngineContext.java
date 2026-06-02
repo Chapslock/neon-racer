@@ -4,6 +4,7 @@ import org.chapzlock.core.asset.gltf.GltfAssetRegistry;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.input.InputMap;
+import org.chapzlock.core.physics.Physics;
 import org.chapzlock.core.render.CameraSystem;
 import org.chapzlock.core.render.MeshSystem;
 import org.chapzlock.core.render.ShaderSystem;
@@ -48,6 +49,8 @@ public class EngineContext implements Disposable {
     private SceneManager sceneManager;
     @Setter
     private InputMap activeInputMap;
+    @Setter
+    private Physics physics;
 
     /**
      * Creates a minimal context for unit tests (no GPU systems).

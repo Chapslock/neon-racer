@@ -1,82 +1,75 @@
 package org.chapzlock.core.physics;
 
-import javax.vecmath.Vector3f;
-
 import org.chapzlock.core.application.EngineContext;
-import org.chapzlock.core.ecs.GameSystem;
-import org.chapzlock.core.ecs.SystemPhase;
 import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.PhysicsBody;
-import org.chapzlock.core.component.Transform;
+import org.chapzlock.core.ecs.ComponentRegistry;
+import org.chapzlock.core.ecs.GameSystem;
+import org.chapzlock.core.ecs.SystemPhase;
 import org.chapzlock.core.event.ComponentAddedEvent;
 import org.chapzlock.core.event.ComponentRemovedEvent;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.event.Subscription;
-import org.chapzlock.core.logging.Log;
-import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.render.CameraSystem;
 
-import com.bulletphysics.collision.broadphase.AxisSweep3;
-import com.bulletphysics.collision.broadphase.BroadphaseInterface;
-import com.bulletphysics.collision.dispatch.CollisionConfiguration;
-import com.bulletphysics.collision.dispatch.CollisionDispatcher;
-import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration;
-import com.bulletphysics.dynamics.DiscreteDynamicsWorld;
-import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver;
-
 /**
- * Bullet physics integration for rigid body simulation.
+ * Lifecycle system that connects the physics simulation to the ECS game loop.
  *
- * <p>Automatically manages entities with {@link PhysicsBody} + {@link Transform} components.
- * Synchronizes transforms with physics world each frame. Runs at fixed 60Hz timestep with sub-stepping.
+ * <h3>What this system does each frame</h3>
+ * <ol>
+ *   <li><strong>Process registrations</strong> — any entities that gained a PhysicsBody since
+ *       last frame get their Bullet rigid body created and added to the simulation.</li>
+ *   <li><strong>Process removals</strong> — any entities that lost their PhysicsBody get
+ *       removed from the simulation.</li>
+ *   <li><strong>Step simulation</strong> — advances the physics world by deltaTime. Internally
+ *       this runs at a fixed 60Hz with sub-stepping to stay frame-rate-independent.</li>
+ *   <li><strong>Sync transforms</strong> — copies positions/rotations from the physics world
+ *       back into ECS Transform components so the renderer draws things in the right place.</li>
+ *   <li><strong>Rebuild collision cache</strong> — scans all contact manifolds and builds the
+ *       fast entity-ID-based lookup used by {@code Physics.isColliding()}.</li>
+ * </ol>
+ *
+ * <h3>Why deferred (not event-driven)</h3>
+ * <p>The old system used ComponentAddedEvent to immediately register bodies. But during scene
+ * loading, PhysicsBody might be added before Transform exists — causing silent registration
+ * failures. The new approach queues registrations and processes them at a well-defined point
+ * when all components are guaranteed present.</p>
+ *
+ * @see Physics
+ * @see PhysicsWorld
+ * @see PhysicsWorldConfig
  */
 public class PhysicsSystem implements GameSystem {
 
-    private static final Vector3f DEFAULT_GRAVITY = new Vector3f(0f, -9.81f, 0f);
-    private static final Vector3f WORLD_AABB_MIN = new Vector3f(-1000f, -1000f, -1000f);
-    private static final Vector3f WORLD_AABB_MAX = new Vector3f(1000f, 1000f, 1000f);
-    private static final float FIXED_TIME_STEP = 1f / 60f;
-    private static final int MAX_SUB_STEPS = 10;
+    private final PhysicsWorldConfig config;
 
+    private PhysicsWorld world;
     private ComponentRegistry registry;
-    private EventBus eventBus;
-
-    private final CollisionConfiguration collisionConfig;
-    private final CollisionDispatcher dispatcher;
-    private final BroadphaseInterface broadPhase;
-    private final SequentialImpulseConstraintSolver solver;
-    private final DiscreteDynamicsWorld dynamicsWorld;
-
-    private final PhysicsDebugger debugger;
     private CameraSystem cameraSystem;
-
-    private final boolean isDebugEnabled;
 
     private Subscription componentAddedSub;
     private Subscription componentRemovedSub;
 
     public PhysicsSystem() {
-        this(false);
+        this(PhysicsWorldConfig.defaults());
     }
 
-    public PhysicsSystem(boolean isDebugEnabled) {
-        this.collisionConfig = new DefaultCollisionConfiguration();
-        this.dispatcher = new CollisionDispatcher(collisionConfig);
-        this.broadPhase = new AxisSweep3(WORLD_AABB_MIN, WORLD_AABB_MAX);
-        this.solver = new SequentialImpulseConstraintSolver();
-        this.dynamicsWorld = new DiscreteDynamicsWorld(dispatcher, broadPhase, solver, collisionConfig);
-
-        this.debugger = new PhysicsDebugger();
-        this.isDebugEnabled = isDebugEnabled;
+    public PhysicsSystem(PhysicsWorldConfig config) {
+        this.config = config;
     }
 
     @Override
     public void onInit(EngineContext ctx) {
         this.registry = ctx.getRegistry();
-        this.eventBus = ctx.getEventBus();
         this.cameraSystem = ctx.getCameraSystem();
-        setupPhysicsWorld();
-        subscribeToLifecycleEvents();
+
+        this.world = new PhysicsWorld(config);
+        this.world.setMeshSystem(ctx.getMeshSystem());
+
+        Physics physics = new Physics(world);
+        ctx.setPhysics(physics);
+
+        subscribeToLifecycleEvents(ctx.getEventBus());
     }
 
     @Override
@@ -86,68 +79,43 @@ public class PhysicsSystem implements GameSystem {
 
     @Override
     public void onUpdate(float deltaTime) {
-        dynamicsWorld.stepSimulation(deltaTime, MAX_SUB_STEPS, FIXED_TIME_STEP);
-        PhysicsCollisionUtil.rebuildContactCache(dynamicsWorld);
+        world.processPendingRegistrations(registry);
+        world.processPendingRemovals();
+        world.step(deltaTime);
+        world.syncTransformsToEcs(registry);
+        world.rebuildCollisionCache();
     }
 
     @Override
     public void onDebugRender(float deltaTime) {
-        if (isDebugEnabled) {
-            renderDebugInfo();
-        }
+        if (!config.debugEnabled()) return;
+
+        world.debugDrawWorld();
+        registry.getSingleton(Camera.class).ifPresent(camera -> {
+            var projectionMatrix = cameraSystem.calculateProjectionMatrix(camera);
+            var viewMatrix = cameraSystem.calculateViewMatrix(camera);
+            world.getDebugDrawer().render(projectionMatrix, viewMatrix);
+        });
     }
 
     @Override
     public void onDestroy() {
         if (componentAddedSub != null) componentAddedSub.unsubscribe();
         if (componentRemovedSub != null) componentRemovedSub.unsubscribe();
+        if (world != null) world.dispose();
     }
 
-    private void setupPhysicsWorld() {
-        dynamicsWorld.setGravity(DEFAULT_GRAVITY);
-        dynamicsWorld.setDebugDrawer(debugger);
-    }
-
-    private void subscribeToLifecycleEvents() {
-        // TODO: Task 12 will rewrite this system to work with new PhysicsBody API
-        // Temporarily disabled until PhysicsWorld (Task 10) is implemented
-        /*
+    private void subscribeToLifecycleEvents(EventBus eventBus) {
         componentAddedSub = eventBus.subscribe(ComponentAddedEvent.class, event -> {
             if (event.componentType() != PhysicsBody.class) return false;
-
-            Transform transform = registry.getComponent(event.entityId(), Transform.class);
-            if (transform == null) {
-                Log.warn("PhysicsBody added to entity " + event.entityId() + " without Transform. Skipping physics registration.");
-                return false;
-            }
-
-            PhysicsBody body = registry.getComponent(event.entityId(), PhysicsBody.class);
-            // Old API: body.getRigidBody().setMotionState(new EntityMotionState(transform));
-            // Old API: dynamicsWorld.addRigidBody(body.getRigidBody());
-            Log.debug("Physics body registered: entity=" + event.entityId() + " mass=" + body.getMass());
+            world.queueRegistration(event.entityId());
             return false;
         });
 
         componentRemovedSub = eventBus.subscribe(ComponentRemovedEvent.class, event -> {
             if (event.componentType() != PhysicsBody.class) return false;
-
-            PhysicsBody body = registry.getComponent(event.entityId(), PhysicsBody.class);
-            if (body != null) {
-                // Old API: dynamicsWorld.removeRigidBody(body.getRigidBody());
-                Log.debug("Physics body removed: entity=" + event.entityId());
-            }
+            world.queueRemoval(event.entityId());
             return false;
         });
-        */
-    }
-
-    private void renderDebugInfo() {
-        dynamicsWorld.debugDrawWorld();
-        // TODO: Task 12 will rewrite this to use PhysicsDebugDrawer
-        // registry.getSingleton(Camera.class).ifPresent(camera -> {
-        //     var projectionMatrix = cameraSystem.calculateProjectionMatrix(camera);
-        //     var viewMatrix = cameraSystem.calculateViewMatrix(camera);
-        //     PhysicsDebugRenderer.drawLines(projectionMatrix, viewMatrix);
-        // });
     }
 }
