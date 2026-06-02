@@ -36,7 +36,7 @@ public class RenderContext {
     private Matrix4f viewMatrix;
     private Vector3f cameraPosition;
     private DirectionalLight directionalLight;
-    private List<PointLight> pointLights;
+    private List<PointLightInstance> pointLights;
     private Fog fog;
     private AmbientLight ambientLight;
     private boolean warnedNoCamera = false;
@@ -81,9 +81,10 @@ public class RenderContext {
             Log.warn("RenderContext", "Scene has " + pointLightCount + " point lights. Only first " +
                 PointLight.MAX_COUNT + " are rendered.");
         }
-        registry.forEach(PointLight.class, (entityId, light) -> {
+        registry.forEach(PointLight.class, Transform.class, (entityId, light, transform) -> {
             if (pointLights.size() < PointLight.MAX_COUNT) {
-                pointLights.add(light);
+                pointLights.add(new PointLightInstance(
+                    transform.getPosition(), light.getColor(), light.getAttenuation()));
             }
         });
 
@@ -100,5 +101,18 @@ public class RenderContext {
     public float getEffectiveAmbientStrength() {
         return ambientLight != null ? ambientLight.getStrength() : AmbientLight.DEFAULT_STRENGTH;
     }
+
+    /**
+     * A resolved point light ready for rendering: position from Transform + properties from PointLight.
+     *
+     * <p>This combines the entity's world-space position (from its {@link Transform} component)
+     * with the light properties (color, attenuation) from its {@link PointLight} component into
+     * a single object the shader can consume directly.
+     *
+     * @param position world-space position of the light (from Transform)
+     * @param color light color (from PointLight)
+     * @param attenuation distance falloff parameters (from PointLight)
+     */
+    public record PointLightInstance(Vector3f position, Color color, Attenuation attenuation) {}
 
 }

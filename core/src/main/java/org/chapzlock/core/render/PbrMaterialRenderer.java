@@ -134,15 +134,15 @@ public class PbrMaterialRenderer {
         }
 
         // Point lights
-        List<PointLight> lights = ctx.getPointLights();
+        List<RenderContext.PointLightInstance> lights = ctx.getPointLights();
         shaderSystem.setUniform(shader, UNIFORM_NUM_POINT_LIGHTS, lights.size());
         for (int i = 0; i < lights.size(); i++) {
-            PointLight pl = lights.get(i);
+            RenderContext.PointLightInstance pl = lights.get(i);
             shaderSystem.setUniform(shader, UNIFORM_POINT_LIGHT_POSITIONS + "[" + i + "]",
-                pl.getPosition());
+                pl.position());
             shaderSystem.setUniform(shader, UNIFORM_POINT_LIGHT_COLORS + "[" + i + "]",
-                pl.getColor().toVector3f());
-            Attenuation att = pl.getAttenuation();
+                pl.color().toVector3f());
+            Attenuation att = pl.attenuation();
             shaderSystem.setUniform(shader, UNIFORM_POINT_LIGHT_ATTENUATION + "[" + i + "]",
                 new Vector3f(att.constant(), att.linear(), att.quadratic()));
         }

@@ -9,6 +9,7 @@ import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.Name;
 import org.chapzlock.core.component.PbrMaterial;
 import org.chapzlock.core.component.PhysicsBody;
+import org.chapzlock.core.component.PointLight;
 import org.chapzlock.core.component.Skeleton;
 import org.chapzlock.core.component.SpriteMaterial;
 import org.chapzlock.core.component.Transform;
@@ -59,6 +60,8 @@ public class SceneInstantiator {
             "Mesh requires Transform — entity won't be positioned in world space"),
         ComponentRule.requires(PhysicsBody.class, Transform.class,
             "PhysicsBody requires Transform — physics simulation needs initial position"),
+        ComponentRule.requires(PointLight.class, Transform.class,
+            "PointLight requires Transform — light position comes from the entity's Transform"),
         ComponentRule.requires(SpriteMaterial.class, Mesh.class,
             "SpriteMaterial requires Mesh — nothing to shade without geometry"),
         ComponentRule.requires(PbrMaterial.class, Mesh.class,

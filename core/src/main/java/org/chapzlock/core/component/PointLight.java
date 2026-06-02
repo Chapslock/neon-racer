@@ -1,7 +1,6 @@
 package org.chapzlock.core.component;
 
 import org.chapzlock.core.ecs.Component;
-import org.joml.Vector3f;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -10,16 +9,25 @@ import lombok.Getter;
  * A light source that radiates outward from a specific position in all directions,
  * like a light bulb, torch, or lamp post.
  *
- * <p>Point lights have position, color, and attenuation. Unlike directional lights,
- * their intensity decreases with distance according to the {@link Attenuation} formula.
- * Surfaces close to the light appear brightly lit; surfaces far away receive little
- * or no contribution.</p>
+ * <p><strong>Position:</strong> The light's world-space position comes from the entity's
+ * {@link Transform} component, not from this component. This follows the ECS pattern used
+ * by all major engines (Unity, Bevy, Godot, Unreal) — position is always on Transform,
+ * and the light component holds only light-specific properties.
+ *
+ * <p><strong>Why Transform-based position?</strong>
+ * <ul>
+ *   <li>Movable lights just update Transform (same as any other entity)</li>
+ *   <li>Lights parented to other entities (e.g., a torch on a vehicle) inherit position
+ *       through the hierarchy system automatically</li>
+ *   <li>Consistent with how Mesh, Camera, and PhysicsBody all use Transform for position</li>
+ * </ul>
+ *
+ * <p><strong>Attenuation:</strong> Unlike directional lights, point light intensity decreases
+ * with distance according to the {@link Attenuation} formula. Surfaces close to the light
+ * appear brightly lit; surfaces far away receive little or no contribution.
  *
  * <p>The engine supports up to {@link #MAX_COUNT} simultaneous point lights per scene.
- * If more exist, only the first MAX_COUNT are sent to the GPU and a warning is logged.</p>
- *
- * <p>Each point light is its own entity in the ECS. This enables runtime modification
- * (flickering effects, moving lights attached to vehicles, etc.).</p>
+ * If more exist, only the first MAX_COUNT are sent to the GPU and a warning is logged.
  */
 @Getter
 @Builder
@@ -30,12 +38,6 @@ public class PointLight implements Component {
 
     public static final Color DEFAULT_COLOR = Color.WHITE;
     public static final Attenuation DEFAULT_ATTENUATION = Attenuation.DEFAULT;
-
-    /**
-     * World-space position of the light source.
-     * Required — must be set explicitly via the builder.
-     */
-    private final Vector3f position;
 
     /**
      * Light color. Multiplied with surface color to produce the final lit appearance.
@@ -49,13 +51,4 @@ public class PointLight implements Component {
      */
     @Builder.Default
     private final Attenuation attenuation = DEFAULT_ATTENUATION;
-
-    private PointLight(Vector3f position, Color color, Attenuation attenuation) {
-        if (position == null) {
-            throw new IllegalStateException("PointLight requires a position");
-        }
-        this.position = position;
-        this.color = color;
-        this.attenuation = attenuation;
-    }
 }

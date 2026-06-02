@@ -62,7 +62,7 @@ class SceneBuilderTest {
     @Test
     void entityBuilderPointLight() {
         PointLight light = PointLight.builder()
-            .position(new Vector3f(1, 2, 3)).build();
+            .color(new Color(1, 0, 0)).build();
         Scene scene = Scene.builder("test")
             .entity("torch", e -> e.pointLight(light))
             .build();

@@ -58,9 +58,9 @@ class RenderContextTest {
     @Test
     void beginFrameCollectsMultiplePointLights() {
         createEntityWith(new Camera(new Vector3f(0, 0, 0)));
-        createEntityWith(PointLight.builder().position(new Vector3f(1, 0, 0)).build());
-        createEntityWith(PointLight.builder().position(new Vector3f(2, 0, 0)).build());
-        createEntityWith(PointLight.builder().position(new Vector3f(3, 0, 0)).build());
+        createEntityWith(PointLight.builder().build(), Transform.at(1, 0, 0));
+        createEntityWith(PointLight.builder().build(), Transform.at(2, 0, 0));
+        createEntityWith(PointLight.builder().build(), Transform.at(3, 0, 0));
 
         ctx.beginFrame();
 
@@ -68,10 +68,21 @@ class RenderContextTest {
     }
 
     @Test
+    void beginFrameReadsPointLightPositionFromTransform() {
+        createEntityWith(new Camera(new Vector3f(0, 0, 0)));
+        createEntityWith(PointLight.builder().build(), Transform.at(5, 10, 15));
+
+        ctx.beginFrame();
+
+        assertEquals(1, ctx.getPointLights().size());
+        assertEquals(new Vector3f(5, 10, 15), ctx.getPointLights().get(0).position());
+    }
+
+    @Test
     void beginFrameCapsPointLightsAtMaxCount() {
         createEntityWith(new Camera(new Vector3f(0, 0, 0)));
         for (int i = 0; i < 10; i++) {
-            createEntityWith(PointLight.builder().position(new Vector3f(i, 0, 0)).build());
+            createEntityWith(PointLight.builder().build(), Transform.at(i, 0, 0));
         }
 
         ctx.beginFrame();
