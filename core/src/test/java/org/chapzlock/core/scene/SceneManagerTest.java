@@ -227,6 +227,9 @@ class SceneManagerTest {
             .time(new org.chapzlock.core.application.Time())
             .tweenManager(new org.chapzlock.core.tween.TweenManager())
             .build();
+        org.chapzlock.core.ecs.EntitySystem entitySystem = new org.chapzlock.core.ecs.EntitySystem();
+        entitySystem.onInit(assetCtx);
+        assetCtx.setEntitySystem(entitySystem);
         SceneManager sm = new SceneManager(assetCtx);
 
         Mesh fakeMesh = Mesh.builder().id(42).build();
