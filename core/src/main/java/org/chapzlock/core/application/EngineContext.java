@@ -2,6 +2,7 @@ package org.chapzlock.core.application;
 
 import org.chapzlock.core.asset.gltf.GltfAssetRegistry;
 import org.chapzlock.core.ecs.ComponentRegistry;
+import org.chapzlock.core.ecs.EntitySystem;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.input.InputMap;
 import org.chapzlock.core.physics.Physics;
@@ -51,6 +52,8 @@ public class EngineContext implements Disposable {
     private InputMap activeInputMap;
     @Setter
     private Physics physics;
+    @Setter
+    private EntitySystem entitySystem;
 
     /**
      * Creates a minimal context for unit tests (no GPU systems).
@@ -59,13 +62,17 @@ public class EngineContext implements Disposable {
      */
     public static EngineContext testContext() {
         EventBus eventBus = new EventBus();
-        return EngineContext.builder()
+        EngineContext ctx = EngineContext.builder()
             .registry(new ComponentRegistry(eventBus))
             .eventBus(eventBus)
             .time(new Time())
             .tweenManager(new TweenManager())
             .gltfAssetRegistry(new GltfAssetRegistry())
             .build();
+        EntitySystem entitySystem = new EntitySystem();
+        entitySystem.onInit(ctx);
+        ctx.setEntitySystem(entitySystem);
+        return ctx;
     }
 
     @Override

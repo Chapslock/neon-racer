@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.chapzlock.core.asset.gltf.GltfAssetRegistry;
 import org.chapzlock.core.ecs.ComponentRegistry;
+import org.chapzlock.core.ecs.EntitySystem;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.input.InputMap;
@@ -106,6 +107,10 @@ public class Application {
 
         sceneManager = new SceneManager(context);
         context.setSceneManager(sceneManager);
+
+        EntitySystem entitySystem = new EntitySystem();
+        entitySystem.onInit(context);
+        context.setEntitySystem(entitySystem);
     }
 
     private void mainLoop() {
