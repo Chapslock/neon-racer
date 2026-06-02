@@ -8,7 +8,6 @@ import org.chapzlock.core.asset.FileUtils;
 import org.chapzlock.core.logging.Log;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 /**
@@ -49,8 +48,13 @@ public class TextureSystem implements Disposable {
     /** Deduplication map: cache key → texture ID. Prevents loading the same image twice. */
     private final Map<String, Integer> filePathToIdMap = new Object2IntOpenHashMap<>();
 
-    /** Reference count per texture ID. Texture is deleted when count reaches zero. */
-    private final Int2IntOpenHashMap refCounts = new Int2IntOpenHashMap();
+    /**
+     * Reference counting tracker for texture lifecycle.
+     *
+     * <p>When the reference count for a texture ID drops to zero (no scenes use it anymore),
+     * the {@link #deleteTexture(int)} callback is fired to clean up GPU resources.
+     */
+    private final RefCounted refCounted = new RefCounted(this::deleteTexture);
 
     public TextureSystem() {
     }
@@ -211,7 +215,7 @@ public class TextureSystem implements Disposable {
      * @param assetId the engine-assigned texture ID
      */
     public void retain(int assetId) {
-        refCounts.put(assetId, refCounts.getOrDefault(assetId, 0) + 1);
+        refCounted.retain(assetId);
     }
 
     /**
@@ -223,18 +227,7 @@ public class TextureSystem implements Disposable {
      * @param assetId the engine-assigned texture ID
      */
     public void release(int assetId) {
-        int count = refCounts.getOrDefault(assetId, 0) - 1;
-        if (count <= 0) {
-            refCounts.remove(assetId);
-            Texture texture = texturePool.remove(assetId);
-            if (texture != null) {
-                TextureUtil.delete(texture);
-                filePathToIdMap.values().removeIf(id -> id.equals(assetId));
-                Log.debug("Texture released and deleted from GPU: id=" + assetId);
-            }
-        } else {
-            refCounts.put(assetId, count);
-        }
+        refCounted.release(assetId);
     }
 
     /**
@@ -244,7 +237,24 @@ public class TextureSystem implements Disposable {
      * @return the number of scenes currently using this texture
      */
     public int getRefCount(int assetId) {
-        return refCounts.getOrDefault(assetId, 0);
+        return refCounted.getRefCount(assetId);
+    }
+
+    /**
+     * Deletes a texture from GPU memory and clears all associated caches.
+     *
+     * <p>Called by the {@link RefCounted} tracker when a texture's reference count drops to zero.
+     * Removes the texture from all internal maps and frees GPU resources via {@link TextureUtil#delete}.
+     *
+     * @param assetId the engine-assigned texture ID to delete
+     */
+    private void deleteTexture(int assetId) {
+        Texture texture = texturePool.remove(assetId);
+        if (texture != null) {
+            TextureUtil.delete(texture);
+            filePathToIdMap.values().removeIf(id -> id.equals(assetId));
+            Log.debug("Texture released and deleted from GPU: id=" + assetId);
+        }
     }
 
     /**
