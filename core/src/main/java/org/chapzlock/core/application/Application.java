@@ -13,13 +13,9 @@ import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.input.InputMap;
 import org.chapzlock.core.logging.Log;
 import org.chapzlock.core.render.CameraSystem;
-import org.chapzlock.core.render.MaterialSystem;
 import org.chapzlock.core.render.MeshSystem;
-import org.chapzlock.core.render.PbrMaterialRenderer;
 import org.chapzlock.core.render.ShaderSystem;
 import org.chapzlock.core.render.TextureSystem;
-import org.chapzlock.core.render.UiMaterialRenderer;
-import org.chapzlock.core.scene.MaterialType;
 import org.chapzlock.core.scene.SceneManager;
 import org.chapzlock.core.tween.TweenManager;
 import org.chapzlock.core.window.Window;
@@ -88,7 +84,6 @@ public class Application {
         ShaderSystem shaderSystem = new ShaderSystem();
         TextureSystem textureSystem = new TextureSystem();
         MeshSystem meshSystem = new MeshSystem();
-        MaterialSystem materialSystem = new MaterialSystem(shaderSystem);
         CameraSystem cameraSystem = new CameraSystem(appSpec.getWindowSpec());
         Time time = new Time();
         TweenManager tweenManager = new TweenManager();
@@ -100,7 +95,6 @@ public class Application {
             .meshSystem(meshSystem)
             .textureSystem(textureSystem)
             .shaderSystem(shaderSystem)
-            .materialSystem(materialSystem)
             .cameraSystem(cameraSystem)
             .window(window)
             .time(time)
@@ -108,13 +102,7 @@ public class Application {
             .gltfAssetRegistry(gltfAssetRegistry)
             .build();
 
-        WindowSpecification windowSpec = appSpec.getWindowSpec();
-        materialSystem.registerDefault(MaterialType.PBR,
-            new PbrMaterialRenderer(shaderSystem, textureSystem));
-        materialSystem.registerDefault(MaterialType.UI,
-            new UiMaterialRenderer(shaderSystem, textureSystem, windowSpec));
-
-        Log.debug("Subsystems initialized: MeshSystem, TextureSystem, ShaderSystem, MaterialSystem, CameraSystem");
+        Log.debug("Subsystems initialized: MeshSystem, TextureSystem, ShaderSystem, CameraSystem");
 
         sceneManager = new SceneManager(context);
         context.setSceneManager(sceneManager);

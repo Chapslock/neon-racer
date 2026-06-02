@@ -5,7 +5,6 @@ import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.input.InputMap;
 import org.chapzlock.core.render.CameraSystem;
-import org.chapzlock.core.render.MaterialSystem;
 import org.chapzlock.core.render.MeshSystem;
 import org.chapzlock.core.render.ShaderSystem;
 import org.chapzlock.core.render.TextureSystem;
@@ -22,7 +21,7 @@ import lombok.Setter;
  *
  * <p>Created by {@link Application} at startup and passed to systems via {@code onInit()}.
  * Contains: {@code ComponentRegistry}, {@code EventBus}, {@code Window}, GPU systems
- * ({@code MeshSystem}, {@code TextureSystem}, {@code ShaderSystem}, {@code MaterialSystem}),
+ * ({@code MeshSystem}, {@code TextureSystem}, {@code ShaderSystem}),
  * {@code CameraSystem}, {@code Time}, {@code TweenManager}, {@code SceneManager}, {@code InputMap}.
  *
  * <p>For unit tests, use {@link #testContext()} to create a minimal context with no GPU subsystems.
@@ -35,7 +34,6 @@ public class EngineContext implements Disposable {
     private final MeshSystem meshSystem;
     private final TextureSystem textureSystem;
     private final ShaderSystem shaderSystem;
-    private final MaterialSystem materialSystem;
     private final CameraSystem cameraSystem;
     private final Window window;
     private final Time time;

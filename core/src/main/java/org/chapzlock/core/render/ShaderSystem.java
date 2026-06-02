@@ -39,9 +39,9 @@ import org.joml.Vector4f;
  * is only deleted from the GPU when its reference count drops to zero (meaning no loaded
  * scene uses it anymore).
  *
- * <p><strong>Usage:</strong> Game code doesn't interact with this system directly. The
- * {@link MaterialSystem} and render passes use it to compile/activate shaders during
- * rendering. The {@link Shader} component on an entity stores which shader files to use.
+ * <p><strong>Usage:</strong> Game code doesn't interact with this system directly. Render
+ * passes and material renderers use it to compile/activate shaders during rendering. The
+ * {@link Shader} component on an entity stores which shader files to use.
  *
  * @see Shader
  * @see ShaderUtil

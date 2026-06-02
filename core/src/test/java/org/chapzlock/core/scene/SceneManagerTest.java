@@ -4,9 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.chapzlock.core.application.EngineContext;
-import org.chapzlock.core.component.Material;
 import org.chapzlock.core.component.Mesh;
-import org.chapzlock.core.component.Shader;
+import org.chapzlock.core.component.SpriteMaterial;
 import org.chapzlock.core.component.SpriteDescriptor;
 import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.component.Transform;
@@ -16,7 +15,6 @@ import org.chapzlock.core.ecs.SystemPhase;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.event.Subscription;
 import org.chapzlock.core.render.MeshSystem;
-import org.chapzlock.core.render.ShaderSystem;
 import org.chapzlock.core.render.TextureSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -220,14 +218,12 @@ class SceneManagerTest {
     void loadRetainsAssetsAndUnloadReleasesAssets() {
         MeshSystem meshSystem = new MeshSystem();
         TextureSystem textureSystem = new TextureSystem();
-        ShaderSystem shaderSystem = new ShaderSystem();
         EventBus eb = new EventBus();
         EngineContext assetCtx = EngineContext.builder()
             .registry(new ComponentRegistry(eb))
             .eventBus(eb)
             .meshSystem(meshSystem)
             .textureSystem(textureSystem)
-            .shaderSystem(shaderSystem)
             .time(new org.chapzlock.core.application.Time())
             .tweenManager(new org.chapzlock.core.tween.TweenManager())
             .build();
@@ -235,12 +231,10 @@ class SceneManagerTest {
 
         Mesh fakeMesh = Mesh.builder().id(42).build();
         Texture fakeTexture = Texture.builder().id(7).build();
-        Shader fakeShader = new Shader("v.vert", "f.frag");
-        fakeShader.setProgramId(99);
 
         Scene scene = new Scene("asset-test", List.of(
             new EntityBlueprintBuilder("entity")
-                .component(fakeMesh, new Material(fakeShader, fakeTexture))
+                .component(fakeMesh, new SpriteMaterial(fakeTexture))
                 .build()
         ), List.of(), null);
 
@@ -248,13 +242,11 @@ class SceneManagerTest {
 
         assertEquals(1, meshSystem.getRefCount(42));
         assertEquals(1, textureSystem.getRefCount(7));
-        assertEquals(1, shaderSystem.getRefCount(99));
 
         sm.loadImmediate(simpleScene("replace"));
 
         assertEquals(0, meshSystem.getRefCount(42));
         assertEquals(0, textureSystem.getRefCount(7));
-        assertEquals(0, shaderSystem.getRefCount(99));
     }
 
     @Test

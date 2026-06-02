@@ -10,10 +10,10 @@ import java.util.Queue;
 
 import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.asset.gltf.GltfAsset;
-import org.chapzlock.core.component.Material;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.Name;
 import org.chapzlock.core.component.PhysicsBody;
+import org.chapzlock.core.component.SpriteMaterial;
 import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.Component;
@@ -346,13 +346,9 @@ public class SceneManager {
 
         for (int entityId : entityIds) {
             boolean hasMesh = registry.getComponent(entityId, Mesh.class) != null;
-            boolean hasMaterial = registry.getComponent(entityId, Material.class) != null;
             boolean hasTransform = registry.getComponent(entityId, Transform.class) != null;
             boolean hasPhysicsBody = registry.getComponent(entityId, PhysicsBody.class) != null;
 
-            if (hasMaterial && !hasMesh) {
-                Log.warn("Entity " + entityId + " has Material but no Mesh — it won't be rendered.");
-            }
             if (hasMesh && !hasTransform) {
                 Log.warn("Entity " + entityId + " has Mesh but no Transform — it won't be rendered.");
             }
@@ -429,15 +425,9 @@ public class SceneManager {
     private void trackAsset(Component component, SceneAssets assets) {
         if (component instanceof Mesh mesh) {
             assets.meshIds.add(mesh.getId());
-        } else if (component instanceof Material material) {
-            for (Texture texture : material.getTextures()) {
-                assets.textureIds.add(texture.getId());
-            }
-            if (material.getBlendMap() != null) {
-                assets.textureIds.add(material.getBlendMap().getId());
-            }
-            if (material.getShader() != null && material.getShader().isCompiled()) {
-                assets.shaderProgramIds.add(material.getShader().getProgramId());
+        } else if (component instanceof SpriteMaterial spriteMaterial) {
+            if (spriteMaterial.texture() != null) {
+                assets.textureIds.add(spriteMaterial.texture().getId());
             }
         }
     }

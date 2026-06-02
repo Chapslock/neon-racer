@@ -26,7 +26,7 @@ public class RenderSystem implements GameSystem {
     @Override
     public void onInit(EngineContext ctx) {
         renderContext = new RenderContext(ctx);
-        passes = List.of(new OpaquePass(), new UiPass());
+        passes = List.of(new OpaquePass(), new SpritePass());
         passes.forEach(p -> p.init(ctx));
 
         glEnable(GL_CULL_FACE);

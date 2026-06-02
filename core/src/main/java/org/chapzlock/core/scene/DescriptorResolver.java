@@ -6,19 +6,17 @@ import java.util.List;
 import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.asset.RawMeshData;
 import org.chapzlock.core.asset.RawMeshDataFactory;
-import org.chapzlock.core.component.Material;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.PhysicsDescriptor;
-import org.chapzlock.core.component.Shader;
+import org.chapzlock.core.component.SpriteMaterial;
 import org.chapzlock.core.component.SpriteDescriptor;
+import org.chapzlock.core.component.SpriteLayer;
 import org.chapzlock.core.component.Texture;
-import org.chapzlock.core.component.UiLayer;
 import org.chapzlock.core.ecs.Component;
 import org.chapzlock.core.ecs.Tag;
 import org.chapzlock.core.physics.CollisionShapeFactory;
 import org.chapzlock.core.physics.PhysicsSpecs;
-import org.chapzlock.core.render.MaterialSystem;
 import org.chapzlock.core.render.MeshSystem;
 import org.chapzlock.core.render.TextureSystem;
 
@@ -72,24 +70,12 @@ public class DescriptorResolver {
     private Mesh resolveSprite(SpriteDescriptor desc, List<Component> result) {
         MeshSystem meshSystem = ctx.getMeshSystem();
         TextureSystem textureSystem = ctx.getTextureSystem();
-        MaterialSystem materialSystem = ctx.getMaterialSystem();
 
         Texture texture = textureSystem.load(desc.getTexture());
         Mesh mesh = meshSystem.load(RawMeshDataFactory.createUi());
         result.add(mesh);
-
-        MaterialType type = MaterialType.UI;
-        Shader shader = new Shader(type.getVertexPath(), type.getFragmentPath());
-
-        Material material = Material.builder()
-            .shader(shader)
-            .textures(List.of(texture))
-            .tint(desc.getTint())
-            .build();
-
-        materialSystem.register(material, type);
-        result.add(material);
-        result.add(new UiLayer());
+        result.add(new SpriteMaterial(texture, desc.getTint()));
+        result.add(new SpriteLayer());
 
         return mesh;
     }

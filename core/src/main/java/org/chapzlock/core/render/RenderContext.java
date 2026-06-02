@@ -27,7 +27,6 @@ public class RenderContext {
     private final MeshSystem meshSystem;
     private final ShaderSystem shaderSystem;
     private final TextureSystem textureSystem;
-    private final MaterialSystem materialSystem;
     private final CameraSystem cameraSystem;
     private final SceneManager sceneManager;
 
@@ -47,7 +46,6 @@ public class RenderContext {
         this.meshSystem = ctx.getMeshSystem();
         this.shaderSystem = ctx.getShaderSystem();
         this.textureSystem = ctx.getTextureSystem();
-        this.materialSystem = ctx.getMaterialSystem();
         this.cameraSystem = ctx.getCameraSystem();
         this.sceneManager = ctx.getSceneManager();
     }

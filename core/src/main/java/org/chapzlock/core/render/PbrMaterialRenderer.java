@@ -37,7 +37,7 @@ import org.joml.Vector3f;
  * @see PbrMaterial
  * @see PbrShaderProps
  */
-public class PbrMaterialRenderer implements MaterialRenderer {
+public class PbrMaterialRenderer {
 
     private final ShaderSystem shaderSystem;
     private final TextureSystem textureSystem;
@@ -79,14 +79,6 @@ public class PbrMaterialRenderer implements MaterialRenderer {
     public PbrMaterialRenderer(ShaderSystem shaderSystem, TextureSystem textureSystem) {
         this.shaderSystem = shaderSystem;
         this.textureSystem = textureSystem;
-    }
-
-    @Override
-    public void apply(RenderContext ctx, Material material) {
-        // PbrMaterialRenderer works with PbrMaterial, not the legacy Material component.
-        // During the transition period, use applyPbr() directly from the render pass.
-        throw new UnsupportedOperationException(
-            "PbrMaterialRenderer does not support legacy Material. Use applyPbr(RenderContext, PbrMaterial) instead.");
     }
 
     /**
@@ -175,7 +167,6 @@ public class PbrMaterialRenderer implements MaterialRenderer {
      * <p>For entities without a Skeleton, skinning is disabled (uHasSkin=false) and the
      * shader uses the raw vertex positions unchanged.
      */
-    @Override
     public void prepareEntity(RenderContext ctx, int entityId) {
         PbrMaterial material = ctx.getRegistry().getComponent(entityId, PbrMaterial.class);
         if (material == null) return;
@@ -228,7 +219,6 @@ public class PbrMaterialRenderer implements MaterialRenderer {
         }
     }
 
-    @Override
     public void unapply() {
         shaderSystem.clearProgram();
     }

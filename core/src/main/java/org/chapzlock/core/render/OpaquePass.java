@@ -12,31 +12,34 @@ import java.util.Map;
 
 import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.component.Color;
-import org.chapzlock.core.component.Material;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.OpaqueLayer;
 import org.chapzlock.core.component.PbrMaterial;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
-import org.chapzlock.core.scene.MaterialType;
 
 /**
- * Renders all opaque 3D entities (models and terrain), batched by material
- * to minimize shader and texture switches.
+ * Renders all opaque 3D entities using PBR (physically-based rendering) materials.
  *
- * <p>This pass supports two material systems in parallel:
+ * <p>Entities are batched by {@link PbrMaterial} to minimize shader and texture switches.
+ * Each batch binds the PBR shader once, sets material-level uniforms, then draws all
+ * entities sharing that material before moving to the next batch.
+ *
+ * <p><strong>Requirements for an entity to be rendered by this pass:</strong>
  * <ul>
- *   <li><strong>Legacy materials</strong> — entities with {@link Material} component,
- *       rendered via the standard {@link MaterialRenderer#apply} path.</li>
- *   <li><strong>PBR materials</strong> — entities with {@link PbrMaterial} component,
- *       rendered via {@link PbrMaterialRenderer#applyPbr} which uses the Cook-Torrance
- *       BRDF shader and PBR-specific uniforms (metallic, roughness, texture maps).</li>
+ *   <li>{@link OpaqueLayer} tag — marks the entity as a 3D opaque object</li>
+ *   <li>{@link PbrMaterial} — material properties (textures, metallic, roughness)</li>
+ *   <li>{@link Mesh} — the 3D geometry to draw</li>
+ *   <li>{@link Transform} — world position/rotation/scale</li>
  * </ul>
+ *
+ * @see PbrMaterialRenderer
+ * @see PbrMaterial
  */
 public class OpaquePass implements RenderPass {
 
-    private final Map<Material, List<Integer>> renderQueue = new HashMap<>();
     private final Map<PbrMaterial, List<Integer>> pbrRenderQueue = new HashMap<>();
+    private PbrMaterialRenderer pbrRenderer;
 
     @Override
     public int order() {
@@ -45,19 +48,14 @@ public class OpaquePass implements RenderPass {
 
     @Override
     public void init(EngineContext ctx) {
+        pbrRenderer = new PbrMaterialRenderer(ctx.getShaderSystem(), ctx.getTextureSystem());
     }
 
     @Override
     public void collectVisibles(RenderContext ctx) {
-        renderQueue.clear();
         pbrRenderQueue.clear();
 
         ComponentRegistry registry = ctx.getRegistry();
-
-        registry.forEach(OpaqueLayer.class, Material.class, Mesh.class, Transform.class,
-            (entityId, layer, material, mesh, transform) -> {
-                renderQueue.computeIfAbsent(material, m -> new ArrayList<>()).add(entityId);
-            });
 
         registry.forEach(OpaqueLayer.class, PbrMaterial.class, Mesh.class, Transform.class,
             (entityId, layer, pbrMaterial, mesh, transform) -> {
@@ -75,25 +73,7 @@ public class OpaquePass implements RenderPass {
 
         ComponentRegistry registry = ctx.getRegistry();
 
-        // --- Legacy material rendering ---
-        for (var batch : renderQueue.entrySet()) {
-            Material material = batch.getKey();
-            List<Integer> entityIds = batch.getValue();
-            MaterialRenderer renderer = ctx.getMaterialSystem().getRenderer(material);
-
-            renderer.apply(ctx, material);
-            for (int entityId : entityIds) {
-                renderer.prepareEntity(ctx, entityId);
-                ctx.getMeshSystem().render(registry.getComponent(entityId, Mesh.class));
-            }
-            renderer.unapply();
-        }
-
-        // --- PBR material rendering ---
         if (!pbrRenderQueue.isEmpty()) {
-            PbrMaterialRenderer pbrRenderer = (PbrMaterialRenderer)
-                ctx.getMaterialSystem().getDefaultRenderer(MaterialType.PBR);
-
             for (var batch : pbrRenderQueue.entrySet()) {
                 PbrMaterial pbrMaterial = batch.getKey();
                 List<Integer> entityIds = batch.getValue();
