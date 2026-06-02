@@ -8,7 +8,6 @@ import org.chapzlock.core.asset.RawMeshData;
 import org.chapzlock.core.logging.Log;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 /**
@@ -56,8 +55,13 @@ public class MeshSystem implements Disposable {
     /** Deduplication map: if the same RawMeshData instance is uploaded again, reuse existing. */
     private final Map<RawMeshData, Integer> rawMeshDataToIdMap = new Object2IntOpenHashMap<>();
 
-    /** Reference count per mesh ID. Mesh is deleted when count reaches zero. */
-    private final Int2IntOpenHashMap refCounts = new Int2IntOpenHashMap();
+    /**
+     * Reference counting tracker for mesh lifecycle.
+     *
+     * <p>When the reference count for a mesh ID drops to zero (no scenes use it anymore),
+     * the {@link #deleteMesh(int)} callback is fired to clean up GPU resources.
+     */
+    private final RefCounted refCounted = new RefCounted(this::deleteMesh);
 
     public MeshSystem() {
     }
@@ -120,7 +124,7 @@ public class MeshSystem implements Disposable {
      * @param assetId the engine-assigned mesh ID
      */
     public void retain(int assetId) {
-        refCounts.put(assetId, refCounts.getOrDefault(assetId, 0) + 1);
+        refCounted.retain(assetId);
     }
 
     /**
@@ -132,19 +136,7 @@ public class MeshSystem implements Disposable {
      * @param assetId the engine-assigned mesh ID
      */
     public void release(int assetId) {
-        int count = refCounts.getOrDefault(assetId, 0) - 1;
-        if (count <= 0) {
-            refCounts.remove(assetId);
-            Mesh mesh = meshPool.remove(assetId);
-            if (mesh != null) {
-                MeshUtil.delete(mesh);
-                Log.debug("Mesh released and deleted from GPU: id=" + assetId);
-            }
-            rawMeshDataPool.remove(assetId);
-            rawMeshDataToIdMap.values().removeIf(id -> id.equals(assetId));
-        } else {
-            refCounts.put(assetId, count);
-        }
+        refCounted.release(assetId);
     }
 
     /**
@@ -154,7 +146,25 @@ public class MeshSystem implements Disposable {
      * @return the number of scenes currently using this mesh
      */
     public int getRefCount(int assetId) {
-        return refCounts.getOrDefault(assetId, 0);
+        return refCounted.getRefCount(assetId);
+    }
+
+    /**
+     * Deletes a mesh from GPU memory and clears all associated caches.
+     *
+     * <p>Called by the {@link RefCounted} tracker when a mesh's reference count drops to zero.
+     * Removes the mesh from all internal maps and frees GPU resources via {@link MeshUtil#delete}.
+     *
+     * @param assetId the engine-assigned mesh ID to delete
+     */
+    private void deleteMesh(int assetId) {
+        Mesh mesh = meshPool.remove(assetId);
+        if (mesh != null) {
+            MeshUtil.delete(mesh);
+            Log.debug("Mesh released and deleted from GPU: id=" + assetId);
+        }
+        rawMeshDataPool.remove(assetId);
+        rawMeshDataToIdMap.values().removeIf(id -> id.equals(assetId));
     }
 
     /**
