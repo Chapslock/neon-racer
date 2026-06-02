@@ -5,12 +5,8 @@ import java.util.List;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.Transform;
-import org.chapzlock.core.physics.PhysicsSpecs;
+import org.chapzlock.core.physics.CollisionGeometry;
 import org.junit.jupiter.api.Test;
-
-import com.bulletphysics.collision.shapes.BoxShape;
-
-import javax.vecmath.Vector3f;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -56,10 +52,10 @@ class ComponentRuleTest {
     void ruleWorksWithTagsInComponentList() {
         ComponentRule rule = ComponentRule.requires(PhysicsBody.class, Transform.class,
             "PhysicsBody requires Transform");
-        PhysicsBody physicsBody = new PhysicsBody(
-            new BoxShape(new Vector3f(1, 1, 1)),
-            PhysicsSpecs.builder().build()
-        );
+        PhysicsBody physicsBody = PhysicsBody.builder()
+            .mass(1f)
+            .geometry(CollisionGeometry.box(1, 1, 1))
+            .build();
         List<Component> components = List.of(
             physicsBody,
             new FakeComponent()
