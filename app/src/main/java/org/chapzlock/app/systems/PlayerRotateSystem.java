@@ -5,9 +5,11 @@ import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
+import org.joml.Vector3f;
 
 public class PlayerRotateSystem implements GameSystem {
     private ComponentRegistry registry;
+    private final Vector3f tempEuler = new Vector3f();
 
     @Override
     public void onInit(EngineContext ctx) {
@@ -18,9 +20,11 @@ public class PlayerRotateSystem implements GameSystem {
     public void onUpdate(float deltaTime) {
         registry.forEach(PlayerTag.class, Transform.class, (entityId, tag, transform) -> {
             float speed = 10 * deltaTime;
-            transform.getRotationEuler().x += speed;
-            transform.getRotationEuler().y += speed;
-            transform.getRotationEuler().z += speed;
+            transform.getRotationEuler(tempEuler);
+            tempEuler.x += speed;
+            tempEuler.y += speed;
+            tempEuler.z += speed;
+            transform.setRotationEuler(tempEuler.x, tempEuler.y, tempEuler.z);
         });
     }
 }

@@ -6,6 +6,7 @@ import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.GameSystem;
+import org.chapzlock.core.util.TransformUtil;
 import org.joml.Vector3f;
 
 /**
@@ -21,6 +22,11 @@ public class PlayerMovementSystem implements GameSystem {
 
     private static final float MOVE_SPEED = 8.0f;
     private static final float TURN_SPEED = 10.0f;
+
+    private final Vector3f tempPos = new Vector3f();
+    private final Vector3f tempEuler = new Vector3f();
+    private final Vector3f tempForward = new Vector3f();
+    private final Vector3f tempRight = new Vector3f();
 
     @Override
     public void onInit(EngineContext ctx) {
@@ -38,32 +44,33 @@ public class PlayerMovementSystem implements GameSystem {
                     return;
                 }
 
-                Vector3f playerForward = transform.getForwardVector(new Vector3f());
+                TransformUtil.forward(transform, tempForward);
                 Vector3f up = new Vector3f(0f, 1f, 0f);
-                Vector3f playerRight = new Vector3f();
-                playerForward.cross(up, playerRight).normalize();
+                tempForward.cross(up, tempRight).normalize();
 
                 Vector3f moveDir = new Vector3f();
-                moveDir.add(new Vector3f(playerForward).mul(forward));
-                moveDir.add(new Vector3f(playerRight).mul(right));
+                moveDir.add(new Vector3f(tempForward).mul(forward));
+                moveDir.add(new Vector3f(tempRight).mul(right));
 
                 if (moveDir.lengthSquared() > 0.001f) {
                     moveDir.normalize();
 
-                    Vector3f pos = transform.getPosition();
-                    pos.x += moveDir.x * MOVE_SPEED * deltaTime;
-                    pos.y += moveDir.y * MOVE_SPEED * deltaTime;
-                    pos.z += moveDir.z * MOVE_SPEED * deltaTime;
+                    transform.getPosition(tempPos);
+                    tempPos.x += moveDir.x * MOVE_SPEED * deltaTime;
+                    tempPos.y += moveDir.y * MOVE_SPEED * deltaTime;
+                    tempPos.z += moveDir.z * MOVE_SPEED * deltaTime;
+                    transform.setPosition(tempPos);
 
                     if (forward != 0f) {
                         float targetYaw = (float) Math.toDegrees(Math.atan2(-moveDir.x, -moveDir.z));
-                        float currentYaw = transform.getRotationEuler().y;
-                        float diff = targetYaw - currentYaw;
+                        transform.getRotationEuler(tempEuler);
+                        float diff = targetYaw - tempEuler.y;
 
                         while (diff > 180f) { diff -= 360f; }
                         while (diff < -180f) { diff += 360f; }
 
-                        transform.getRotationEuler().y += diff * TURN_SPEED * deltaTime;
+                        tempEuler.y += diff * TURN_SPEED * deltaTime;
+                        transform.setRotationEuler(tempEuler.x, tempEuler.y, tempEuler.z);
                     }
                 }
             });

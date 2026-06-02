@@ -5,6 +5,7 @@ import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.GameSystem;
+import org.chapzlock.core.util.TransformUtil;
 import org.joml.Vector3f;
 
 
@@ -42,8 +43,9 @@ public class PlayerCameraFollowSystem implements GameSystem {
             return;
         }
 
-        Vector3f playerPos = playerT.getPosition();
-        Vector3f playerForward = playerT.getForwardVector(new Vector3f());
+        Vector3f playerPos = new Vector3f();
+        playerT.getPosition(playerPos);
+        Vector3f playerForward = TransformUtil.forward(playerT, new Vector3f());
 
         Vector3f up = new Vector3f(0f, 1f, 0f);
         Vector3f right = new Vector3f();
