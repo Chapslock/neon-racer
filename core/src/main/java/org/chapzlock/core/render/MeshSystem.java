@@ -55,6 +55,9 @@ public class MeshSystem implements Disposable {
     /** Deduplication map: if the same RawMeshData instance is uploaded again, reuse existing. */
     private final Map<RawMeshData, Integer> rawMeshDataToIdMap = new Object2IntOpenHashMap<>();
 
+    /** Reverse lookup: mesh ID → original RawMeshData. Enables O(1) cleanup on release. */
+    private final Map<Integer, RawMeshData> idToRawMeshDataMap = new Int2ObjectOpenHashMap<>();
+
     /**
      * Reference counting tracker for mesh lifecycle.
      *
@@ -87,6 +90,7 @@ public class MeshSystem implements Disposable {
         meshPool.put(mesh.getId(), mesh);
         rawMeshDataPool.put(mesh.getId(), rawMeshData);
         rawMeshDataToIdMap.put(rawMeshData, mesh.getId());
+        idToRawMeshDataMap.put(mesh.getId(), rawMeshData);
         Log.debug("Mesh uploaded to GPU: id=" + mesh.getId() + ", " + mesh.getVertexCount() + " indices");
         return mesh;
     }
@@ -164,7 +168,10 @@ public class MeshSystem implements Disposable {
             Log.debug("Mesh released and deleted from GPU: id=" + assetId);
         }
         rawMeshDataPool.remove(assetId);
-        rawMeshDataToIdMap.values().removeIf(id -> id.equals(assetId));
+        RawMeshData rawData = idToRawMeshDataMap.remove(assetId);
+        if (rawData != null) {
+            rawMeshDataToIdMap.remove(rawData);
+        }
     }
 
     /**
@@ -180,5 +187,6 @@ public class MeshSystem implements Disposable {
         meshPool.clear();
         rawMeshDataPool.clear();
         rawMeshDataToIdMap.clear();
+        idToRawMeshDataMap.clear();
     }
 }

@@ -48,6 +48,9 @@ public class TextureSystem implements Disposable {
     /** Deduplication map: cache key → texture ID. Prevents loading the same image twice. */
     private final Map<String, Integer> filePathToIdMap = new Object2IntOpenHashMap<>();
 
+    /** Reverse lookup: texture ID → cache key. Enables O(1) cleanup on release. */
+    private final Map<Integer, String> idToKeyMap = new Int2ObjectOpenHashMap<>();
+
     /**
      * Reference counting tracker for texture lifecycle.
      *
@@ -104,6 +107,7 @@ public class TextureSystem implements Disposable {
         Texture texture = TextureUtil.bindTextureDataToGpu(rawImageData, srgb);
         texturePool.put(texture.getId(), texture);
         filePathToIdMap.put(key, texture.getId());
+        idToKeyMap.put(texture.getId(), key);
         Log.debug("Texture loaded: \"" + filePath + "\" → id=" + texture.getId() + " (" + rawImageData.getWidth() + "x" + rawImageData.getHeight() + (srgb ? ", sRGB" : "") + ")");
         return texture;
     }
@@ -157,6 +161,7 @@ public class TextureSystem implements Disposable {
         Texture texture = TextureUtil.bindTextureDataToGpu(rawImageData, srgb);
         texturePool.put(texture.getId(), texture);
         filePathToIdMap.put(key, texture.getId());
+        idToKeyMap.put(texture.getId(), key);
         Log.debug("Texture loaded from memory: \"" + cacheKey + "\" → id=" + texture.getId() + " (" + rawImageData.getWidth() + "x" + rawImageData.getHeight() + (srgb ? ", sRGB" : "") + ")");
         return texture;
     }
@@ -252,7 +257,10 @@ public class TextureSystem implements Disposable {
         Texture texture = texturePool.remove(assetId);
         if (texture != null) {
             TextureUtil.delete(texture);
-            filePathToIdMap.values().removeIf(id -> id.equals(assetId));
+            String key = idToKeyMap.remove(assetId);
+            if (key != null) {
+                filePathToIdMap.remove(key);
+            }
             Log.debug("Texture released and deleted from GPU: id=" + assetId);
         }
     }
@@ -269,5 +277,6 @@ public class TextureSystem implements Disposable {
         }
         texturePool.clear();
         filePathToIdMap.clear();
+        idToKeyMap.clear();
     }
 }
