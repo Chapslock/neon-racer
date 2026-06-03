@@ -119,6 +119,8 @@ public class Application {
         float lastTime = getTime();
 
         while (isRunning) {
+            glfwPollEvents();
+
             float now = getTime();
             float rawDelta = now - lastTime;
             lastTime = now;
@@ -130,11 +132,6 @@ public class Application {
 
             context.getTime().update(rawDelta);
             float delta = context.getTime().getDelta();
-
-            InputMap activeInputMap = context.getActiveInputMap();
-            if (activeInputMap != null) {
-                activeInputMap.frameReset();
-            }
 
             ApplicationUtil.clearAndPrepareWindowState();
 
@@ -149,10 +146,14 @@ public class Application {
                 system.onDebugRender(delta);
             }
 
+            InputMap activeInputMap = context.getActiveInputMap();
+            if (activeInputMap != null) {
+                activeInputMap.frameReset();
+            }
+
             sceneManager.processPendingTransitions();
 
             glfwSwapBuffers(window.getId());
-            glfwPollEvents();
         }
     }
 

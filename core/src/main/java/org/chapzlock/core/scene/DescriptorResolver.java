@@ -87,6 +87,7 @@ public class DescriptorResolver {
             .restitution(desc.getRestitution())
             .linearDamping(desc.getLinearDamping())
             .angularDamping(desc.getAngularDamping())
+            .angularFactor(desc.getAngularFactor())
             .geometry(desc.getGeometry())
             .layer(desc.getLayer())
             .collisionMask(desc.getCollisionMask())

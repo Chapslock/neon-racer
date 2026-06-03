@@ -354,6 +354,7 @@ class PhysicsWorld implements Disposable {
         body.setFriction(config.getFriction());
         body.setRestitution(config.getRestitution());
         body.setDamping(config.getLinearDamping(), config.getAngularDamping());
+        body.setAngularFactor(config.getAngularFactor());
         return body;
     }
 

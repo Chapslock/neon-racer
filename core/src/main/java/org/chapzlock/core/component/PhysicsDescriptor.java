@@ -40,43 +40,52 @@ public class PhysicsDescriptor implements Component {
     private final float linearDamping;
     private final float angularDamping;
     private final CollisionGeometry geometry;
+    private final float angularFactor;
     private final int layer;
     private final int collisionMask;
 
     public static PhysicsDescriptor dynamic(float mass) {
-        return new PhysicsDescriptor(mass, 0.5f, 0.1f, 0.05f, 0.85f, null, 1, 0xFFFFFFFF);
+        return new PhysicsDescriptor(mass, 0.5f, 0.1f, 0.05f, 0.85f, null, 1f, 1, 0xFFFFFFFF);
     }
 
     public static PhysicsDescriptor asStatic() {
-        return new PhysicsDescriptor(0f, 0.5f, 0.1f, 0.05f, 0.85f, null, 1, 0xFFFFFFFF);
+        return new PhysicsDescriptor(0f, 0.5f, 0.1f, 0.05f, 0.85f, null, 1f, 1, 0xFFFFFFFF);
     }
 
     public PhysicsDescriptor shape(CollisionGeometry geometry) {
-        return new PhysicsDescriptor(mass, friction, restitution, linearDamping, angularDamping, geometry, layer, collisionMask);
+        return new PhysicsDescriptor(mass, friction, restitution, linearDamping, angularDamping, geometry, angularFactor, layer, collisionMask);
     }
 
     public PhysicsDescriptor friction(float friction) {
-        return new PhysicsDescriptor(mass, friction, restitution, linearDamping, angularDamping, geometry, layer, collisionMask);
+        return new PhysicsDescriptor(mass, friction, restitution, linearDamping, angularDamping, geometry, angularFactor, layer, collisionMask);
     }
 
     public PhysicsDescriptor restitution(float restitution) {
-        return new PhysicsDescriptor(mass, friction, restitution, linearDamping, angularDamping, geometry, layer, collisionMask);
+        return new PhysicsDescriptor(mass, friction, restitution, linearDamping, angularDamping, geometry, angularFactor, layer, collisionMask);
     }
 
     public PhysicsDescriptor linearDamping(float linearDamping) {
-        return new PhysicsDescriptor(mass, friction, restitution, linearDamping, angularDamping, geometry, layer, collisionMask);
+        return new PhysicsDescriptor(mass, friction, restitution, linearDamping, angularDamping, geometry, angularFactor, layer, collisionMask);
     }
 
     public PhysicsDescriptor angularDamping(float angularDamping) {
-        return new PhysicsDescriptor(mass, friction, restitution, linearDamping, angularDamping, geometry, layer, collisionMask);
+        return new PhysicsDescriptor(mass, friction, restitution, linearDamping, angularDamping, geometry, angularFactor, layer, collisionMask);
+    }
+
+    public PhysicsDescriptor angularFactor(float angularFactor) {
+        return new PhysicsDescriptor(mass, friction, restitution, linearDamping, angularDamping, geometry, angularFactor, layer, collisionMask);
+    }
+
+    public PhysicsDescriptor lockRotation() {
+        return angularFactor(0f);
     }
 
     public PhysicsDescriptor layer(int layer) {
-        return new PhysicsDescriptor(mass, friction, restitution, linearDamping, angularDamping, geometry, layer, collisionMask);
+        return new PhysicsDescriptor(mass, friction, restitution, linearDamping, angularDamping, geometry, angularFactor, layer, collisionMask);
     }
 
     public PhysicsDescriptor collidesWith(int collisionMask) {
-        return new PhysicsDescriptor(mass, friction, restitution, linearDamping, angularDamping, geometry, layer, collisionMask);
+        return new PhysicsDescriptor(mass, friction, restitution, linearDamping, angularDamping, geometry, angularFactor, layer, collisionMask);
     }
 
     public boolean isDynamic() {

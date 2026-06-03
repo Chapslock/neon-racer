@@ -2,7 +2,6 @@ package org.chapzlock.core.component;
 
 import org.chapzlock.core.ecs.Component;
 import org.chapzlock.core.physics.CollisionGeometry;
-
 import lombok.Builder;
 import lombok.Getter;
 
@@ -50,6 +49,8 @@ public class PhysicsBody implements Component {
     @Builder.Default
     private final float angularDamping = 0.85f;
     private final CollisionGeometry geometry;
+    @Builder.Default
+    private final float angularFactor = 1f;
     @Builder.Default
     private final int layer = 1;
     @Builder.Default
