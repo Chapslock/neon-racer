@@ -43,7 +43,7 @@ class CollisionShapeResolver {
             case CollisionGeometry.Compound c ->
                 resolveCompound(c, meshData);
             case CollisionGeometry.Offset o ->
-                resolve(o.inner(), meshData);
+                resolveOffset(o, meshData);
         };
     }
 
@@ -75,5 +75,15 @@ class CollisionShapeResolver {
             compoundShape.addChildShape(childTransform, childShape);
         }
         return compoundShape;
+    }
+
+    private CollisionShape resolveOffset(CollisionGeometry.Offset offset, RawMeshData meshData) {
+        CollisionShape innerShape = resolve(offset.inner(), meshData);
+        CompoundShape compound = new CompoundShape();
+        Transform childTransform = new Transform();
+        childTransform.setIdentity();
+        childTransform.origin.set(PhysicsUtil.toVecmath(offset.offset()));
+        compound.addChildShape(childTransform, innerShape);
+        return compound;
     }
 }

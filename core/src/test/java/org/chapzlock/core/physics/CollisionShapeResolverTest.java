@@ -98,4 +98,23 @@ class CollisionShapeResolverTest {
         assertThrows(IllegalStateException.class, () ->
             resolver.resolve(CollisionGeometry.triangleMesh(), null));
     }
+
+    @Test
+    void resolveOffset_wrapsInCompoundShapeWithChildAtOffset() {
+        var resolver = new CollisionShapeResolver();
+        var geometry = CollisionGeometry.sphere(1f).offset(0, 2f, 0);
+
+        CollisionShape shape = resolver.resolve(geometry, null);
+
+        assertInstanceOf(CompoundShape.class, shape);
+        CompoundShape compound = (CompoundShape) shape;
+        assertEquals(1, compound.getNumChildShapes());
+        assertInstanceOf(SphereShape.class, compound.getChildShape(0));
+
+        com.bulletphysics.linearmath.Transform childTransform = new com.bulletphysics.linearmath.Transform();
+        compound.getChildTransform(0, childTransform);
+        assertEquals(0f, childTransform.origin.x, 0.001f);
+        assertEquals(2f, childTransform.origin.y, 0.001f);
+        assertEquals(0f, childTransform.origin.z, 0.001f);
+    }
 }
