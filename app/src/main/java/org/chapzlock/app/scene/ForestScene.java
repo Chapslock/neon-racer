@@ -60,7 +60,7 @@ public class ForestScene {
                 .transform(Transform.at(0, 3, -3, 0, 90, 0))
                 .gltfModel("glb/player-character.glb")
                 .physics(PhysicsDescriptor.asStatic()
-                    .shape(CollisionGeometry.capsule(0.4f, 1.8f)))
+                    .shape(CollisionGeometry.capsule(0.4f, 1.8f).offset(0, 0.9f, 0)))
                 .tag(new PlayerTag())
                 .component(new PlayerInputComponent()))
             .entity("healthbar", e -> e
