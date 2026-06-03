@@ -29,6 +29,7 @@ import org.joml.Vector3f;
 public class CharacterRotationSystem implements GameSystem {
 
     private static final float TURN_SMOOTHING = 10f;
+    private static final float MODEL_YAW_OFFSET = -90f;
 
     private ComponentRegistry registry;
 
@@ -59,7 +60,7 @@ public class CharacterRotationSystem implements GameSystem {
                 Vector3f dir = state.getMovementDirection();
                 if (dir.x == 0f && dir.z == 0f) return;
 
-                float targetYaw = (float) Math.toDegrees(Math.atan2(dir.x, -dir.z));
+                float targetYaw = (float) Math.toDegrees(Math.atan2(dir.x, -dir.z)) + MODEL_YAW_OFFSET;
 
                 Quaternionf current = new Quaternionf();
                 transform.getRotationQuaternion(current);

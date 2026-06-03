@@ -79,7 +79,7 @@ public class ThirdPersonCameraSystem implements GameSystem {
         if (tpc.isOrbiting() && input != null) {
             float dx = input.getMouseAxis("lookX");
             float dy = input.getMouseAxis("lookY");
-            tpc.setYaw(tpc.getYaw() + dx * tpc.getMouseSensitivity());
+            tpc.setYaw(tpc.getYaw() - dx * tpc.getMouseSensitivity());
             tpc.setPitch(tpc.getPitch() - dy * tpc.getMouseSensitivity());
             tpc.setPitch(Math.max(tpc.getPitchMin(), Math.min(tpc.getPitchMax(), tpc.getPitch())));
         } else {
