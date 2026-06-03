@@ -57,10 +57,11 @@ public class ForestScene {
             .entity(e -> e.fog(Fog.builder().density(0.012f).gradient(2.0f).build()))
             .entity(e -> e.ambient(AmbientLight.builder().strength(0.5f).build()))
             .entity("player", e -> e
-                .transform(Transform.at(0, 3, -3, 0, 90, 0))
+                .transform(Transform.at(0, 3, 0, 0, 90, 0))
                 .gltfModel("glb/player-character.glb")
-                .physics(PhysicsDescriptor.asStatic()
-                    .shape(CollisionGeometry.capsule(0.4f, 1.8f).offset(0, 0.9f, 0)))
+                .physics(PhysicsDescriptor.dynamic(1)
+                    .shape(CollisionGeometry.capsule(0.3f, 0.6f)
+                        .offset(0, 0.3f, 0)))
                 .tag(new PlayerTag())
                 .component(new PlayerInputComponent()))
             .entity("healthbar", e -> e
