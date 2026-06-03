@@ -45,10 +45,25 @@ import org.lwjgl.opengl.GLCapabilities;
 
 
 /**
- * GLFW window wrapper with input event callbacks.
+ * GLFW window wrapper managing the application's display surface and input callbacks.
  *
- * <p>Created by {@link org.chapzlock.core.application.Application}. Publishes input events
- * (key, mouse button, mouse move, mouse scroll) to {@link EventBus}.
+ * <p><strong>Lifecycle:</strong>
+ * <ol>
+ *   <li>{@code new Window(spec, eventBus)} — stores configuration, no native resources yet</li>
+ *   <li>{@link #create(long)} — creates the GLFW window, sets up OpenGL context, registers
+ *       input callbacks that publish events to the EventBus, and makes the window visible</li>
+ *   <li>Main loop calls {@code glfwPollEvents()} externally — callbacks fire, events publish</li>
+ *   <li>{@link #destroy()} — destroys the native window and frees GLFW resources</li>
+ * </ol>
+ *
+ * <p><strong>Input callbacks:</strong> Key, mouse button, mouse move, and scroll events are
+ * published to the {@link org.chapzlock.core.event.EventBus} as typed event records
+ * (KeyPressedEvent, MouseMovedEvent, etc.). Systems subscribe to these events rather than
+ * polling GLFW directly.
+ *
+ * <p><strong>Cursor modes:</strong> {@link #setCursorLocked(boolean)} toggles between normal
+ * cursor (visible, confined to window) and disabled cursor (hidden, infinite movement for
+ * mouse-look). Used by camera systems during orbit.
  */
 public class Window {
 

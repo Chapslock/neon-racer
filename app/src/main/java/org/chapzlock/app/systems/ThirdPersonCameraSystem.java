@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.chapzlock.app.component.CharacterState;
 import org.chapzlock.app.component.ThirdPersonCamera;
-import org.chapzlock.app.tags.PlayerTag;
 import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.Transform;
@@ -18,6 +17,28 @@ import org.chapzlock.core.input.mouse.MouseScrolledEvent;
 import org.chapzlock.core.window.Window;
 import org.joml.Vector3f;
 
+/**
+ * Third-person camera that follows the player using spherical coordinates.
+ *
+ * <p>Camera position is computed from three parameters stored in {@link ThirdPersonCamera}:
+ * distance, pitch (vertical angle), and yaw (horizontal angle). These map to Cartesian
+ * coordinates via: x = dist * cos(pitch) * sin(yaw), y = dist * sin(pitch),
+ * z = dist * cos(pitch) * cos(yaw).
+ *
+ * <p><strong>Modes:</strong>
+ * <ul>
+ *   <li><em>Follow mode</em> (no mouse button held) — camera yaw lerps toward player's
+ *       facing direction. Smooth rotation behind the player.</li>
+ *   <li><em>Orbit mode</em> (left or right mouse button held) — mouse movement directly
+ *       controls yaw and pitch. Cursor is locked during orbit.</li>
+ * </ul>
+ *
+ * <p>Scroll wheel adjusts distance (zoom). Position is smoothed via lerp with
+ * delta-time scaling for frame-rate independence. Pitch is clamped to prevent
+ * gimbal lock at the poles.
+ *
+ * <p>Runs after {@link CharacterRotationSystem} to read the latest player facing yaw.
+ */
 public class ThirdPersonCameraSystem implements GameSystem {
 
     private ComponentRegistry registry;
@@ -133,19 +154,19 @@ public class ThirdPersonCameraSystem implements GameSystem {
     }
 
     private Vector3f getPlayerPosition() {
-        final Vector3f[] result = {null};
-        registry.forEach(PlayerTag.class, Transform.class, (entityId, tag, transform) -> {
-            result[0] = new Vector3f();
-            transform.getPosition(result[0]);
-        });
-        return result[0];
+        int playerEntity = registry.getEntityByName("player");
+        if (playerEntity < 0) return null;
+        Transform transform = registry.getComponent(playerEntity, Transform.class);
+        if (transform == null) return null;
+        Vector3f pos = new Vector3f();
+        transform.getPosition(pos);
+        return pos;
     }
 
     private float getPlayerFacingYaw() {
-        final float[] result = {0f};
-        registry.forEach(PlayerTag.class, CharacterState.class, (entityId, tag, state) -> {
-            result[0] = state.getFacingYaw();
-        });
-        return result[0];
+        int playerEntity = registry.getEntityByName("player");
+        if (playerEntity < 0) return 0f;
+        CharacterState state = registry.getComponent(playerEntity, CharacterState.class);
+        return state != null ? state.getFacingYaw() : 0f;
     }
 }

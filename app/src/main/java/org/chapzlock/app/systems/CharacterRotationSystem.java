@@ -13,6 +13,22 @@ import org.chapzlock.core.ecs.SystemPhase;
 import org.chapzlock.core.input.InputMap;
 import org.joml.Quaternionf;
 
+/**
+ * Controls player facing direction via two modes:
+ *
+ * <ol>
+ *   <li><strong>Keyboard turning</strong> — when A/D keys are pressed (via "turnRight" axis),
+ *       the player rotates at TURN_SPEED degrees/second. Only active when right-click orbit
+ *       is not held.</li>
+ *   <li><strong>Camera snap</strong> — on right-click release, the player's facing direction
+ *       snaps to match the camera's yaw. This lets the player orbit the camera with right-click
+ *       and then run in that direction when released.</li>
+ * </ol>
+ *
+ * <p>Tracks {@code wasOrbitingRight} state across frames to detect the right-click
+ * release transition. Runs after {@link CharacterMovementSystem} and before
+ * {@link ThirdPersonCameraSystem}.
+ */
 public class CharacterRotationSystem implements GameSystem {
 
     private static final float TURN_SPEED = 180f;

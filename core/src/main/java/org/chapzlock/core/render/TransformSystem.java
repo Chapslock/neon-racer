@@ -13,11 +13,20 @@ import org.chapzlock.core.logging.Log;
 import org.joml.Matrix4f;
 
 /**
- * Computes world-space transformation matrices for entities in a hierarchy.
+ * Computes world-space transformation matrices for entities in a parent-child hierarchy.
  *
- * <p>Standalone entities (no Hierarchy component) are never touched — their
- * {@link Transform#getWorldMatrix()} returns the local matrix directly. This system
- * only processes hierarchy roots and recursively propagates to all descendants.
+ * <p><strong>Algorithm:</strong> Each frame, iterates all entities with both {@link Hierarchy}
+ * and {@link Transform}. For root entities (no parent), copies the local matrix as the world
+ * matrix. Then recursively propagates down the tree: each child's world matrix = parent's
+ * world matrix * child's local matrix.
+ *
+ * <p><strong>Important assumption:</strong> Entities without a {@link Hierarchy} component
+ * never get their world matrix updated by this system. Their
+ * {@link Transform#getWorldMatrix()} returns the local matrix directly (identity world
+ * transform). This is correct for standalone entities that don't participate in a scene graph.
+ *
+ * <p>Includes cycle detection — if a hierarchy has a cycle (A→B→C→A), the cycle is broken
+ * with an error log rather than causing a stack overflow.
  *
  * <p>Runs in the LOGIC phase, after animation and before physics/rendering.
  */

@@ -121,11 +121,18 @@ public class SceneInstantiator {
 
                 String name = recipe.name();
                 Log.debug("  Entity \"" + (name != null ? name : "<anonymous>") + "\" created (id=" + entityId + ")");
+            } catch (org.chapzlock.core.asset.gltf.GltfLoadException e) {
+                String name = recipe.name();
+                Log.error("Scene \"" + scene.getName() + "\", entity \"" + (name != null ? name : "<anonymous>") +
+                    "\": glTF load failed for model asset. " + e.getMessage());
+            } catch (IllegalStateException e) {
+                String name = recipe.name();
+                Log.error("Scene \"" + scene.getName() + "\", entity \"" + (name != null ? name : "<anonymous>") +
+                    "\": Component validation error. " + e.getMessage());
             } catch (Exception e) {
                 String name = recipe.name();
                 Log.error("Scene \"" + scene.getName() + "\", entity \"" + (name != null ? name : "<anonymous>") +
-                    "\": Failed to instantiate. " + e.getMessage() +
-                    " Ensure asset files exist in src/main/resources/ and paths are relative to the resources root.");
+                    "\": Unexpected error during instantiation. " + e.getClass().getSimpleName() + ": " + e.getMessage());
             }
         }
         retainAll(assets);

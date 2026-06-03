@@ -14,6 +14,20 @@ import org.chapzlock.core.physics.Physics;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
+/**
+ * Moves the player character based on input and current facing direction.
+ *
+ * <p>Transforms the forward input value (-1 to 1) into a world-space velocity by
+ * rotating the model's local +X axis by the player's current quaternion rotation.
+ * The Y component of velocity is preserved from physics (gravity) so movement
+ * doesn't fight vertical forces.
+ *
+ * <p>When input is zero, horizontal velocity is zeroed immediately (no momentum).
+ * This gives responsive, arcade-style movement rather than realistic deceleration.
+ *
+ * <p>Depends on {@link CharacterGroundCheckSystem} (runs after it) and runs before
+ * {@link CharacterRotationSystem}.
+ */
 public class CharacterMovementSystem implements GameSystem {
 
     private static final float MOVE_SPEED = 8f;
