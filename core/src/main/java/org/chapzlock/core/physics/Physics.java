@@ -7,6 +7,7 @@ import javax.vecmath.Vector3f;
 import org.chapzlock.core.logging.Log;
 import org.joml.Quaternionf;
 
+import com.bulletphysics.collision.dispatch.CollisionObject;
 import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.linearmath.Transform;
 
@@ -114,10 +115,10 @@ public class Physics {
     public void stopMotion(int entityId) {
         RigidBody body = getBodyOrWarn(entityId, "stopMotion");
         if (body == null) return;
-        body.activate(true);
         body.setLinearVelocity(new Vector3f(0, 0, 0));
         body.setAngularVelocity(new Vector3f(0, 0, 0));
         body.clearForces();
+        body.setActivationState(CollisionObject.ISLAND_SLEEPING);
     }
 
     // --- Collision Queries ---
