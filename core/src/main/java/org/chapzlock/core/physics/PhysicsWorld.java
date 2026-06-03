@@ -75,6 +75,7 @@ class PhysicsWorld implements Disposable {
 
     private final Int2ObjectOpenHashMap<RigidBody> entityToBody = new Int2ObjectOpenHashMap<>();
     private final IdentityHashMap<RigidBody, Integer> bodyToEntity = new IdentityHashMap<>();
+    private final Int2ObjectOpenHashMap<org.joml.Vector3f> entityOffsets = new Int2ObjectOpenHashMap<>();
 
     private final IntList pendingRemovals = new IntArrayList();
 
@@ -129,7 +130,12 @@ class PhysicsWorld implements Disposable {
         RawMeshData meshData = resolveMeshData(entityId, registry, meshSystem);
         CollisionShape shape = shapeResolver.resolve(config.getGeometry(), meshData);
 
-        RigidBody body = createRigidBody(config, shape, transform);
+        org.joml.Vector3f offset = extractOffset(config.getGeometry());
+        if (offset != null) {
+            entityOffsets.put(entityId, new org.joml.Vector3f(offset));
+        }
+
+        RigidBody body = createRigidBody(config, shape, transform, offset);
         dynamicsWorld.addRigidBody(body, (short) config.getLayer(), (short) config.getCollisionMask());
 
         entityToBody.put(entityId, body);
@@ -152,6 +158,7 @@ class PhysicsWorld implements Disposable {
                 bodyToEntity.remove(body);
                 dynamicsWorld.removeRigidBody(body);
                 body.destroy();
+                entityOffsets.remove(entityId);
                 Log.debug("Physics body removed: entity=" + entityId);
             }
         }
@@ -173,13 +180,24 @@ class PhysicsWorld implements Disposable {
             Transform transform = registry.getComponent(entityId, Transform.class);
             if (transform == null) return;
 
-            transform.setPosition(
-                bulletTransform.origin.x,
-                bulletTransform.origin.y,
-                bulletTransform.origin.z);
-
             Quat4f q = bulletTransform.getRotation(new Quat4f());
             transform.setRotationQuaternion(PhysicsUtil.toQuaternionf(q));
+
+            org.joml.Vector3f offset = entityOffsets.get(entityId);
+            if (offset != null) {
+                Quaternionf rotation = PhysicsUtil.toQuaternionf(q);
+                org.joml.Vector3f rotatedOffset = new org.joml.Vector3f(offset);
+                rotation.transform(rotatedOffset);
+                transform.setPosition(
+                    bulletTransform.origin.x - rotatedOffset.x,
+                    bulletTransform.origin.y - rotatedOffset.y,
+                    bulletTransform.origin.z - rotatedOffset.z);
+            } else {
+                transform.setPosition(
+                    bulletTransform.origin.x,
+                    bulletTransform.origin.y,
+                    bulletTransform.origin.z);
+            }
         });
     }
 
@@ -246,11 +264,13 @@ class PhysicsWorld implements Disposable {
         }
         entityToBody.clear();
         bodyToEntity.clear();
+        entityOffsets.clear();
         pendingRemovals.clear();
         debugDrawer.dispose();
     }
 
-    private RigidBody createRigidBody(PhysicsBody config, CollisionShape shape, Transform transform) {
+    private RigidBody createRigidBody(PhysicsBody config, CollisionShape shape, Transform transform,
+                                      org.joml.Vector3f offset) {
         Vector3f localInertia = new Vector3f(0f, 0f, 0f);
         if (config.getMass() != 0) {
             shape.calculateLocalInertia(config.getMass(), localInertia);
@@ -260,6 +280,15 @@ class PhysicsWorld implements Disposable {
         startTransform.setIdentity();
         org.joml.Vector3f pos = new org.joml.Vector3f();
         transform.getPosition(pos);
+
+        if (offset != null) {
+            Quaternionf rotation = new Quaternionf();
+            transform.getRotationQuaternion(rotation);
+            org.joml.Vector3f rotatedOffset = new org.joml.Vector3f(offset);
+            rotation.transform(rotatedOffset);
+            pos.add(rotatedOffset);
+        }
+
         startTransform.origin.set(pos.x, pos.y, pos.z);
 
         Quaternionf engineQuat = new Quaternionf();
@@ -317,5 +346,12 @@ class PhysicsWorld implements Disposable {
         if (childMeshes.isEmpty()) return null;
         if (childMeshes.size() == 1) return childMeshes.get(0);
         return RawMeshData.merge(childMeshes);
+    }
+
+    private static org.joml.Vector3f extractOffset(CollisionGeometry geometry) {
+        if (geometry instanceof CollisionGeometry.Offset o) {
+            return o.offset();
+        }
+        return null;
     }
 }

@@ -108,6 +108,38 @@ class PhysicsWorldTest {
         assertFalse(world.isRegistered(e2));
     }
 
+    @Test
+    void dynamicBodyWithOffset_syncsBackToLogicalPosition() {
+        int entity = createPhysicsEntity(1f, CollisionGeometry.sphere(0.5f).offset(0, 2f, 0), 0, 10, 0);
+
+        world.register(entity, registry);
+
+        world.step(1f / 60f);
+        world.syncTransformsToEcs(registry);
+
+        Transform transform = registry.getComponent(entity, Transform.class);
+        Vector3f pos = new Vector3f();
+        transform.getPosition(pos);
+
+        // Entity should have fallen slightly (gravity) and offset subtracted
+        assertTrue(pos.y < 10f, "Entity should have fallen slightly. Y=" + pos.y);
+        assertTrue(pos.y > 9.5f, "Entity shouldn't have fallen far in one frame. Y=" + pos.y);
+    }
+
+    @Test
+    void dynamicBodyWithOffset_initialRegistrationPlacesBodyAtOffsetPosition() {
+        int entity = createPhysicsEntity(0f, CollisionGeometry.sphere(0.5f).offset(0, 3f, 0), 0, 5, 0);
+
+        world.register(entity, registry);
+
+        com.bulletphysics.linearmath.Transform bulletTransform = new com.bulletphysics.linearmath.Transform();
+        world.getBody(entity).getWorldTransform(bulletTransform);
+
+        assertEquals(0f, bulletTransform.origin.x, 0.001f);
+        assertEquals(8f, bulletTransform.origin.y, 0.001f);
+        assertEquals(0f, bulletTransform.origin.z, 0.001f);
+    }
+
     private int createPhysicsEntity(float mass, CollisionGeometry geometry, float x, float y, float z) {
         int entity = Entity.create(registry);
         registry.addComponent(entity, Transform.at(x, y, z));
