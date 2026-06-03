@@ -29,6 +29,7 @@ public class RenderContext {
     private final TextureSystem textureSystem;
     private final CameraSystem cameraSystem;
     private final SceneManager sceneManager;
+    private final Vector3f[] pointLightPositionPool = new Vector3f[PointLight.MAX_COUNT];
 
     private Camera camera;
     private Sky sky;
@@ -48,6 +49,9 @@ public class RenderContext {
         this.textureSystem = ctx.getTextureSystem();
         this.cameraSystem = ctx.getCameraSystem();
         this.sceneManager = ctx.getSceneManager();
+        for (int i = 0; i < pointLightPositionPool.length; i++) {
+            pointLightPositionPool[i] = new Vector3f();
+        }
     }
 
     public boolean beginFrame() {
@@ -81,12 +85,13 @@ public class RenderContext {
             Log.warn("RenderContext", "Scene has " + pointLightCount + " point lights. Only first " +
                 PointLight.MAX_COUNT + " are rendered.");
         }
+        final int[] index = {0};
         registry.forEach(PointLight.class, Transform.class, (entityId, light, transform) -> {
-            if (pointLights.size() < PointLight.MAX_COUNT) {
-                Vector3f pos = new Vector3f();
-                transform.getPosition(pos);
+            if (index[0] < PointLight.MAX_COUNT) {
+                transform.getPosition(pointLightPositionPool[index[0]]);
                 pointLights.add(new PointLightInstance(
-                    pos, light.getColor(), light.getAttenuation()));
+                    pointLightPositionPool[index[0]], light.getColor(), light.getAttenuation()));
+                index[0]++;
             }
         });
 
