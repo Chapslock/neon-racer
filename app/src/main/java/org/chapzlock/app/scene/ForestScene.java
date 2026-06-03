@@ -17,9 +17,11 @@ import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.Color;
 import org.chapzlock.core.component.DirectionalLight;
 import org.chapzlock.core.component.Fog;
-import org.chapzlock.core.component.PhysicsDescriptor;
+import org.chapzlock.core.component.GltfModel;
+import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.PointLight;
-import org.chapzlock.core.component.SpriteDescriptor;
+import org.chapzlock.core.component.SpriteMaterial;
+import org.chapzlock.core.component.SpriteLayer;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.EntityBuilder;
 import org.chapzlock.core.input.InputMap;
@@ -35,8 +37,8 @@ public class ForestScene {
         return Scene.builder("forest")
             .entity("terrain", e -> e
                 .transform(Transform.at(0, 0, 0))
-                .gltfModel("glb/terrain.glb")
-                .physics(PhysicsDescriptor.asStatic()
+                .component(new GltfModel("glb/terrain.glb"))
+                .component(PhysicsBody.asStatic()
                     .shape(CollisionGeometry.triangleMesh())))
             .entity("sun", e -> e
                 .directionalLight(DirectionalLight.builder()
@@ -53,8 +55,8 @@ public class ForestScene {
             .entity(e -> e.ambient(AmbientLight.builder().strength(0.5f).build()))
             .entity("player", e -> e
                 .transform(Transform.at(0, 3, 0))
-                .gltfModel("glb/player-character.glb")
-                .physics(PhysicsDescriptor.dynamic(1)
+                .component(new GltfModel("glb/player-character.glb"))
+                .component(PhysicsBody.dynamic(1)
                     .shape(CollisionGeometry.capsule(0.3f, 0.6f)
                         .offset(0, 0.3f, 0))
                     .lockRotation())
@@ -63,7 +65,8 @@ public class ForestScene {
                 .component(new CharacterState()))
             .entity("healthbar", e -> e
                 .transform(Transform.at(0, 0, 0, 0, 0, 0, 250))
-                .sprite(SpriteDescriptor.of("textures/health-bar.png")))
+                .component(new SpriteMaterial("textures/health-bar.png"))
+                .component(new SpriteLayer()))
             .entity(e -> e
                 .camera(new Camera(new Vector3f(0, 3, 5)))
                 .component(new ThirdPersonCamera()))

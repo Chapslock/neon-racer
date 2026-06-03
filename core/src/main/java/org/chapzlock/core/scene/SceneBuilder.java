@@ -11,16 +11,16 @@ import org.chapzlock.core.input.InputMap;
 /**
  * Fluent builder for creating scenes.
  *
- * <p>A scene is a collection of entity blueprints, game systems, and optional input bindings.
+ * <p>A scene is a collection of entity recipes, game systems, and optional input bindings.
  * Every piece of scene content (lights, cameras, fog, terrain, players) is defined as an entity
  * using the {@link EntityBuilder}.
  *
  * <p><strong>Usage example:</strong>
  * <pre>{@code
  * Scene race = Scene.builder("race-track")
- *     .entity("terrain", e -> e.gltfModel("models/track.glb"))
+ *     .entity("terrain", e -> e.component(new GltfModel("models/track.glb")))
  *     .entity("sun", e -> e.directionalLight(DirectionalLight.builder()...build()))
- *     .entity("player", e -> e.transform(Transform.at(0, 0, 0)).gltfModel("glb/car.glb"))
+ *     .entity("player", e -> e.transform(Transform.at(0, 0, 0)).component(new GltfModel("glb/car.glb")))
  *     .entity(e -> e.camera(new Camera(new Vector3f(0, 5, 10))))
  *     .entity(e -> e.sky())
  *     .systems(new PlayerSystem(), new AISystem())
@@ -31,7 +31,7 @@ import org.chapzlock.core.input.InputMap;
 public class SceneBuilder {
 
     private final String name;
-    private final List<EntityBlueprint> entities = new ArrayList<>();
+    private final List<EntityRecipe> entities = new ArrayList<>();
     private final List<GameSystem> systems = new ArrayList<>();
     private InputMap inputMap;
     private int namelessCounter = 0;
@@ -51,9 +51,7 @@ public class SceneBuilder {
      * @return this builder for chaining
      */
     public SceneBuilder entity(String entityName, Consumer<EntityBuilder> configurator) {
-        EntityBuilder builder = new EntityBuilder(entityName);
-        configurator.accept(builder);
-        entities.add(builder.build());
+        entities.add(new EntityRecipe(entityName, configurator));
         return this;
     }
 
@@ -69,9 +67,7 @@ public class SceneBuilder {
      */
     public SceneBuilder entity(Consumer<EntityBuilder> configurator) {
         String internalName = "_entity_" + namelessCounter++;
-        EntityBuilder builder = new EntityBuilder(internalName);
-        configurator.accept(builder);
-        entities.add(builder.build());
+        entities.add(new EntityRecipe(internalName, configurator));
         return this;
     }
 

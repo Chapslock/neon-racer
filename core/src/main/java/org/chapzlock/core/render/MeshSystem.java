@@ -38,7 +38,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
  *
  * <p><strong>Usage:</strong> Game code does not interact with this system directly. The
  * {@link org.chapzlock.core.scene.GltfModelFactory} and
- * {@link org.chapzlock.core.scene.DescriptorResolver} use it during scene instantiation.
+ * {@link org.chapzlock.core.ecs.EntitySystem} use it during scene instantiation.
  *
  * @see Mesh
  * @see MeshUtil

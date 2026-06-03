@@ -12,7 +12,7 @@ import lombok.Getter;
  *
  * <p>A Scene is a pure data description that can be loaded, unloaded, and reloaded without
  * side effects. All content (terrain, lights, players) is defined as entities through the
- * {@link SceneBuilder}. Use {@link org.chapzlock.core.ecs.EntityBuilder#gltfModel(String)} to load 3D
+ * {@link SceneBuilder}. Use {@link org.chapzlock.core.component.GltfModel} component to load 3D
  * models as part of an entity.
  *
  * <p><strong>Immutability:</strong> Once built via {@link SceneBuilder#build()}, a Scene
@@ -21,7 +21,7 @@ import lombok.Getter;
 @Getter
 public class Scene {
     private final String name;
-    private final List<EntityBlueprint> entities;
+    private final List<EntityRecipe> entities;
     private final List<GameSystem> systems;
     private final InputMap inputMap;
 
@@ -32,11 +32,11 @@ public class Scene {
      * by game code. Use the builder for a cleaner API.
      *
      * @param name     unique name identifying this scene (used in logs and events)
-     * @param entities list of entity blueprints to instantiate when the scene loads
+     * @param entities list of entity recipes to instantiate when the scene loads
      * @param systems  list of game systems active while this scene is loaded
      * @param inputMap optional input bindings (null if scene has no input handling)
      */
-    public Scene(String name, List<EntityBlueprint> entities, List<GameSystem> systems, InputMap inputMap) {
+    public Scene(String name, List<EntityRecipe> entities, List<GameSystem> systems, InputMap inputMap) {
         if (name == null) {
             throw new IllegalArgumentException(
                 "Scene name cannot be null. Pass a name to identify the scene in logs and error messages.");

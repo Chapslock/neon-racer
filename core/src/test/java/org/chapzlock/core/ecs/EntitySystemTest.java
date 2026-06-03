@@ -2,12 +2,10 @@ package org.chapzlock.core.ecs;
 
 import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.component.PhysicsBody;
-import org.chapzlock.core.component.PhysicsDescriptor;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.event.ComponentAddedEvent;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.physics.CollisionGeometry;
-import org.chapzlock.core.scene.EntityBlueprint;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -57,7 +55,7 @@ class EntitySystemTest {
 
         entitySystem.builder("test")
             .transform(Transform.at(0, 0, 0))
-            .physics(PhysicsDescriptor.dynamic(1f).shape(CollisionGeometry.sphere(1f)))
+            .component(PhysicsBody.dynamic(1f).shape(CollisionGeometry.sphere(1f)))
             .instantiate();
 
         assertEquals(1, transformPresentAtPhysicsEvent.size());
@@ -68,7 +66,7 @@ class EntitySystemTest {
     void instantiate_validatesRules_rejectsInvalid() {
         // PhysicsBody requires Transform — omitting Transform should fail
         int entityId = entitySystem.builder("invalid")
-            .physics(PhysicsDescriptor.dynamic(1f).shape(CollisionGeometry.sphere(1f)))
+            .component(PhysicsBody.dynamic(1f).shape(CollisionGeometry.sphere(1f)))
             .instantiate();
 
         assertEquals(-1, entityId);
@@ -83,20 +81,21 @@ class EntitySystemTest {
         });
 
         entitySystem.builder("invalid")
-            .physics(PhysicsDescriptor.dynamic(1f).shape(CollisionGeometry.sphere(1f)))
+            .component(PhysicsBody.dynamic(1f).shape(CollisionGeometry.sphere(1f)))
             .instantiate();
 
         assertEquals(0, eventCount.get());
     }
 
     @Test
-    void instantiateBlueprint_worksWithExistingBlueprint() {
-        EntityBlueprint blueprint = new EntityBuilder("from-blueprint")
-            .transform(Transform.at(5, 5, 5))
-            .physics(PhysicsDescriptor.asStatic().shape(CollisionGeometry.box(1, 1, 1)))
-            .build();
+    void instantiateDirectCall_worksWithComponentsAndTags() {
+        List<Component> components = List.of(
+            Transform.at(5, 5, 5),
+            PhysicsBody.asStatic().shape(CollisionGeometry.box(1, 1, 1))
+        );
+        List<Tag> tags = List.of();
 
-        int entityId = entitySystem.instantiate(blueprint);
+        int entityId = entitySystem.instantiate("from-direct", components, tags);
 
         assertTrue(entityId >= 0);
         assertNotNull(registry.getComponent(entityId, Transform.class));

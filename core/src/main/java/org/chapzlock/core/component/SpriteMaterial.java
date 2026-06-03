@@ -17,16 +17,15 @@ import lombok.Getter;
  * owns the sprite shader program internally. This component is pure data — it tells the
  * renderer WHAT to draw (which texture, what tint), not HOW to draw it.
  *
- * <p><strong>Usage:</strong> Typically created via
- * {@link org.chapzlock.core.scene.DescriptorResolver} from a {@link SpriteDescriptor}
- * during scene instantiation. Game code does not create these manually.
+ * <p><strong>Usage:</strong> Created directly in scene declarations with a texture path
+ * (deferred loading) or with an already-loaded texture. When path-based, the texture is
+ * resolved during entity instantiation via {@link #withTexture(Texture)}.
  *
  * <p><strong>Deferred loading:</strong> Supports both immediate (texture already loaded)
  * and deferred (path-based) construction. When constructed with a path, the texture is
  * null until resolved via {@link #withTexture(Texture)}.
  *
  * @see SpriteLayer
- * @see SpriteDescriptor
  */
 @Getter
 public class SpriteMaterial implements Component {

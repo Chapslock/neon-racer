@@ -1,6 +1,7 @@
 package org.chapzlock.core.scene;
 
 import org.chapzlock.core.component.*;
+import org.chapzlock.core.ecs.EntityBuilder;
 import org.chapzlock.core.ecs.GameSystem;
 import org.joml.Vector3f;
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,15 @@ class SceneBuilderTest {
 
     static class DummySystem implements GameSystem {}
 
+    /**
+     * Helper: applies a recipe's configurator to a fresh EntityBuilder and returns it.
+     */
+    private EntityBuilder applyRecipe(EntityRecipe recipe) {
+        EntityBuilder builder = new EntityBuilder(recipe.name());
+        recipe.configurator().accept(builder);
+        return builder;
+    }
+
     @Test
     void builderCreatesSceneWithName() {
         Scene scene = Scene.builder("my-scene").build();
@@ -18,15 +28,15 @@ class SceneBuilderTest {
     }
 
     @Test
-    void namedEntityAddsBlueprint() {
+    void namedEntityAddsRecipe() {
         Scene scene = Scene.builder("test")
             .entity("player", e -> e.transform(Transform.at(1, 2, 3)))
             .entity("enemy", e -> e.transform(Transform.at(4, 5, 6)))
             .build();
 
         assertEquals(2, scene.getEntities().size());
-        assertEquals("player", scene.getEntities().get(0).getName());
-        assertEquals("enemy", scene.getEntities().get(1).getName());
+        assertEquals("player", scene.getEntities().get(0).name());
+        assertEquals("enemy", scene.getEntities().get(1).name());
     }
 
     @Test
@@ -36,7 +46,7 @@ class SceneBuilderTest {
             .build();
 
         assertEquals(1, scene.getEntities().size());
-        assertTrue(scene.getEntities().get(0).getName().startsWith("_entity_"));
+        assertTrue(scene.getEntities().get(0).name().startsWith("_entity_"));
     }
 
     @Test
@@ -56,7 +66,8 @@ class SceneBuilderTest {
             .build();
 
         assertEquals(1, scene.getEntities().size());
-        assertTrue(scene.getEntities().get(0).getComponents().contains(light));
+        EntityBuilder applied = applyRecipe(scene.getEntities().get(0));
+        assertTrue(applied.getComponents().contains(light));
     }
 
     @Test
@@ -67,7 +78,8 @@ class SceneBuilderTest {
             .entity("torch", e -> e.pointLight(light))
             .build();
 
-        assertTrue(scene.getEntities().get(0).getComponents().contains(light));
+        EntityBuilder applied = applyRecipe(scene.getEntities().get(0));
+        assertTrue(applied.getComponents().contains(light));
     }
 
     @Test
@@ -77,7 +89,8 @@ class SceneBuilderTest {
             .entity(e -> e.fog(fog))
             .build();
 
-        assertTrue(scene.getEntities().get(0).getComponents().contains(fog));
+        EntityBuilder applied = applyRecipe(scene.getEntities().get(0));
+        assertTrue(applied.getComponents().contains(fog));
     }
 
     @Test
@@ -87,7 +100,8 @@ class SceneBuilderTest {
             .entity(e -> e.ambient(ambient))
             .build();
 
-        assertTrue(scene.getEntities().get(0).getComponents().contains(ambient));
+        EntityBuilder applied = applyRecipe(scene.getEntities().get(0));
+        assertTrue(applied.getComponents().contains(ambient));
     }
 
     @Test
@@ -97,7 +111,8 @@ class SceneBuilderTest {
             .entity(e -> e.camera(cam))
             .build();
 
-        assertTrue(scene.getEntities().get(0).getComponents().contains(cam));
+        EntityBuilder applied = applyRecipe(scene.getEntities().get(0));
+        assertTrue(applied.getComponents().contains(cam));
     }
 
     @Test
@@ -106,7 +121,8 @@ class SceneBuilderTest {
             .entity(e -> e.sky())
             .build();
 
-        assertTrue(scene.getEntities().get(0).getComponents().stream()
+        EntityBuilder applied = applyRecipe(scene.getEntities().get(0));
+        assertTrue(applied.getComponents().stream()
             .anyMatch(c -> c instanceof Sky));
     }
 

@@ -1,20 +1,24 @@
 package org.chapzlock.core.ecs;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.asset.RawMeshDataFactory;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.Name;
 import org.chapzlock.core.component.PbrMaterial;
 import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.PointLight;
 import org.chapzlock.core.component.Skeleton;
+import org.chapzlock.core.component.SpriteLayer;
 import org.chapzlock.core.component.SpriteMaterial;
+import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.event.ComponentAddedEvent;
 import org.chapzlock.core.logging.Log;
-import org.chapzlock.core.scene.DescriptorResolver;
-import org.chapzlock.core.scene.EntityBlueprint;
+import org.chapzlock.core.render.MeshSystem;
+import org.chapzlock.core.render.TextureSystem;
 
 /**
  * Manages runtime entity creation through a phased assembly pipeline.
@@ -25,8 +29,8 @@ import org.chapzlock.core.scene.EntityBlueprint;
  *
  * <p>Pipeline phases:
  * <ol>
- *   <li><strong>Resolve</strong> — converts descriptors (PhysicsDescriptor, SpriteDescriptor)
- *       into concrete runtime components via {@link DescriptorResolver}</li>
+ *   <li><strong>Resolve</strong> — resolves deferred components (e.g., SpriteMaterial with
+ *       a texture path is loaded into a GPU texture)</li>
  *   <li><strong>Validate</strong> — checks component dependency rules (e.g., Mesh requires
  *       Transform). Invalid entities are rejected with a clear error message.</li>
  *   <li><strong>Commit</strong> — creates the entity ID, bulk-adds all components silently
@@ -41,12 +45,11 @@ import org.chapzlock.core.scene.EntityBlueprint;
  *     .component(new Velocity(dir))
  *     .instantiate();
  *
- * // Via blueprint (used internally by scene loading)
- * int id = entitySystem.instantiate(blueprint);
+ * // Via direct call (used internally by scene loading)
+ * int id = entitySystem.instantiate(name, components, tags);
  * }</pre>
  *
  * @see EntityBuilder#instantiate()
- * @see DescriptorResolver
  * @see ComponentRule
  */
 public class EntitySystem implements GameSystem {
@@ -67,12 +70,12 @@ public class EntitySystem implements GameSystem {
     );
 
     private ComponentRegistry registry;
-    private DescriptorResolver descriptorResolver;
+    private EngineContext ctx;
 
     @Override
     public void onInit(EngineContext ctx) {
+        this.ctx = ctx;
         this.registry = ctx.getRegistry();
-        this.descriptorResolver = new DescriptorResolver(ctx);
     }
 
     /**
@@ -89,21 +92,23 @@ public class EntitySystem implements GameSystem {
     }
 
     /**
-     * Instantiates an entity from a blueprint through the phased assembly pipeline.
+     * Instantiates an entity from component and tag lists through the phased assembly pipeline.
      *
-     * <p>Phases: resolve descriptors, validate rules, commit atomically with deferred events.
+     * <p>Phases: resolve components, validate rules, commit atomically with deferred events.
      *
-     * @param blueprint the entity blueprint to instantiate
+     * @param name       the entity name (nullable for anonymous entities)
+     * @param components the components to attach
+     * @param tags       the tags to attach
      * @return the new entity ID, or -1 if validation failed
      */
-    public int instantiate(EntityBlueprint blueprint) {
-        // Phase 1: Resolve descriptors into concrete components
-        List<Component> resolved = descriptorResolver.resolve(blueprint);
+    public int instantiate(String name, List<Component> components, List<Tag> tags) {
+        // Phase 1: Resolve deferred components
+        List<Component> resolved = resolveComponents(components, tags);
 
         // Phase 2: Validate component rules
-        String violation = checkRules(resolved, blueprint.getName());
+        String violation = checkRules(resolved, name);
         if (violation != null) {
-            Log.error("EntitySystem", "Entity '" + blueprint.getName() + "' failed validation: " + violation);
+            Log.error("EntitySystem", "Entity '" + name + "' failed validation: " + violation);
             return -1;
         }
 
@@ -111,9 +116,9 @@ public class EntitySystem implements GameSystem {
         int entityId = Entity.create(registry);
         registry.addComponentsSilent(entityId, resolved);
 
-        // Add Name component if the blueprint has a non-internal name
-        if (blueprint.getName() != null && !blueprint.getName().startsWith("_")) {
-            registry.addComponentsSilent(entityId, List.of(new Name(blueprint.getName())));
+        // Add Name component if the entity has a non-internal name
+        if (name != null && !name.startsWith("_")) {
+            registry.addComponentsSilent(entityId, List.of(new Name(name)));
         }
 
         // Fire ComponentAddedEvent for each component (entity is now fully assembled)
@@ -122,6 +127,48 @@ public class EntitySystem implements GameSystem {
         }
 
         return entityId;
+    }
+
+    /**
+     * Resolves deferred components into their runtime equivalents.
+     *
+     * <p>Handles:
+     * <ul>
+     *   <li>SpriteMaterial with needsResolution() — loads texture via TextureSystem</li>
+     *   <li>SpriteLayer present without Mesh — auto-creates UI quad mesh</li>
+     *   <li>Tags — added to the result list as components</li>
+     * </ul>
+     */
+    private List<Component> resolveComponents(List<Component> components, List<Tag> tags) {
+        List<Component> result = new ArrayList<>();
+        boolean hasMesh = false;
+        boolean hasSpriteLayer = false;
+
+        for (Component c : components) {
+            if (c instanceof SpriteMaterial sm && sm.needsResolution()) {
+                TextureSystem textureSystem = ctx.getTextureSystem();
+                Texture loaded = textureSystem.load(sm.texturePath());
+                result.add(sm.withTexture(loaded));
+            } else {
+                result.add(c);
+            }
+            if (c instanceof Mesh) hasMesh = true;
+            if (c instanceof SpriteLayer) hasSpriteLayer = true;
+        }
+
+        // Auto-create UI quad mesh if SpriteLayer is present without Mesh
+        if (hasSpriteLayer && !hasMesh) {
+            MeshSystem meshSystem = ctx.getMeshSystem();
+            Mesh mesh = meshSystem.load(RawMeshDataFactory.createUi());
+            result.add(mesh);
+        }
+
+        // Add tags to result list
+        for (Tag tag : tags) {
+            result.add(tag);
+        }
+
+        return result;
     }
 
     private String checkRules(List<? extends Component> components, String entityName) {

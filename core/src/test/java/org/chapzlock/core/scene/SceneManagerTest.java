@@ -6,7 +6,7 @@ import java.util.List;
 import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.SpriteMaterial;
-import org.chapzlock.core.component.SpriteDescriptor;
+import org.chapzlock.core.component.SpriteLayer;
 import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
@@ -44,9 +44,7 @@ class SceneManagerTest {
 
     private Scene simpleScene(String name) {
         return new Scene(name, List.of(
-            new org.chapzlock.core.ecs.EntityBuilder("entity1")
-                .transform(Transform.at(0, 0, 0))
-                .build()
+            new EntityRecipe("entity1", e -> e.transform(Transform.at(0, 0, 0)))
         ), List.of(), null);
     }
 
@@ -236,10 +234,9 @@ class SceneManagerTest {
         Texture fakeTexture = Texture.builder().id(7).build();
 
         Scene scene = new Scene("asset-test", List.of(
-            new org.chapzlock.core.ecs.EntityBuilder("entity")
+            new EntityRecipe("entity", e -> e
                 .transform(Transform.at(0, 0, 0))
-                .component(fakeMesh, new SpriteMaterial(fakeTexture))
-                .build()
+                .component(fakeMesh, new SpriteMaterial(fakeTexture)))
         ), List.of(), null);
 
         sm.loadImmediate(scene);
@@ -254,11 +251,9 @@ class SceneManagerTest {
     }
 
     @Test
-    void loadImmediateAddsNameComponentForNamedBlueprints() {
+    void loadImmediateAddsNameComponentForNamedRecipes() {
         Scene scene = new Scene("test", List.of(
-            new org.chapzlock.core.ecs.EntityBuilder("player")
-                .transform(Transform.at(0, 0, 0))
-                .build()
+            new EntityRecipe("player", e -> e.transform(Transform.at(0, 0, 0)))
         ), List.of(), null);
 
         sceneManager.loadImmediate(scene);
@@ -271,13 +266,11 @@ class SceneManagerTest {
     @Test
     void failedEntityInstantiationDoesNotLeavePartialEntity() {
         Scene scene = new Scene("bad-entity", List.of(
-            new org.chapzlock.core.ecs.EntityBuilder("good")
-                .transform(Transform.at(0, 0, 0))
-                .build(),
-            new org.chapzlock.core.ecs.EntityBuilder("bad")
+            new EntityRecipe("good", e -> e.transform(Transform.at(0, 0, 0))),
+            new EntityRecipe("bad", e -> e
                 .transform(Transform.at(1, 1, 1))
-                .sprite(SpriteDescriptor.of("nonexistent.png"))
-                .build()
+                .component(new SpriteMaterial("nonexistent.png"))
+                .component(new SpriteLayer()))
         ), List.of(), null);
 
         sceneManager.loadImmediate(scene);

@@ -38,7 +38,6 @@ import org.joml.Vector3f;
  * that a barrel uses a cylinder instead of matching every polygon.</p>
  *
  * @see PhysicsBody
- * @see org.chapzlock.core.component.PhysicsDescriptor
  */
 public sealed interface CollisionGeometry {
 

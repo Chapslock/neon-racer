@@ -5,9 +5,11 @@ import java.util.List;
 
 import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.asset.gltf.GltfAsset;
+import org.chapzlock.core.component.GltfModel;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.SpriteMaterial;
 import org.chapzlock.core.ecs.ComponentRegistry;
+import org.chapzlock.core.ecs.EntityBuilder;
 import org.chapzlock.core.ecs.EntitySystem;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.logging.Log;
@@ -26,9 +28,9 @@ import org.chapzlock.core.logging.Log;
  * into this dedicated class gives SceneManager a single responsibility (lifecycle orchestration)
  * and makes instantiation independently testable.
  *
- * <p><strong>Delegation to EntitySystem:</strong> Entity creation (descriptor resolution,
+ * <p><strong>Delegation to EntitySystem:</strong> Entity creation (component resolution,
  * component rule validation, and atomic component commit) is fully handled by
- * {@link EntitySystem#instantiate(EntityBlueprint)}. This class retains only scene-level
+ * {@link EntitySystem#instantiate(String, List, List)}. This class retains only scene-level
  * concerns: the entity loop, glTF loading, GPU asset tracking, and system lifecycle.
  *
  * <p><strong>Usage:</strong> This class is not used directly by game code. It is owned by
@@ -62,10 +64,11 @@ public class SceneInstantiator {
      *
      * <p><strong>What happens during instantiation:</strong>
      * <ol>
-     *   <li>For each entity blueprint, delegates to {@link EntitySystem#instantiate(EntityBlueprint)}
-     *       which resolves descriptors, validates rules, and commits components atomically</li>
+     *   <li>For each entity recipe, creates an EntityBuilder, applies the configurator,
+     *       then delegates to {@link EntitySystem#instantiate(String, List, List)}
+     *       which resolves components, validates rules, and commits atomically</li>
      *   <li>GPU asset IDs are tracked for reference counting</li>
-     *   <li>If the blueprint specifies a glTF model, it is loaded as child entities</li>
+     *   <li>If the entity has a GltfModel component, it is loaded as child entities</li>
      *   <li>All tracked GPU assets are retained (refcount incremented)</li>
      *   <li>Scene systems are initialized via {@code onInit()}</li>
      * </ol>
@@ -83,9 +86,13 @@ public class SceneInstantiator {
         List<Integer> entityIds = new ArrayList<>();
         SceneAssets assets = new SceneAssets();
 
-        for (EntityBlueprint blueprint : scene.getEntities()) {
+        for (EntityRecipe recipe : scene.getEntities()) {
             try {
-                int entityId = entitySystem.instantiate(blueprint);
+                EntityBuilder builder = new EntityBuilder(recipe.name());
+                recipe.configurator().accept(builder);
+
+                int entityId = entitySystem.instantiate(
+                    builder.getName(), builder.getComponents(), builder.getTags());
 
                 if (entityId < 0) {
                     // Validation failed (e.g., missing required component dependency).
@@ -96,11 +103,12 @@ public class SceneInstantiator {
                 entityIds.add(entityId);
                 trackAssetsForEntity(entityId, assets);
 
-                // If this entity has a glTF model path, instantiate the model as children.
+                // If this entity has a GltfModel component, instantiate the model as children.
                 // The glTF nodes become children of this entity, making it the "owner" of
                 // the model. Animation clips are attached to this entity for easy access.
-                if (blueprint.getGltfModelPath() != null) {
-                    GltfAsset modelAsset = context.getGltfAssetRegistry().getOrLoad(blueprint.getGltfModelPath());
+                GltfModel gltfModel = registry.getComponent(entityId, GltfModel.class);
+                if (gltfModel != null) {
+                    GltfAsset modelAsset = context.getGltfAssetRegistry().getOrLoad(gltfModel.resourcePath());
                     GltfModelFactory modelFactory = new GltfModelFactory(context);
                     GltfInstance modelInstance = modelFactory.instantiateAsChild(modelAsset, entityId);
                     for (int childId : modelInstance.allEntities().values()) {
@@ -111,10 +119,10 @@ public class SceneInstantiator {
                     }
                 }
 
-                String name = blueprint.getName();
+                String name = recipe.name();
                 Log.debug("  Entity \"" + (name != null ? name : "<anonymous>") + "\" created (id=" + entityId + ")");
             } catch (Exception e) {
-                String name = blueprint.getName();
+                String name = recipe.name();
                 Log.error("Scene \"" + scene.getName() + "\", entity \"" + (name != null ? name : "<anonymous>") +
                     "\": Failed to instantiate. " + e.getMessage() +
                     " Ensure asset files exist in src/main/resources/ and paths are relative to the resources root.");
@@ -196,7 +204,7 @@ public class SceneInstantiator {
     /**
      * Tracks GPU asset IDs for an entity by querying its components after instantiation.
      *
-     * <p>Called after {@link EntitySystem#instantiate(EntityBlueprint)} has committed all
+     * <p>Called after {@link EntitySystem#instantiate(String, List, List)} has committed all
      * components. Inspects the entity's Mesh and SpriteMaterial to record resource IDs
      * for later reference counting.
      *
