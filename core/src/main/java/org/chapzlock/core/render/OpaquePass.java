@@ -1,8 +1,5 @@
 package org.chapzlock.core.render;
 
-import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
-import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
-import static org.lwjgl.opengl.GL11.glClear;
 import static org.lwjgl.opengl.GL11.glClearColor;
 
 import java.util.ArrayList;
@@ -69,7 +66,6 @@ public class OpaquePass implements RenderPass {
             Color color = ctx.getSky().getColor();
             glClearColor(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha());
         }
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         ComponentRegistry registry = ctx.getRegistry();
 
