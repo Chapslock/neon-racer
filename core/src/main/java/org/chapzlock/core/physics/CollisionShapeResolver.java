@@ -13,9 +13,10 @@ import com.bulletphysics.linearmath.Transform;
  * Converts {@link CollisionGeometry} descriptors into JBullet {@link CollisionShape} objects.
  *
  * <h3>When this runs</h3>
- * <p>Shape resolution happens during deferred registration — NOT during scene loading.
- * This guarantees that mesh data is available for mesh-derived shapes (ConvexHull,
- * TriangleMesh), because glTF models are fully loaded by the time registration processes.</p>
+ * <p>Shape resolution happens when {@link PhysicsSystem} drains its pending registration
+ * queue at the start of {@code onUpdate()}. By this point in the frame, all scene loading
+ * (including glTF child entity creation) is complete, guaranteeing that mesh data is
+ * available for mesh-derived shapes.</p>
  *
  * <h3>Why mesh-derived shapes need raw vertex data</h3>
  * <p>A ConvexHull shape is computed by finding the smallest convex polyhedron that
