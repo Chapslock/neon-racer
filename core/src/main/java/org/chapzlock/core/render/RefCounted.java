@@ -2,6 +2,7 @@ package org.chapzlock.core.render;
 
 import java.util.function.IntConsumer;
 
+import org.chapzlock.core.logging.Log;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 
 /**
@@ -55,12 +56,15 @@ public class RefCounted {
      * @param id the resource ID to release
      */
     public void release(int id) {
-        int count = refCounts.getOrDefault(id, 0) - 1;
-        if (count <= 0) {
+        int current = refCounts.getOrDefault(id, 0);
+        if (current <= 0) {
+            Log.warn("RefCounted", "release() called on id=" + id + " with refCount=" + current + ". Ignoring.");
+            return;
+        }
+        int count = current - 1;
+        if (count == 0) {
             refCounts.remove(id);
-            if (count == 0) {
-                onRelease.accept(id);
-            }
+            onRelease.accept(id);
         } else {
             refCounts.put(id, count);
         }
