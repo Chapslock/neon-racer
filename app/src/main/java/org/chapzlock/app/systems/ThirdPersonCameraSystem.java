@@ -2,6 +2,7 @@ package org.chapzlock.app.systems;
 
 import java.util.List;
 
+import org.chapzlock.app.component.CharacterState;
 import org.chapzlock.app.component.ThirdPersonCamera;
 import org.chapzlock.app.tags.PlayerTag;
 import org.chapzlock.core.application.EngineContext;
@@ -95,7 +96,7 @@ public class ThirdPersonCameraSystem implements GameSystem {
             tpc.setPitch(Math.max(tpc.getPitchMin(), Math.min(tpc.getPitchMax(), tpc.getPitch())));
         } else {
             // Follow mode: lerp camera behind player
-            float behindYaw = getPlayerYaw() - 90f;
+            float behindYaw = getPlayerFacingYaw() - 90f;
             float yawDiff = behindYaw - tpc.getYaw();
             while (yawDiff > 180f) yawDiff -= 360f;
             while (yawDiff < -180f) yawDiff += 360f;
@@ -140,12 +141,10 @@ public class ThirdPersonCameraSystem implements GameSystem {
         return result[0];
     }
 
-    private float getPlayerYaw() {
+    private float getPlayerFacingYaw() {
         final float[] result = {0f};
-        registry.forEach(PlayerTag.class, Transform.class, (entityId, tag, transform) -> {
-            Vector3f rot = new Vector3f();
-            transform.getRotationEuler(rot);
-            result[0] = rot.y;
+        registry.forEach(PlayerTag.class, CharacterState.class, (entityId, tag, state) -> {
+            result[0] = state.getFacingYaw();
         });
         return result[0];
     }

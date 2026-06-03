@@ -83,24 +83,23 @@ class CharacterRotationSystemTest {
     void pressingA_rotatesOppositeToD() {
         int player = createPlayer();
         Transform transform = registry.getComponent(player, Transform.class);
+        CharacterState state = registry.getComponent(player, CharacterState.class);
 
         // Test D key
-        transform.setRotationQuaternion(new Quaternionf());
+        state.setFacingYaw(0f);
         eventBus.publish(new KeyPressedEvent(GLFW_KEY_D, 0));
         system.onUpdate(DELTA_TIME);
-        Quaternionf afterD = new Quaternionf();
-        transform.getRotationQuaternion(afterD);
+        float yawAfterD = state.getFacingYaw();
         eventBus.publish(new org.chapzlock.core.input.keyboard.KeyReleasedEvent(GLFW_KEY_D, 0));
 
         // Test A key
-        transform.setRotationQuaternion(new Quaternionf());
+        state.setFacingYaw(0f);
         inputMap.frameReset();
         eventBus.publish(new KeyPressedEvent(GLFW_KEY_A, 0));
         system.onUpdate(DELTA_TIME);
-        Quaternionf afterA = new Quaternionf();
-        transform.getRotationQuaternion(afterA);
+        float yawAfterA = state.getFacingYaw();
 
-        assertTrue(afterA.y * afterD.y < 0, "A and D should rotate in opposite directions");
+        assertTrue(yawAfterA * yawAfterD < 0, "A and D should rotate in opposite directions");
     }
 
     private int createPlayer() {

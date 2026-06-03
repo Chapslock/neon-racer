@@ -3,7 +3,6 @@ package org.chapzlock.app.systems;
 import java.util.List;
 
 import org.chapzlock.app.component.CharacterState;
-import org.chapzlock.app.component.PlayerInputComponent;
 import org.chapzlock.app.component.ThirdPersonCamera;
 import org.chapzlock.app.tags.PlayerTag;
 import org.chapzlock.core.application.EngineContext;
@@ -53,10 +52,11 @@ public class CharacterRotationSystem implements GameSystem {
         if (wasOrbitingRight && !orbitingRight) {
             camOpt.ifPresent(tpc -> {
                 float cameraFacingYaw = tpc.getYaw() + 90f;
-                float yawRad = (float) Math.toRadians(cameraFacingYaw);
                 registry.forEach(PlayerTag.class, Transform.class, CharacterState.class,
                     (entityId, tag, transform, state) -> {
-                        transform.setRotationQuaternion(new Quaternionf().rotationY(yawRad));
+                        state.setFacingYaw(cameraFacingYaw);
+                        transform.setRotationQuaternion(
+                            new Quaternionf().rotationY((float) Math.toRadians(cameraFacingYaw)));
                     });
             });
         }
@@ -69,11 +69,10 @@ public class CharacterRotationSystem implements GameSystem {
                 float turnAmount = -turnInput * TURN_SPEED * deltaTime;
                 registry.forEach(PlayerTag.class, Transform.class, CharacterState.class,
                     (entityId, tag, transform, state) -> {
-                        Quaternionf current = new Quaternionf();
-                        transform.getRotationQuaternion(current);
-                        Quaternionf turn = new Quaternionf().rotationY((float) Math.toRadians(turnAmount));
-                        current.mul(turn);
-                        transform.setRotationQuaternion(current);
+                        float newYaw = state.getFacingYaw() + turnAmount;
+                        state.setFacingYaw(newYaw);
+                        transform.setRotationQuaternion(
+                            new Quaternionf().rotationY((float) Math.toRadians(newYaw)));
                     });
             }
         }

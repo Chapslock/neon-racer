@@ -12,4 +12,5 @@ public class CharacterState implements Component {
     private boolean grounded;
     private final Vector3f movementDirection = new Vector3f();
     private float currentSpeed;
+    private float facingYaw;
 }

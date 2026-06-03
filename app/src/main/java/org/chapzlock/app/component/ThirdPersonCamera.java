@@ -12,7 +12,7 @@ public class ThirdPersonCamera implements Component {
     private float distanceMin = 2f;
     private float distanceMax = 20f;
     private float zoomSpeed = 2f;
-    private float heightOffset = 2.5f;
+    private float heightOffset = 1.0f;
     private float followSmoothing = 8f;
     private float rotationSmoothing = 6f;
     private float pitchMin = -20f;
