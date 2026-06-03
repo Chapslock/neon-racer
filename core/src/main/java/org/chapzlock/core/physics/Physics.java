@@ -1,5 +1,7 @@
 package org.chapzlock.core.physics;
 
+import java.util.Optional;
+
 import javax.vecmath.Vector3f;
 
 import org.chapzlock.core.logging.Log;
@@ -199,6 +201,50 @@ public class Physics {
     public void wake(int entityId) {
         RigidBody body = getBodyOrWarn(entityId, "wake");
         if (body != null) body.activate(true);
+    }
+
+    // --- Raycasting ---
+
+    /**
+     * Casts a ray and returns the closest hit within the given distance.
+     *
+     * <p>This is the simple overload — tests against all collision layers and does not
+     * exclude any entity. Use the full overload for layer filtering or entity exclusion.</p>
+     *
+     * @param origin    ray start position in world space
+     * @param direction ray direction (will be normalized internally)
+     * @param maxDistance maximum distance the ray can travel
+     * @return the closest hit, or empty if nothing was struck
+     */
+    public Optional<RaycastHit> raycast(org.joml.Vector3f origin, org.joml.Vector3f direction, float maxDistance) {
+        return raycast(origin, direction, maxDistance, 0xFFFFFFFF, -1);
+    }
+
+    /**
+     * Casts a ray with full control over layer filtering and entity exclusion.
+     *
+     * <p>The ray travels from {@code origin} in the given {@code direction} up to
+     * {@code maxDistance} units. Only bodies whose layer matches the {@code layerMask}
+     * bitmask are considered. If {@code excludeEntity} is >= 0, that entity is skipped
+     * even if the ray hits it (useful for "don't hit yourself" scenarios).</p>
+     *
+     * @param origin        ray start position in world space
+     * @param direction     ray direction (will be normalized internally)
+     * @param maxDistance   maximum distance the ray can travel
+     * @param layerMask     bitmask of collision layers to test against
+     * @param excludeEntity entity ID to exclude from results, or -1 for no exclusion
+     * @return the closest hit, or empty if nothing was struck
+     */
+    public Optional<RaycastHit> raycast(org.joml.Vector3f origin, org.joml.Vector3f direction,
+                                        float maxDistance, int layerMask, int excludeEntity) {
+        org.joml.Vector3f normalizedDir = new org.joml.Vector3f(direction).normalize();
+        org.joml.Vector3f endpoint = new org.joml.Vector3f(origin)
+            .add(normalizedDir.x * maxDistance, normalizedDir.y * maxDistance, normalizedDir.z * maxDistance);
+
+        Vector3f from = PhysicsUtil.toVecmath(origin);
+        Vector3f to = PhysicsUtil.toVecmath(endpoint);
+
+        return world.raycast(from, to, layerMask, excludeEntity);
     }
 
     // --- Internal ---

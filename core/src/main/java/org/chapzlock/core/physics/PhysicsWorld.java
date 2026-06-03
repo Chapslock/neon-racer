@@ -3,6 +3,7 @@ package org.chapzlock.core.physics;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Optional;
 
 import javax.vecmath.Quat4f;
 import javax.vecmath.Vector3f;
@@ -23,6 +24,7 @@ import com.bulletphysics.collision.broadphase.BroadphaseInterface;
 import com.bulletphysics.collision.dispatch.CollisionConfiguration;
 import com.bulletphysics.collision.dispatch.CollisionDispatcher;
 import com.bulletphysics.collision.dispatch.CollisionObject;
+import com.bulletphysics.collision.dispatch.CollisionWorld;
 import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration;
 import com.bulletphysics.collision.narrowphase.ManifoldPoint;
 import com.bulletphysics.collision.narrowphase.PersistentManifold;
@@ -237,6 +239,49 @@ class PhysicsWorld implements Disposable {
                 }
             }
         }
+    }
+
+    /**
+     * Performs a raycast against the physics world and returns the closest hit.
+     *
+     * @param from       ray origin in world space (javax.vecmath)
+     * @param to         ray endpoint in world space (javax.vecmath)
+     * @param layerMask  bitmask of collision layers to test against
+     * @param excludeEntity entity ID to exclude from results, or -1 for no exclusion
+     * @return the closest hit, or empty if nothing was struck
+     */
+    Optional<RaycastHit> raycast(Vector3f from, Vector3f to, int layerMask, int excludeEntity) {
+        CollisionWorld.ClosestRayResultCallback callback =
+            new CollisionWorld.ClosestRayResultCallback(from, to);
+        callback.collisionFilterMask = (short) layerMask;
+
+        dynamicsWorld.rayTest(from, to, callback);
+
+        if (!callback.hasHit()) {
+            return Optional.empty();
+        }
+
+        // Resolve the hit body to an entity
+        RigidBody hitBody = (RigidBody) callback.collisionObject;
+        Integer hitEntity = bodyToEntity.get(hitBody);
+        if (hitEntity == null) {
+            return Optional.empty();
+        }
+
+        // Apply entity exclusion filter
+        if (excludeEntity >= 0 && hitEntity == excludeEntity) {
+            return Optional.empty();
+        }
+
+        org.joml.Vector3f hitPoint = PhysicsUtil.toJoml(callback.hitPointWorld);
+        org.joml.Vector3f hitNormal = PhysicsUtil.toJoml(callback.hitNormalWorld);
+        float distance = new Vector3f(
+            callback.hitPointWorld.x - from.x,
+            callback.hitPointWorld.y - from.y,
+            callback.hitPointWorld.z - from.z
+        ).length();
+
+        return Optional.of(new RaycastHit(hitEntity, hitPoint, hitNormal, distance));
     }
 
     void debugDrawWorld() {
