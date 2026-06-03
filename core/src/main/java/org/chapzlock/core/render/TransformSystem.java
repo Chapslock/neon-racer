@@ -1,11 +1,15 @@
 package org.chapzlock.core.render;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.component.Hierarchy;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.ecs.SystemPhase;
+import org.chapzlock.core.logging.Log;
 import org.joml.Matrix4f;
 
 /**
@@ -20,6 +24,7 @@ import org.joml.Matrix4f;
 public class TransformSystem implements GameSystem {
 
     private ComponentRegistry registry;
+    private final Set<Integer> visited = new HashSet<>();
 
     @Override
     public SystemPhase phase() {
@@ -35,6 +40,8 @@ public class TransformSystem implements GameSystem {
     public void onUpdate(float deltaTime) {
         registry.forEach(Hierarchy.class, Transform.class, (entityId, hierarchy, transform) -> {
             if (hierarchy.isRoot()) {
+                visited.clear();
+                visited.add(entityId);
                 transform.setInHierarchy(true);
                 transform.getWorldMatrix().set(transform.getLocalMatrix());
                 propagateToChildren(hierarchy, transform.getWorldMatrix());
@@ -44,6 +51,12 @@ public class TransformSystem implements GameSystem {
 
     private void propagateToChildren(Hierarchy parentHierarchy, Matrix4f parentWorldMatrix) {
         for (int childId : parentHierarchy.getChildren()) {
+            if (!visited.add(childId)) {
+                Log.error("TransformSystem", "Cycle detected in hierarchy: entity " + childId +
+                    " is visited twice. Skipping to prevent stack overflow.");
+                continue;
+            }
+
             Transform childTransform = registry.getComponent(childId, Transform.class);
             if (childTransform == null) continue;
 
