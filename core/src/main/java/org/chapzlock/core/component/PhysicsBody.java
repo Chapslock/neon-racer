@@ -2,6 +2,8 @@ package org.chapzlock.core.component;
 
 import org.chapzlock.core.ecs.Component;
 import org.chapzlock.core.physics.CollisionGeometry;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -38,6 +40,7 @@ import lombok.Getter;
  */
 @Getter
 @Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class PhysicsBody implements Component {
     private final float mass;
     @Builder.Default
@@ -62,5 +65,53 @@ public class PhysicsBody implements Component {
 
     public boolean isDynamic() {
         return mass > 0f;
+    }
+
+    // Static factory methods
+
+    public static PhysicsBody dynamic(float mass) {
+        return new PhysicsBody(mass, 0.5f, 0.1f, 0.05f, 0.85f, null, 1f, 1, 0xFFFFFFFF);
+    }
+
+    public static PhysicsBody asStatic() {
+        return new PhysicsBody(0f, 0.5f, 0.1f, 0.05f, 0.85f, null, 1f, 1, 0xFFFFFFFF);
+    }
+
+    // Fluent wither methods
+
+    public PhysicsBody shape(CollisionGeometry geometry) {
+        return new PhysicsBody(mass, friction, restitution, linearDamping, angularDamping, geometry, angularFactor, layer, collisionMask);
+    }
+
+    public PhysicsBody friction(float friction) {
+        return new PhysicsBody(mass, friction, restitution, linearDamping, angularDamping, geometry, angularFactor, layer, collisionMask);
+    }
+
+    public PhysicsBody restitution(float restitution) {
+        return new PhysicsBody(mass, friction, restitution, linearDamping, angularDamping, geometry, angularFactor, layer, collisionMask);
+    }
+
+    public PhysicsBody linearDamping(float linearDamping) {
+        return new PhysicsBody(mass, friction, restitution, linearDamping, angularDamping, geometry, angularFactor, layer, collisionMask);
+    }
+
+    public PhysicsBody angularDamping(float angularDamping) {
+        return new PhysicsBody(mass, friction, restitution, linearDamping, angularDamping, geometry, angularFactor, layer, collisionMask);
+    }
+
+    public PhysicsBody angularFactor(float angularFactor) {
+        return new PhysicsBody(mass, friction, restitution, linearDamping, angularDamping, geometry, angularFactor, layer, collisionMask);
+    }
+
+    public PhysicsBody lockRotation() {
+        return angularFactor(0f);
+    }
+
+    public PhysicsBody layer(int layer) {
+        return new PhysicsBody(mass, friction, restitution, linearDamping, angularDamping, geometry, angularFactor, layer, collisionMask);
+    }
+
+    public PhysicsBody collidesWith(int collisionMask) {
+        return new PhysicsBody(mass, friction, restitution, linearDamping, angularDamping, geometry, angularFactor, layer, collisionMask);
     }
 }
