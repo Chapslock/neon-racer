@@ -12,11 +12,18 @@ import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.event.Subscription;
 import org.chapzlock.core.render.CameraSystem;
 
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
+
 /**
  * Lifecycle system that connects the physics simulation to the ECS game loop.
  *
  * <h3>What this system does each frame</h3>
  * <ol>
+ *   <li><strong>Process pending registrations</strong> — drains the queue of entities that
+ *       received a PhysicsBody since last frame, registering them into the simulation. This
+ *       deferred approach guarantees glTF child meshes are loaded before mesh-dependent shapes
+ *       (TriangleMesh, ConvexHull) attempt to resolve geometry.</li>
  *   <li><strong>Process removals</strong> — any entities that lost their PhysicsBody get
  *       removed from the simulation.</li>
  *   <li><strong>Step simulation</strong> — advances the physics world by deltaTime. Internally
@@ -27,10 +34,15 @@ import org.chapzlock.core.render.CameraSystem;
  *       fast entity-ID-based lookup used by {@code Physics.isColliding()}.</li>
  * </ol>
  *
- * <h3>Registration strategy</h3>
- * <p>Entities are registered immediately when ComponentAddedEvent fires. This is safe because
- * EntitySystem guarantees all components are present before events fire (atomic commit).
- * Removals remain deferred to avoid mid-iteration issues with the dynamics world.</p>
+ * <h3>Registration strategy (deferred queue)</h3>
+ * <p>When ComponentAddedEvent fires for a PhysicsBody, the entity ID is added to a pending
+ * queue rather than registered immediately. The queue is drained at the start of
+ * {@code onUpdate()}, at which point all scene loading is complete and mesh data is available.
+ * This matches the standard approach used by Unity (FixedUpdate), Godot (PhysicsServer step),
+ * and Bevy (schedule ordering).</p>
+ *
+ * <p>Entities that are destroyed or have their PhysicsBody removed before the queue drains
+ * are silently skipped.</p>
  *
  * @see Physics
  * @see PhysicsWorld
@@ -46,6 +58,8 @@ public class PhysicsSystem implements GameSystem {
 
     private Subscription componentAddedSub;
     private Subscription componentRemovedSub;
+
+    private final IntList pendingRegistrations = new IntArrayList();
 
     public PhysicsSystem() {
         this(PhysicsWorldConfig.defaults());
@@ -76,6 +90,7 @@ public class PhysicsSystem implements GameSystem {
 
     @Override
     public void onUpdate(float deltaTime) {
+        processPendingRegistrations();
         world.processPendingRemovals();
         world.step(deltaTime);
         world.syncTransformsToEcs(registry);
@@ -101,10 +116,20 @@ public class PhysicsSystem implements GameSystem {
         if (world != null) world.dispose();
     }
 
+    private void processPendingRegistrations() {
+        for (int i = 0; i < pendingRegistrations.size(); i++) {
+            int entityId = pendingRegistrations.getInt(i);
+            if (!registry.entityExists(entityId)) continue;
+            if (registry.getComponent(entityId, PhysicsBody.class) == null) continue;
+            world.register(entityId, registry);
+        }
+        pendingRegistrations.clear();
+    }
+
     private void subscribeToLifecycleEvents(EventBus eventBus) {
         componentAddedSub = eventBus.subscribe(ComponentAddedEvent.class, event -> {
             if (event.componentType() != PhysicsBody.class) return false;
-            world.register(event.entityId(), registry);
+            pendingRegistrations.add(event.entityId());
             return false;
         });
 
