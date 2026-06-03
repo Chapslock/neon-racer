@@ -20,6 +20,7 @@ import org.chapzlock.core.component.Fog;
 import org.chapzlock.core.component.GltfModel;
 import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.PointLight;
+import org.chapzlock.core.component.Sky;
 import org.chapzlock.core.component.SpriteLayer;
 import org.chapzlock.core.component.SpriteMaterial;
 import org.chapzlock.core.component.Transform;
@@ -41,18 +42,18 @@ public class ForestScene {
                 .component(PhysicsBody.asStatic()
                     .shape(CollisionGeometry.triangleMesh())))
             .entity("sun", e -> e
-                .directionalLight(DirectionalLight.builder()
+                .component(DirectionalLight.builder()
                     .direction(new Vector3f(-0.2f, -1f, -0.3f))
                     .color(new Color(1.0f, 0.95f, 0.8f))
                     .build()))
             .entity("torch-1", e -> e
                 .transform(Transform.at(0, -50, -5))
-                .pointLight(PointLight.builder()
+                .component(PointLight.builder()
                     .color(new Color(1.0f, 0.3f, 0.1f))
                     .attenuation(Attenuation.DEFAULT)
                     .build()))
-            .entity(e -> e.fog(Fog.builder().density(0.012f).gradient(2.0f).build()))
-            .entity(e -> e.ambient(AmbientLight.builder().strength(0.5f).build()))
+            .entity(e -> e.component(Fog.builder().density(0.012f).gradient(2.0f).build()))
+            .entity(e -> e.component(AmbientLight.builder().strength(0.5f).build()))
             .entity("player", e -> e
                 .transform(Transform.at(0, 3, 0))
                 .component(new GltfModel("glb/player-character.glb"))
@@ -68,9 +69,9 @@ public class ForestScene {
                 .component(new SpriteMaterial("textures/health-bar.png"))
                 .component(new SpriteLayer()))
             .entity(e -> e
-                .camera(new Camera(new Vector3f(0, 3, 5)))
+                .component(new Camera(new Vector3f(0, 3, 5)))
                 .component(new ThirdPersonCamera()))
-            .entity(EntityBuilder::sky)
+            .entity(e -> e.component(new Sky()))
             .systems(
                 new PlayerInputSystem(),
                 new CharacterGroundCheckSystem(),

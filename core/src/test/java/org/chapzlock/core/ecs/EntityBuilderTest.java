@@ -63,7 +63,7 @@ class EntityBuilderTest {
     }
 
     @Test
-    void convenienceMethodsDelegateToComponent() {
+    void transformDelegatesToComponent() {
         Transform transform = Transform.at(1, 2, 3);
         DirectionalLight light = DirectionalLight.builder()
             .direction(new org.joml.Vector3f(0, -1, 0))
@@ -75,12 +75,12 @@ class EntityBuilderTest {
 
         EntityBuilder builder = new EntityBuilder("full")
             .transform(transform)
-            .directionalLight(light)
-            .pointLight(pointLight)
-            .fog(fog)
-            .ambient(ambient)
-            .camera(camera)
-            .sky();
+            .component(light)
+            .component(pointLight)
+            .component(fog)
+            .component(ambient)
+            .component(camera)
+            .component(new Sky());
 
         assertTrue(builder.getComponents().contains(transform));
         assertTrue(builder.getComponents().contains(light));

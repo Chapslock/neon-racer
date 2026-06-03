@@ -42,7 +42,7 @@ class SceneBuilderTest {
     @Test
     void namelessEntityGetsInternalName() {
         Scene scene = Scene.builder("test")
-            .entity(e -> e.camera(new Camera(new Vector3f(0, 5, 10))))
+            .entity(e -> e.component(new Camera(new Vector3f(0, 5, 10))))
             .build();
 
         assertEquals(1, scene.getEntities().size());
@@ -62,7 +62,7 @@ class SceneBuilderTest {
         DirectionalLight light = DirectionalLight.builder()
             .direction(new Vector3f(0, -1, 0)).build();
         Scene scene = Scene.builder("test")
-            .entity("sun", e -> e.directionalLight(light))
+            .entity("sun", e -> e.component(light))
             .build();
 
         assertEquals(1, scene.getEntities().size());
@@ -75,7 +75,7 @@ class SceneBuilderTest {
         PointLight light = PointLight.builder()
             .color(new Color(1, 0, 0)).build();
         Scene scene = Scene.builder("test")
-            .entity("torch", e -> e.pointLight(light))
+            .entity("torch", e -> e.component(light))
             .build();
 
         EntityBuilder applied = applyRecipe(scene.getEntities().get(0));
@@ -86,7 +86,7 @@ class SceneBuilderTest {
     void entityBuilderFog() {
         Fog fog = Fog.builder().build();
         Scene scene = Scene.builder("test")
-            .entity(e -> e.fog(fog))
+            .entity(e -> e.component(fog))
             .build();
 
         EntityBuilder applied = applyRecipe(scene.getEntities().get(0));
@@ -97,7 +97,7 @@ class SceneBuilderTest {
     void entityBuilderAmbient() {
         AmbientLight ambient = AmbientLight.builder().strength(0.3f).build();
         Scene scene = Scene.builder("test")
-            .entity(e -> e.ambient(ambient))
+            .entity(e -> e.component(ambient))
             .build();
 
         EntityBuilder applied = applyRecipe(scene.getEntities().get(0));
@@ -108,7 +108,7 @@ class SceneBuilderTest {
     void entityBuilderCamera() {
         Camera cam = new Camera(new Vector3f(0, 5, 10));
         Scene scene = Scene.builder("test")
-            .entity(e -> e.camera(cam))
+            .entity(e -> e.component(cam))
             .build();
 
         EntityBuilder applied = applyRecipe(scene.getEntities().get(0));
@@ -118,7 +118,7 @@ class SceneBuilderTest {
     @Test
     void entityBuilderSky() {
         Scene scene = Scene.builder("test")
-            .entity(e -> e.sky())
+            .entity(e -> e.component(new Sky()))
             .build();
 
         EntityBuilder applied = applyRecipe(scene.getEntities().get(0));

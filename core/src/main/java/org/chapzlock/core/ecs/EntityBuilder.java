@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.chapzlock.core.component.*;
+import org.chapzlock.core.component.Transform;
 
 /**
  * Fluent builder for constructing entities, used both in scene declarations and at runtime.
@@ -109,68 +109,6 @@ public class EntityBuilder {
     public EntityBuilder component(Component... components) {
         Collections.addAll(this.components, components);
         return this;
-    }
-
-    /**
-     * Adds a directional light component.
-     *
-     * @param light the directional light configuration
-     * @return this builder for chaining
-     */
-    public EntityBuilder directionalLight(DirectionalLight light) {
-        return component(light);
-    }
-
-    /**
-     * Adds a point light component.
-     *
-     * @param light the point light configuration
-     * @return this builder for chaining
-     */
-    public EntityBuilder pointLight(PointLight light) {
-        return component(light);
-    }
-
-    /**
-     * Adds a fog component.
-     *
-     * @param fog the fog configuration
-     * @return this builder for chaining
-     */
-    public EntityBuilder fog(Fog fog) {
-        return component(fog);
-    }
-
-    /**
-     * Adds an ambient light component.
-     *
-     * @param ambient the ambient light configuration
-     * @return this builder for chaining
-     */
-    public EntityBuilder ambient(AmbientLight ambient) {
-        return component(ambient);
-    }
-
-    /**
-     * Adds a camera component.
-     *
-     * @param camera the camera configuration
-     * @return this builder for chaining
-     */
-    public EntityBuilder camera(Camera camera) {
-        return component(camera);
-    }
-
-    /**
-     * Adds a sky component with default settings.
-     *
-     * <p>The sky controls background clear color and distance fog rendering.
-     * Only one sky entity should exist per scene.
-     *
-     * @return this builder for chaining
-     */
-    public EntityBuilder sky() {
-        return component(new Sky());
     }
 
     /**
