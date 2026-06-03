@@ -139,7 +139,7 @@ class SceneManagerTest {
 
     @Test
     void loadNullThrowsWithHelpfulMessage() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+        NullPointerException ex = assertThrows(NullPointerException.class, () ->
             sceneManager.loadImmediate(null));
         assertTrue(ex.getMessage().contains("Scene cannot be null"));
     }

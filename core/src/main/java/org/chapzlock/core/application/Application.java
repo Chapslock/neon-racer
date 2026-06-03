@@ -78,39 +78,49 @@ public class Application {
         EventBus eventBus = new EventBus();
         ComponentRegistry registry = new ComponentRegistry(eventBus);
 
-        window = new Window(appSpec.getWindowSpec(), eventBus);
-        window.create(0);
-        Log.debug("Window created: " + appSpec.getWindowSpec().getWidth() + "x" + appSpec.getWindowSpec().getHeight());
+        try {
+            window = new Window(appSpec.getWindowSpec(), eventBus);
+            window.create(0);
+            Log.debug("Window created: " + appSpec.getWindowSpec().getWidth() + "x" + appSpec.getWindowSpec().getHeight());
 
-        ShaderSystem shaderSystem = new ShaderSystem();
-        TextureSystem textureSystem = new TextureSystem();
-        MeshSystem meshSystem = new MeshSystem();
-        CameraSystem cameraSystem = new CameraSystem(appSpec.getWindowSpec());
-        Time time = new Time();
-        TweenManager tweenManager = new TweenManager();
-        GltfAssetRegistry gltfAssetRegistry = new GltfAssetRegistry();
+            ShaderSystem shaderSystem = new ShaderSystem();
+            TextureSystem textureSystem = new TextureSystem();
+            MeshSystem meshSystem = new MeshSystem();
+            CameraSystem cameraSystem = new CameraSystem(appSpec.getWindowSpec());
+            Time time = new Time();
+            TweenManager tweenManager = new TweenManager();
+            GltfAssetRegistry gltfAssetRegistry = new GltfAssetRegistry();
 
-        context = EngineContext.builder()
-            .registry(registry)
-            .eventBus(eventBus)
-            .meshSystem(meshSystem)
-            .textureSystem(textureSystem)
-            .shaderSystem(shaderSystem)
-            .cameraSystem(cameraSystem)
-            .window(window)
-            .time(time)
-            .tweenManager(tweenManager)
-            .gltfAssetRegistry(gltfAssetRegistry)
-            .build();
+            context = EngineContext.builder()
+                .registry(registry)
+                .eventBus(eventBus)
+                .meshSystem(meshSystem)
+                .textureSystem(textureSystem)
+                .shaderSystem(shaderSystem)
+                .cameraSystem(cameraSystem)
+                .window(window)
+                .time(time)
+                .tweenManager(tweenManager)
+                .gltfAssetRegistry(gltfAssetRegistry)
+                .build();
 
-        Log.debug("Subsystems initialized: MeshSystem, TextureSystem, ShaderSystem, CameraSystem");
+            Log.debug("Subsystems initialized: MeshSystem, TextureSystem, ShaderSystem, CameraSystem");
 
-        sceneManager = new SceneManager(context);
-        context.setSceneManager(sceneManager);
+            sceneManager = new SceneManager(context);
+            context.setSceneManager(sceneManager);
 
-        EntitySystem entitySystem = new EntitySystem();
-        entitySystem.onInit(context);
-        context.setEntitySystem(entitySystem);
+            EntitySystem entitySystem = new EntitySystem();
+            entitySystem.onInit(context);
+            context.setEntitySystem(entitySystem);
+        } catch (Exception e) {
+            if (context != null) {
+                context.dispose();
+            }
+            if (window != null) {
+                window.destroy();
+            }
+            throw new RuntimeException("Failed to initialize engine subsystems", e);
+        }
     }
 
     private void mainLoop() {

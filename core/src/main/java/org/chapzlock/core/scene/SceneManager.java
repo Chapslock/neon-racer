@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 
 import org.chapzlock.core.application.EngineContext;
@@ -102,10 +103,7 @@ public class SceneManager {
      * @throws IllegalArgumentException if scene is null
      */
     public void load(Scene scene) {
-        if (scene == null) {
-            throw new IllegalArgumentException(
-                "Scene cannot be null. Pass a Scene built via Scene.builder(name).build().");
-        }
+        Objects.requireNonNull(scene, "Scene cannot be null. Pass a Scene built via Scene.builder(name).build().");
         pendingTransitions.add(() -> doLoad(scene));
     }
 
@@ -119,10 +117,7 @@ public class SceneManager {
      * @throws IllegalArgumentException if scene is null
      */
     public void loadAdditive(Scene scene) {
-        if (scene == null) {
-            throw new IllegalArgumentException(
-                "Scene cannot be null. Pass a Scene built via Scene.builder(name).build().");
-        }
+        Objects.requireNonNull(scene, "Scene cannot be null. Pass a Scene built via Scene.builder(name).build().");
         pendingTransitions.add(() -> doLoadAdditive(scene));
     }
 
@@ -145,10 +140,7 @@ public class SceneManager {
      * @throws IllegalArgumentException if scene is null
      */
     public void loadImmediate(Scene scene) {
-        if (scene == null) {
-            throw new IllegalArgumentException(
-                "Scene cannot be null. Pass a Scene built via Scene.builder(name).build().");
-        }
+        Objects.requireNonNull(scene, "Scene cannot be null. Pass a Scene built via Scene.builder(name).build().");
         doLoad(scene);
     }
 
@@ -159,10 +151,7 @@ public class SceneManager {
      * @throws IllegalArgumentException if scene is null
      */
     public void loadAdditiveImmediate(Scene scene) {
-        if (scene == null) {
-            throw new IllegalArgumentException(
-                "Scene cannot be null. Pass a Scene built via Scene.builder(name).build().");
-        }
+        Objects.requireNonNull(scene, "Scene cannot be null. Pass a Scene built via Scene.builder(name).build().");
         doLoadAdditive(scene);
     }
 

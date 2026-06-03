@@ -16,7 +16,6 @@ import org.chapzlock.core.window.Window;
 
 import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
 
 /**
  * Container for all engine subsystems.
@@ -46,13 +45,9 @@ public class EngineContext implements Disposable {
      * EngineContext in its constructor, but EngineContext holds SceneManager.
      * This is intentional — set once during Application.run() and never changed after.
      */
-    @Setter
     private SceneManager sceneManager;
-    @Setter
     private InputMap activeInputMap;
-    @Setter
     private Physics physics;
-    @Setter
     private EntitySystem entitySystem;
 
     /**
@@ -81,5 +76,21 @@ public class EngineContext implements Disposable {
         if (textureSystem != null) textureSystem.dispose();
         if (meshSystem != null) meshSystem.dispose();
         if (eventBus != null) eventBus.clearAllListeners();
+    }
+
+    public void setSceneManager(SceneManager sceneManager) {
+        this.sceneManager = sceneManager;
+    }
+
+    public void setActiveInputMap(InputMap activeInputMap) {
+        this.activeInputMap = activeInputMap;
+    }
+
+    public void setPhysics(Physics physics) {
+        this.physics = physics;
+    }
+
+    public void setEntitySystem(EntitySystem entitySystem) {
+        this.entitySystem = entitySystem;
     }
 }
