@@ -9,6 +9,9 @@ import lombok.Setter;
 @Setter
 public class ThirdPersonCamera implements Component {
     private float distance = 6f;
+    private float distanceMin = 2f;
+    private float distanceMax = 20f;
+    private float zoomSpeed = 2f;
     private float heightOffset = 2.5f;
     private float followSmoothing = 8f;
     private float rotationSmoothing = 6f;
@@ -18,5 +21,7 @@ public class ThirdPersonCamera implements Component {
 
     private float yaw;
     private float pitch = 15f;
-    private boolean orbiting;
+
+    private boolean orbitingRight;
+    private boolean orbitingLeft;
 }

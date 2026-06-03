@@ -10,30 +10,23 @@ import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.ecs.SystemPhase;
+import org.chapzlock.core.event.EventBus;
+import org.chapzlock.core.event.Subscription;
 import org.chapzlock.core.input.InputMap;
+import org.chapzlock.core.input.mouse.MouseScrolledEvent;
 import org.chapzlock.core.window.Window;
 import org.joml.Vector3f;
 
-/**
- * Third-person camera system with two modes: follow-behind (default) and orbit (right-mouse held).
- *
- * <p>In follow mode the camera smoothly tracks behind the player, lerping its yaw toward the
- * player's facing direction. In orbit mode (activated by holding the "cameraOrbit" action),
- * the player can freely rotate the camera around the character using mouse movement.
- *
- * <p>Runs after {@link CharacterRotationSystem} so that the player's rotation is up-to-date
- * before the camera computes its position.
- */
 public class ThirdPersonCameraSystem implements GameSystem {
 
     private ComponentRegistry registry;
     private EngineContext context;
     private Window window;
+    private float pendingScrollDelta;
+    private Subscription scrollSubscription;
 
     @Override
-    public SystemPhase phase() {
-        return SystemPhase.LOGIC;
-    }
+    public SystemPhase phase() { return SystemPhase.LOGIC; }
 
     @Override
     public List<Class<? extends GameSystem>> runAfter() {
@@ -45,57 +38,78 @@ public class ThirdPersonCameraSystem implements GameSystem {
         this.context = ctx;
         this.registry = ctx.getRegistry();
         this.window = ctx.getWindow();
+
+        EventBus eventBus = ctx.getEventBus();
+        scrollSubscription = eventBus.subscribe(MouseScrolledEvent.class, event -> {
+            pendingScrollDelta += (float) event.yOffset();
+            return false;
+        });
+    }
+
+    @Override
+    public void onDestroy() {
+        if (scrollSubscription != null) scrollSubscription.unsubscribe();
     }
 
     @Override
     public void onUpdate(float deltaTime) {
-        // Get ThirdPersonCamera component (singleton on camera entity)
         var camOpt = registry.getSingleton(ThirdPersonCamera.class);
         if (camOpt.isEmpty()) return;
         ThirdPersonCamera tpc = camOpt.get();
 
-        // Get Camera component (singleton on same entity)
         var cameraOpt = registry.getSingleton(Camera.class);
         if (cameraOpt.isEmpty()) return;
         Camera camera = cameraOpt.get();
 
-        // Get player position
         Vector3f playerPos = getPlayerPosition();
         if (playerPos == null) return;
 
         InputMap input = context.getActiveInputMap();
 
         // Handle orbit mode transitions
-        boolean orbitPressed = input != null && input.isPressed("cameraOrbit");
-        if (orbitPressed && !tpc.isOrbiting()) {
-            tpc.setOrbiting(true);
+        boolean rightHeld = input != null && input.isPressed("cameraOrbit");
+        boolean leftHeld = input != null && input.isPressed("cameraLook");
+
+        if (rightHeld && !tpc.isOrbitingRight()) {
+            tpc.setOrbitingRight(true);
             if (window != null) window.setCursorLocked(true);
-        } else if (!orbitPressed && tpc.isOrbiting()) {
-            tpc.setOrbiting(false);
-            if (window != null) window.setCursorLocked(false);
+        } else if (!rightHeld && tpc.isOrbitingRight()) {
+            tpc.setOrbitingRight(false);
+            if (!leftHeld && window != null) window.setCursorLocked(false);
         }
 
-        // Update yaw/pitch
-        if (tpc.isOrbiting() && input != null) {
+        if (leftHeld && !tpc.isOrbitingLeft()) {
+            tpc.setOrbitingLeft(true);
+            if (window != null) window.setCursorLocked(true);
+        } else if (!leftHeld && tpc.isOrbitingLeft()) {
+            tpc.setOrbitingLeft(false);
+            if (!rightHeld && window != null) window.setCursorLocked(false);
+        }
+
+        // Mouse orbit (either button)
+        if ((tpc.isOrbitingRight() || tpc.isOrbitingLeft()) && input != null) {
             float dx = input.getMouseAxis("lookX");
             float dy = input.getMouseAxis("lookY");
             tpc.setYaw(tpc.getYaw() - dx * tpc.getMouseSensitivity());
-            tpc.setPitch(tpc.getPitch() - dy * tpc.getMouseSensitivity());
+            tpc.setPitch(tpc.getPitch() + dy * tpc.getMouseSensitivity());
             tpc.setPitch(Math.max(tpc.getPitchMin(), Math.min(tpc.getPitchMax(), tpc.getPitch())));
         } else {
-            // Follow mode: lerp yaw to place camera behind the player.
-            // Player rotation uses atan2(-dirZ, dirX) giving 90° for -Z facing.
-            // Camera orbital formula places camera at +Z when yaw=0.
-            // Offset of -90° aligns these two conventions.
+            // Follow mode: lerp camera behind player
             float behindYaw = getPlayerYaw() - 90f;
             float yawDiff = behindYaw - tpc.getYaw();
-            // Normalize to [-180, 180]
             while (yawDiff > 180f) yawDiff -= 360f;
             while (yawDiff < -180f) yawDiff += 360f;
             tpc.setYaw(tpc.getYaw() + yawDiff * Math.min(1f, tpc.getRotationSmoothing() * deltaTime));
         }
 
-        // Compute camera position from orbit parameters
+        // Scroll zoom
+        if (pendingScrollDelta != 0f) {
+            float newDist = tpc.getDistance() - pendingScrollDelta * tpc.getZoomSpeed();
+            tpc.setDistance(Math.max(tpc.getDistanceMin(), Math.min(tpc.getDistanceMax(), newDist)));
+            pendingScrollDelta = 0f;
+        }
+
+        // Compute camera position from spherical coordinates
         float yawRad = (float) Math.toRadians(tpc.getYaw());
         float pitchRad = (float) Math.toRadians(tpc.getPitch());
 

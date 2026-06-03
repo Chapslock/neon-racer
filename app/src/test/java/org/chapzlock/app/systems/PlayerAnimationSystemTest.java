@@ -88,12 +88,12 @@ class PlayerAnimationSystemTest {
     }
 
     @Test
-    void playsRunAnimationWhenMovingSideways() {
+    void playsIdleAnimationWhenOnlyTurning() {
         int entity = createPlayerEntity(0f, 1.0f);
         system.onUpdate(0.016f);
 
         AnimationState state = registry.getComponent(entity, AnimationState.class);
-        assertEquals(runAnim, state.getCurrentAnimation());
+        assertEquals(idleAnim, state.getCurrentAnimation());
     }
 
     @Test

@@ -3,39 +3,27 @@ package org.chapzlock.app.systems;
 import java.util.List;
 
 import org.chapzlock.app.component.CharacterState;
+import org.chapzlock.app.component.PlayerInputComponent;
+import org.chapzlock.app.component.ThirdPersonCamera;
 import org.chapzlock.app.tags.PlayerTag;
 import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.ecs.SystemPhase;
+import org.chapzlock.core.input.InputMap;
 import org.joml.Quaternionf;
-import org.joml.Vector3f;
 
-/**
- * Smoothly rotates the player character to face their movement direction.
- *
- * <p>Uses quaternion slerp (spherical linear interpolation) to avoid gimbal lock
- * and produce natural-looking rotation transitions. The interpolation factor is
- * frame-rate independent: {@code t = min(1, TURN_SMOOTHING * deltaTime)}.
- *
- * <p>When the player is not moving (movement direction is zero), the rotation
- * remains unchanged so the character holds their last facing direction.
- *
- * <p>The target yaw is derived from the XZ movement direction using
- * {@code atan2(dir.x, -dir.z)}, which gives 0 degrees for the -Z axis (forward)
- * and 90 degrees for the +X axis (right).
- */
 public class CharacterRotationSystem implements GameSystem {
 
-    private static final float TURN_SMOOTHING = 10f;
+    private static final float TURN_SPEED = 180f;
 
     private ComponentRegistry registry;
+    private EngineContext context;
+    private boolean wasOrbitingRight;
 
     @Override
-    public SystemPhase phase() {
-        return SystemPhase.LOGIC;
-    }
+    public SystemPhase phase() { return SystemPhase.LOGIC; }
 
     @Override
     public List<Class<? extends GameSystem>> runAfter() {
@@ -49,28 +37,45 @@ public class CharacterRotationSystem implements GameSystem {
 
     @Override
     public void onInit(EngineContext ctx) {
+        this.context = ctx;
         this.registry = ctx.getRegistry();
     }
 
     @Override
     public void onUpdate(float deltaTime) {
-        registry.forEach(PlayerTag.class, Transform.class, CharacterState.class,
-            (entityId, tag, transform, state) -> {
-                Vector3f dir = state.getMovementDirection();
-                if (dir.x == 0f && dir.z == 0f) return;
+        InputMap input = context.getActiveInputMap();
+        if (input == null) return;
 
-                float targetYaw = (float) Math.toDegrees(Math.atan2(-dir.z, dir.x));
+        var camOpt = registry.getSingleton(ThirdPersonCamera.class);
+        boolean orbitingRight = camOpt.map(ThirdPersonCamera::isOrbitingRight).orElse(false);
 
-                Quaternionf current = new Quaternionf();
-                transform.getRotationQuaternion(current);
-
-                Quaternionf target = new Quaternionf().rotationY((float) Math.toRadians(targetYaw));
-
-                float t = Math.min(1f, TURN_SMOOTHING * deltaTime);
-                Quaternionf result = new Quaternionf();
-                current.slerp(target, t, result);
-
-                transform.setRotationQuaternion(result);
+        // On right-click release, snap player facing to camera direction
+        if (wasOrbitingRight && !orbitingRight) {
+            camOpt.ifPresent(tpc -> {
+                float cameraFacingYaw = tpc.getYaw() + 90f;
+                float yawRad = (float) Math.toRadians(cameraFacingYaw);
+                registry.forEach(PlayerTag.class, Transform.class, CharacterState.class,
+                    (entityId, tag, transform, state) -> {
+                        transform.setRotationQuaternion(new Quaternionf().rotationY(yawRad));
+                    });
             });
+        }
+        wasOrbitingRight = orbitingRight;
+
+        // A/D keyboard turning (only when not orbiting with right-click)
+        if (!orbitingRight) {
+            float turnInput = input.getAxis("turnRight");
+            if (turnInput != 0f) {
+                float turnAmount = -turnInput * TURN_SPEED * deltaTime;
+                registry.forEach(PlayerTag.class, Transform.class, CharacterState.class,
+                    (entityId, tag, transform, state) -> {
+                        Quaternionf current = new Quaternionf();
+                        transform.getRotationQuaternion(current);
+                        Quaternionf turn = new Quaternionf().rotationY((float) Math.toRadians(turnAmount));
+                        current.mul(turn);
+                        transform.setRotationQuaternion(current);
+                    });
+            }
+        }
     }
 }

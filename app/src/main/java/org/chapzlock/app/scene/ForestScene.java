@@ -92,8 +92,9 @@ public class ForestScene {
                 .action("quit", Key.ESCAPE)
                 .action("jump", Key.SPACE)
                 .action("cameraOrbit", MouseButton.RIGHT)
+                .action("cameraLook", MouseButton.LEFT)
                 .axis("moveForward", Key.S, Key.W)
-                .axis("moveRight", Key.A, Key.D)
+                .axis("turnRight", Key.A, Key.D)
                 .mouseAxis("lookX", "lookY")
                 .build())
             .build();

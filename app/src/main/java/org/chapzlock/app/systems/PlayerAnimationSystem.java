@@ -38,7 +38,7 @@ public class PlayerAnimationSystem implements GameSystem {
         registry.forEach(PlayerTag.class, PlayerInputComponent.class,
             AnimationState.class, AnimationClipSet.class,
             (entityId, tag, input, state, clips) -> {
-                boolean moving = input.getMoveForward() != 0 || input.getMoveRight() != 0;
+                boolean moving = input.getMoveForward() != 0;
                 String targetName = moving ? ANIM_RUN : ANIM_IDLE;
                 Animation target = clips.get(targetName);
 
