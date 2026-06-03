@@ -49,18 +49,6 @@ public class ForestScene {
                     .color(new Color(1.0f, 0.3f, 0.1f))
                     .attenuation(Attenuation.DEFAULT)
                     .build()))
-            .entity("torch-2", e -> e
-                .transform(Transform.at(30, -50, -30))
-                .pointLight(PointLight.builder()
-                    .color(new Color(0.2f, 0.4f, 1.0f))
-                    .attenuation(Attenuation.DEFAULT)
-                    .build()))
-            .entity("torch-3", e -> e
-                .transform(Transform.at(-20, -50, -40))
-                .pointLight(PointLight.builder()
-                    .color(new Color(0.0f, 1.0f, 0.5f))
-                    .attenuation(Attenuation.DEFAULT)
-                    .build()))
             .entity(e -> e.fog(Fog.builder().density(0.012f).gradient(2.0f).build()))
             .entity(e -> e.ambient(AmbientLight.builder().strength(0.5f).build()))
             .entity("player", e -> e
