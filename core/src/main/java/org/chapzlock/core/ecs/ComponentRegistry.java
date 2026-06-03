@@ -261,11 +261,14 @@ public class ComponentRegistry {
             return;
         }
         ComponentStore<T> store = (ComponentStore<T>) stores.get(typeId);
+        if (type == Name.class) {
+            Name nameComp = (Name) store.get(entityId);
+            if (nameComp != null) {
+                nameIndex.remove(nameComp.getValue());
+            }
+        }
         eventBus.publish(new ComponentRemovedEvent(entityId, type));
         store.remove(entityId);
-        if (type == Name.class) {
-            nameIndex.values().removeIf(id -> id == entityId);
-        }
 
         BitSet mask = entityComponentMasks.get(entityId);
         if (mask != null) {
