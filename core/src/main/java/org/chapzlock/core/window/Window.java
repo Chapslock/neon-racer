@@ -24,6 +24,10 @@ import static org.lwjgl.glfw.GLFW.glfwShowWindow;
 import static org.lwjgl.glfw.GLFW.glfwSwapInterval;
 import static org.lwjgl.glfw.GLFW.glfwWindowHint;
 import static org.lwjgl.glfw.GLFW.glfwWindowShouldClose;
+import static org.lwjgl.glfw.GLFW.GLFW_CURSOR;
+import static org.lwjgl.glfw.GLFW.GLFW_CURSOR_DISABLED;
+import static org.lwjgl.glfw.GLFW.GLFW_CURSOR_NORMAL;
+import static org.lwjgl.glfw.GLFW.glfwSetInputMode;
 import static org.lwjgl.opengl.GL.createCapabilities;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
@@ -149,6 +153,11 @@ public class Window {
         });
         glfwSetWindowCloseCallback(id, window -> eventBus.publish(new WindowCloseEvent(window)));
 
+    }
+
+    public void setCursorLocked(boolean locked) {
+        if (id == NULL) return;
+        glfwSetInputMode(id, GLFW_CURSOR, locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     }
 
     public void destroy() {
