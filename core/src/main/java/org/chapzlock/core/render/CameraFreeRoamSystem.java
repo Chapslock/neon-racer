@@ -27,8 +27,17 @@ public class CameraFreeRoamSystem implements GameSystem {
     private EventBus eventBus;
     private final List<Subscription> subscriptions = new ArrayList<>();
 
-    private static final float CAMERA_MOUSE_SENSITIVITY = .03f;
-    private static final float CAMERA_MOVEMENT_SPEED = 10f;
+    private final float mouseSensitivity;
+    private final float movementSpeed;
+
+    public CameraFreeRoamSystem() {
+        this(10f, 0.03f);
+    }
+
+    public CameraFreeRoamSystem(float movementSpeed, float mouseSensitivity) {
+        this.movementSpeed = movementSpeed;
+        this.mouseSensitivity = mouseSensitivity;
+    }
 
     // Movement state (driven by key press/release events)
     private boolean movingForward = false;
@@ -50,7 +59,7 @@ public class CameraFreeRoamSystem implements GameSystem {
             return;
         }
         Camera camera = cameraOpt.get();
-        float velocity = CAMERA_MOVEMENT_SPEED * deltaTime;
+        float velocity = movementSpeed * deltaTime;
         if (movingForward) {
             Vector3f forward = camera.getCameraFront().mul(velocity);
             camera.getPosition().add(forward);
@@ -145,8 +154,8 @@ public class CameraFreeRoamSystem implements GameSystem {
         }
         Camera camera = cameraOpt.get();
 
-        float yaw = camera.getYaw() + (float) (xOffset * CAMERA_MOUSE_SENSITIVITY);
-        float pitch = camera.getPitch() + (float) (yOffset * CAMERA_MOUSE_SENSITIVITY);
+        float yaw = camera.getYaw() + (float) (xOffset * mouseSensitivity);
+        float pitch = camera.getPitch() + (float) (yOffset * mouseSensitivity);
 
         pitch = clamp(-89f, 89f, pitch);
 
