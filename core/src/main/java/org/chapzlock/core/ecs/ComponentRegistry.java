@@ -371,11 +371,47 @@ public class ComponentRegistry {
     }
 
     /**
+     * Resolves a cached query for the given component type IDs.
+     *
+     * <p>Creates a bitset mask from the type IDs, looks up or creates a cached query,
+     * and recomputes entity matches if the cache is invalid. Returns the cached list
+     * of matching entity IDs.
+     *
+     * @param typeIds the component type IDs to query for (all must be present on matching entities)
+     * @return immutable list of entity IDs matching all type IDs
+     */
+    private List<Integer> resolveQuery(int... typeIds) {
+        BitSet queryMask = new BitSet();
+        for (int id : typeIds) {
+            queryMask.set(id);
+        }
+
+        CachedQuery cached = queryCache.computeIfAbsent(queryMask, CachedQuery::new);
+        if (!cached.valid) {
+            List<Integer> ids = new ArrayList<>();
+            for (Entry<Integer, BitSet> entry : entityComponentMasks.entrySet()) {
+                BitSet mask = entry.getValue();
+                boolean matches = true;
+                for (int typeId : typeIds) {
+                    if (!mask.get(typeId)) {
+                        matches = false;
+                        break;
+                    }
+                }
+                if (matches) {
+                    ids.add(entry.getKey());
+                }
+            }
+            cached.entityIds = ids;
+            cached.valid = true;
+        }
+        return cached.entityIds;
+    }
+
+    /**
      * Iterates all entities with the specified component, passing typed references to the consumer.
      *
      * <p>Zero allocations on stable frames — uses the same cached query mechanism as other queries.
-     * Zero allocations on stable frames, making it ideal for hot-loop systems
-     * that process a single component type every frame.
      *
      * <p>Example:
      * <pre>{@code
@@ -393,23 +429,9 @@ public class ComponentRegistry {
         Integer typeIdA = typeToId.get(type);
         if (typeIdA == null) return;
 
-        BitSet queryMask = new BitSet();
-        queryMask.set(typeIdA);
-
-        CachedQuery cached = queryCache.computeIfAbsent(queryMask, CachedQuery::new);
-        if (!cached.valid) {
-            List<Integer> ids = new ArrayList<>();
-            for (Entry<Integer, BitSet> entry : entityComponentMasks.entrySet()) {
-                if (entry.getValue().get(typeIdA)) {
-                    ids.add(entry.getKey());
-                }
-            }
-            cached.entityIds = ids;
-            cached.valid = true;
-        }
-
+        List<Integer> entities = resolveQuery(typeIdA);
         ComponentStore<A> storeA = (ComponentStore<A>) stores.get(typeIdA);
-        for (int entityId : cached.entityIds) {
+        for (int entityId : entities) {
             consumer.accept(entityId, storeA.get(entityId));
         }
     }
@@ -418,8 +440,6 @@ public class ComponentRegistry {
      * Iterates all entities with both specified components, passing typed references to the consumer.
      *
      * <p>Zero allocations on stable frames — uses the same cached query mechanism as other queries.
-     * Zero allocations on stable frames, making it ideal for hot-loop systems
-     * that process two component types every frame.
      *
      * <p>Example:
      * <pre>{@code
@@ -441,26 +461,10 @@ public class ComponentRegistry {
         Integer typeIdB = typeToId.get(typeB);
         if (typeIdA == null || typeIdB == null) return;
 
-        BitSet queryMask = new BitSet();
-        queryMask.set(typeIdA);
-        queryMask.set(typeIdB);
-
-        CachedQuery cached = queryCache.computeIfAbsent(queryMask, CachedQuery::new);
-        if (!cached.valid) {
-            List<Integer> ids = new ArrayList<>();
-            for (Entry<Integer, BitSet> entry : entityComponentMasks.entrySet()) {
-                BitSet mask = entry.getValue();
-                if (mask.get(typeIdA) && mask.get(typeIdB)) {
-                    ids.add(entry.getKey());
-                }
-            }
-            cached.entityIds = ids;
-            cached.valid = true;
-        }
-
+        List<Integer> entities = resolveQuery(typeIdA, typeIdB);
         ComponentStore<A> storeA = (ComponentStore<A>) stores.get(typeIdA);
         ComponentStore<B> storeB = (ComponentStore<B>) stores.get(typeIdB);
-        for (int entityId : cached.entityIds) {
+        for (int entityId : entities) {
             consumer.accept(entityId, storeA.get(entityId), storeB.get(entityId));
         }
     }
@@ -469,8 +473,6 @@ public class ComponentRegistry {
      * Iterates all entities with all three specified components, passing typed references to the consumer.
      *
      * <p>Zero allocations on stable frames — uses the same cached query mechanism as other queries.
-     * Zero allocations on stable frames, making it ideal for hot-loop systems
-     * that process three component types every frame.
      *
      * <p>Example:
      * <pre>{@code
@@ -495,28 +497,11 @@ public class ComponentRegistry {
         Integer typeIdC = typeToId.get(typeC);
         if (typeIdA == null || typeIdB == null || typeIdC == null) return;
 
-        BitSet queryMask = new BitSet();
-        queryMask.set(typeIdA);
-        queryMask.set(typeIdB);
-        queryMask.set(typeIdC);
-
-        CachedQuery cached = queryCache.computeIfAbsent(queryMask, CachedQuery::new);
-        if (!cached.valid) {
-            List<Integer> ids = new ArrayList<>();
-            for (Entry<Integer, BitSet> entry : entityComponentMasks.entrySet()) {
-                BitSet mask = entry.getValue();
-                if (mask.get(typeIdA) && mask.get(typeIdB) && mask.get(typeIdC)) {
-                    ids.add(entry.getKey());
-                }
-            }
-            cached.entityIds = ids;
-            cached.valid = true;
-        }
-
+        List<Integer> entities = resolveQuery(typeIdA, typeIdB, typeIdC);
         ComponentStore<A> storeA = (ComponentStore<A>) stores.get(typeIdA);
         ComponentStore<B> storeB = (ComponentStore<B>) stores.get(typeIdB);
         ComponentStore<C> storeC = (ComponentStore<C>) stores.get(typeIdC);
-        for (int entityId : cached.entityIds) {
+        for (int entityId : entities) {
             consumer.accept(entityId, storeA.get(entityId), storeB.get(entityId), storeC.get(entityId));
         }
     }
@@ -525,9 +510,6 @@ public class ComponentRegistry {
      * Iterates all entities with all four specified components, passing typed references to the consumer.
      *
      * <p>Zero allocations on stable frames — uses the same cached query mechanism as other queries.
-     * Zero allocations on stable frames, making it ideal for hot-loop systems
-     * that process four component types every frame (e.g. the render pipeline iterating
-     * Transform + Mesh + Material + layer tag).
      *
      * <p>Example:
      * <pre>{@code
@@ -557,30 +539,12 @@ public class ComponentRegistry {
         Integer typeIdD = typeToId.get(typeD);
         if (typeIdA == null || typeIdB == null || typeIdC == null || typeIdD == null) return;
 
-        BitSet queryMask = new BitSet();
-        queryMask.set(typeIdA);
-        queryMask.set(typeIdB);
-        queryMask.set(typeIdC);
-        queryMask.set(typeIdD);
-
-        CachedQuery cached = queryCache.computeIfAbsent(queryMask, CachedQuery::new);
-        if (!cached.valid) {
-            List<Integer> ids = new ArrayList<>();
-            for (Entry<Integer, BitSet> entry : entityComponentMasks.entrySet()) {
-                BitSet mask = entry.getValue();
-                if (mask.get(typeIdA) && mask.get(typeIdB) && mask.get(typeIdC) && mask.get(typeIdD)) {
-                    ids.add(entry.getKey());
-                }
-            }
-            cached.entityIds = ids;
-            cached.valid = true;
-        }
-
+        List<Integer> entities = resolveQuery(typeIdA, typeIdB, typeIdC, typeIdD);
         ComponentStore<A> storeA = (ComponentStore<A>) stores.get(typeIdA);
         ComponentStore<B> storeB = (ComponentStore<B>) stores.get(typeIdB);
         ComponentStore<C> storeC = (ComponentStore<C>) stores.get(typeIdC);
         ComponentStore<D> storeD = (ComponentStore<D>) stores.get(typeIdD);
-        for (int entityId : cached.entityIds) {
+        for (int entityId : entities) {
             consumer.accept(entityId, storeA.get(entityId), storeB.get(entityId),
                 storeC.get(entityId), storeD.get(entityId));
         }
