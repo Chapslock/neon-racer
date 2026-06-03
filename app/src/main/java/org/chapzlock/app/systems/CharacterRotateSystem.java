@@ -2,12 +2,12 @@ package org.chapzlock.app.systems;
 
 import org.chapzlock.app.tags.PlayerTag;
 import org.chapzlock.core.application.EngineContext;
-import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
+import org.chapzlock.core.ecs.GameSystem;
 import org.joml.Vector3f;
 
-public class PlayerRotateSystem implements GameSystem {
+public class CharacterRotateSystem implements GameSystem {
     private ComponentRegistry registry;
     private final Vector3f tempEuler = new Vector3f();
 

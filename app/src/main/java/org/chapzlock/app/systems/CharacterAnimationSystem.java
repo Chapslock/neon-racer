@@ -21,7 +21,7 @@ import org.chapzlock.core.ecs.GameSystem;
  * {@link AnimationClipSet}. The animation components are automatically promoted onto
  * the player entity by the scene instantiator when using {@code .gltfModel()}.
  */
-public class PlayerAnimationSystem implements GameSystem {
+public class CharacterAnimationSystem implements GameSystem {
 
     private static final String ANIM_IDLE = "Idle";
     private static final String ANIM_RUN = "Run";

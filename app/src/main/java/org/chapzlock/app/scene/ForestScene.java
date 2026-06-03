@@ -3,11 +3,11 @@ package org.chapzlock.app.scene;
 import org.chapzlock.app.component.CharacterState;
 import org.chapzlock.app.component.PlayerInputComponent;
 import org.chapzlock.app.component.ThirdPersonCamera;
+import org.chapzlock.app.systems.CharacterAnimationSystem;
 import org.chapzlock.app.systems.CharacterGroundCheckSystem;
 import org.chapzlock.app.systems.CharacterJumpSystem;
 import org.chapzlock.app.systems.CharacterMovementSystem;
 import org.chapzlock.app.systems.CharacterRotationSystem;
-import org.chapzlock.app.systems.PlayerAnimationSystem;
 import org.chapzlock.app.systems.PlayerInputSystem;
 import org.chapzlock.app.systems.ThirdPersonCameraSystem;
 import org.chapzlock.app.tags.PlayerTag;
@@ -20,8 +20,8 @@ import org.chapzlock.core.component.Fog;
 import org.chapzlock.core.component.GltfModel;
 import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.PointLight;
-import org.chapzlock.core.component.SpriteMaterial;
 import org.chapzlock.core.component.SpriteLayer;
+import org.chapzlock.core.component.SpriteMaterial;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.EntityBuilder;
 import org.chapzlock.core.input.InputMap;
@@ -77,7 +77,7 @@ public class ForestScene {
                 new CharacterMovementSystem(),
                 new CharacterJumpSystem(),
                 new CharacterRotationSystem(),
-                new PlayerAnimationSystem(),
+                new CharacterAnimationSystem(),
                 new ThirdPersonCameraSystem())
             .inputMap(InputMap.builder()
                 .action("quit", Key.ESCAPE)

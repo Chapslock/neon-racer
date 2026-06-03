@@ -1,5 +1,11 @@
 package org.chapzlock.app.systems;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
+import java.util.Map;
+
 import org.chapzlock.app.component.PlayerInputComponent;
 import org.chapzlock.app.tags.PlayerTag;
 import org.chapzlock.core.animation.Animation;
@@ -14,16 +20,11 @@ import org.chapzlock.core.ecs.Entity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.*;
-
-class PlayerAnimationSystemTest {
+class CharacterAnimationSystemTest {
 
     private EngineContext ctx;
     private ComponentRegistry registry;
-    private PlayerAnimationSystem system;
+    private CharacterAnimationSystem system;
 
     private Animation idleAnim;
     private Animation runAnim;
@@ -33,7 +34,7 @@ class PlayerAnimationSystemTest {
     void setUp() {
         ctx = EngineContext.testContext();
         registry = ctx.getRegistry();
-        system = new PlayerAnimationSystem();
+        system = new CharacterAnimationSystem();
         system.onInit(ctx);
 
         Channel dummyChannel = new Channel(0, TargetPath.TRANSLATION, Interpolation.LINEAR,
