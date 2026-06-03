@@ -127,6 +127,13 @@ class PhysicsWorld implements Disposable {
             return;
         }
 
+        if (config.getGeometry() instanceof CollisionGeometry.TriangleMesh && config.getMass() != 0) {
+            Log.error("Physics registration skipped for entity " + entityId +
+                ": TriangleMesh geometry cannot be used with dynamic bodies (mass > 0). " +
+                "TriangleMesh is a static-only shape. Use CollisionGeometry.capsule(), box(), or sphere() for dynamic bodies.");
+            return;
+        }
+
         RawMeshData meshData = resolveMeshData(entityId, registry, meshSystem);
         CollisionShape shape = shapeResolver.resolve(config.getGeometry(), meshData);
 

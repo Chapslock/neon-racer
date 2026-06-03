@@ -164,6 +164,28 @@ class PhysicsWorldTest {
         assertEquals(0f, bulletTransform.origin.z, 0.001f);
     }
 
+    @Test
+    void register_rejectsDynamicBodyWithTriangleMesh() {
+        int entity = createPhysicsEntity(1f, CollisionGeometry.triangleMesh(), 0, 5, 0);
+
+        world.register(entity, registry);
+
+        assertFalse(world.isRegistered(entity),
+            "Dynamic body with TriangleMesh should be rejected (static-only shape)");
+    }
+
+    @Test
+    void register_allowsStaticBodyWithTriangleMesh() {
+        int entity = createPhysicsEntity(0f, CollisionGeometry.triangleMesh(), 0, 0, 0);
+
+        // Static + TriangleMesh is valid but will throw because no mesh data is available
+        // in test context. The point: it should NOT be rejected by the dynamic-body validation
+        // — it should proceed to mesh resolution and fail there instead.
+        var ex = assertThrows(IllegalStateException.class, () -> world.register(entity, registry));
+        assertTrue(ex.getMessage().contains("mesh data"),
+            "Should fail at mesh resolution, not at dynamic-body validation");
+    }
+
     private int createPhysicsEntity(float mass, CollisionGeometry geometry, float x, float y, float z) {
         int entity = Entity.create(registry);
         registry.addComponent(entity, Transform.at(x, y, z));
