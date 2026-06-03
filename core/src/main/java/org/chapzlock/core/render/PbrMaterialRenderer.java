@@ -52,6 +52,13 @@ public class PbrMaterialRenderer {
     private final Matrix4f tempJointMatrix = new Matrix4f();
 
     /**
+     * Reusable temporary matrix for the inverse model matrix used in skinning.
+     * Joint matrices must be expressed relative to the mesh entity so the shader's
+     * modelMatrix * skinMatrix * vertex produces correct world-space positions.
+     */
+    private final Matrix4f tempInverseModel = new Matrix4f();
+
+    /**
      * Reusable VBO for uploading blended morph position deltas each frame.
      * Created lazily on first use and reused across frames to avoid allocation churn.
      * Zero means not yet created.
@@ -157,11 +164,12 @@ public class PbrMaterialRenderer {
      * method computes and uploads the joint matrices needed for vertex skinning. The skin
      * matrix formula per joint is:
      * <pre>
-     *   skinMatrix[j] = jointWorldMatrix[j] * inverseBindMatrix[j]
+     *   skinMatrix[j] = inverse(modelMatrix) * jointWorldMatrix[j] * inverseBindMatrix[j]
      * </pre>
-     * This transforms vertices from bind-pose space into the joint's current animated position.
-     * The vertex shader then blends up to 4 joint influences per vertex using the weights
-     * stored in the WEIGHTS_0 attribute.
+     * Joint matrices are expressed relative to the mesh entity so that the shader's
+     * {@code modelMatrix * skinMatrix * vertex} produces the correct world-space position
+     * without double-applying the entity's hierarchy transform. The vertex shader then
+     * blends up to 4 joint influences per vertex using the weights stored in WEIGHTS_0.
      *
      * <p>For entities without a Skeleton, skinning is disabled (uHasSkin=false) and the
      * shader uses the raw vertex positions unchanged.
@@ -183,15 +191,17 @@ public class PbrMaterialRenderer {
             shaderSystem.setUniform(material.getShader(), UNIFORM_HAS_SKIN, true);
             int[] jointEntities = skeleton.getJointEntities();
             Matrix4f[] inverseBindMatrices = skeleton.getInverseBindMatrices();
+            modelMatrix.invert(tempInverseModel);
 
             for (int j = 0; j < skeleton.jointCount(); j++) {
                 Transform jointTransform = ctx.getRegistry().getComponent(
                     jointEntities[j], Transform.class);
                 if (jointTransform != null) {
-                    // skinMatrix = jointWorldMatrix * inverseBindMatrix
-                    tempJointMatrix.set(jointTransform.getWorldMatrix()).mul(inverseBindMatrices[j]);
+                    // skinMatrix = inverse(modelMatrix) * jointWorldMatrix * inverseBindMatrix
+                    tempJointMatrix.set(tempInverseModel)
+                        .mul(jointTransform.getWorldMatrix())
+                        .mul(inverseBindMatrices[j]);
                 } else {
-                    // Joint has no world transform yet — use identity (bind pose)
                     tempJointMatrix.identity();
                 }
                 shaderSystem.setUniform(material.getShader(),
