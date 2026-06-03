@@ -1,34 +1,27 @@
 package org.chapzlock.core.render;
 
 import org.chapzlock.core.component.Camera;
+import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.logging.Log;
 import org.chapzlock.core.window.WindowSpecification;
 import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
-import org.joml.Vector3fc;
 
 /**
  * Computes projection and view matrices from the active camera entity.
  *
- * <p><strong>What is a projection matrix?</strong> It defines how the 3D world is projected
- * onto the 2D screen. A perspective projection makes distant objects smaller (like how your
- * eyes work). It's defined by field-of-view (how wide the camera sees), aspect ratio (screen
- * width/height), and near/far planes (minimum and maximum visible distance).
+ * <p><strong>Projection matrix:</strong> Defines how the 3D world is projected onto the 2D
+ * screen using perspective projection. Configured by Camera component (FOV, near/far planes).
  *
- * <p><strong>What is a view matrix?</strong> It positions the camera in the world. Technically,
- * it transforms world coordinates into "camera space" — as if the camera were at the origin
- * looking down -Z. This is computed from the camera's position and its look-at direction.
- *
- * <p><strong>Why these matrices matter:</strong> Every vertex rendered goes through:
- * {@code screenPosition = projectionMatrix × viewMatrix × modelMatrix × vertexPosition}.
- * The model matrix positions the object in the world, the view matrix adjusts for where
- * the camera is, and the projection matrix applies perspective.
+ * <p><strong>View matrix:</strong> Positions the camera in the world. Computed from the
+ * camera entity's Transform component (position and rotation quaternion).
  *
  * <p><strong>Caching:</strong> The projection matrix only changes when camera settings change
- * (FOV, near/far planes, window resize). The view matrix changes every frame if the camera
- * moves. This system caches the projection matrix and only recalculates when settings differ.
+ * (FOV, near/far planes, window resize). The view matrix is recalculated every frame.
  *
- * @see org.chapzlock.core.component.Camera
+ * @see Camera
+ * @see Transform
  */
 public class CameraSystem {
 
@@ -41,15 +34,17 @@ public class CameraSystem {
     private float cachedFarPlane = 0;
     private float cachedAspectRatio = 0;
 
+    private final Vector3f tempPos = new Vector3f();
+    private final Vector3f tempForward = new Vector3f();
+    private final Vector3f tempCenter = new Vector3f();
+    private final Quaternionf tempQuat = new Quaternionf();
+
     public CameraSystem(WindowSpecification windowSpec) {
         this.windowSpec = windowSpec;
     }
 
     /**
      * Returns the perspective projection matrix based on the camera settings.
-     *
-     * <p>The returned matrix is owned by this system — do not mutate it. It is recalculated
-     * only when camera settings change (FOV, near/far planes, window resize).
      *
      * @param camera the camera component with FOV, near/far plane settings
      * @return the cached projection matrix (read-only — do not modify)
@@ -77,33 +72,35 @@ public class CameraSystem {
         return projectionMatrix;
     }
 
+    /**
+     * Returns the view matrix computed from the camera entity's Transform.
+     *
+     * <p>Derives the camera's look direction from the Transform's rotation quaternion.
+     * The forward vector is computed by rotating (1, 0, 0) by the quaternion — matching
+     * the engine's convention where +X is the default forward axis.
+     *
+     * @param transform the transform component of the camera entity
+     * @return the cached view matrix (read-only — do not modify)
+     */
+    public Matrix4f calculateViewMatrix(Transform transform) {
+        transform.getPosition(tempPos);
+        transform.getRotationQuaternion(tempQuat);
+
+        tempForward.set(1, 0, 0);
+        tempQuat.transform(tempForward);
+        tempForward.normalize();
+
+        tempCenter.set(tempPos).add(tempForward);
+
+        this.cameraViewMatrix.identity();
+        this.cameraViewMatrix.lookAt(tempPos, tempCenter, new Vector3f(0, 1, 0));
+        return cameraViewMatrix;
+    }
+
     private boolean isCameraSettingsSame(Camera camera) {
         return cachedFieldOfView == camera.getFieldOfView() &&
             cachedNearPlane == camera.getNearPlane() &&
             cachedFarPlane == camera.getFarPlane() &&
             cachedAspectRatio == windowSpec.getAspectRatio();
-    }
-
-    /**
-     * Returns the view matrix based on the camera's position and direction.
-     *
-     * <p>The returned matrix is owned by this system — do not mutate it. It is
-     * recalculated every frame (camera movement is expected to be frequent).
-     *
-     * @param camera the camera component with position and direction
-     * @return the cached view matrix (read-only — do not modify)
-     */
-    public Matrix4f calculateViewMatrix(Camera camera) {
-        this.cameraViewMatrix.identity();
-        this.cameraViewMatrix.lookAt(
-            camera.getPosition(),
-            calculateCameraCenter(camera),
-            camera.getCameraUp()
-        );
-        return cameraViewMatrix;
-    }
-
-    private Vector3fc calculateCameraCenter(Camera camera) {
-        return camera.getPosition().add(camera.getCameraFront(), new Vector3f());
     }
 }
