@@ -59,7 +59,7 @@ public class ForestScene {
             .entity("player", e -> e
                 .transform(Transform.at(0, 3, -3, 0, 90, 0))
                 .gltfModel("glb/player-character.glb")
-                .physics(PhysicsDescriptor.dynamic(1)
+                .physics(PhysicsDescriptor.asStatic()
                     .shape(CollisionGeometry.capsule(0.4f, 1.8f)))
                 .tag(new PlayerTag())
                 .component(new PlayerInputComponent()))
