@@ -127,6 +127,30 @@ class PhysicsWorldTest {
     }
 
     @Test
+    void dynamicBodyWithOffset_rotatedEntity_appliesRotatedOffset() {
+        // Entity at (0, 5, 0) rotated 90° around Y axis
+        // Offset is (0, 0, 3) in local space
+        // After 90° Y rotation, local Z maps to world X → body center at (3, 5, 0)
+        int entity = Entity.create(registry);
+        Transform transform = Transform.at(0, 5, 0, 0, 90, 0);
+        registry.addComponent(entity, transform);
+        registry.addComponent(entity, PhysicsBody.builder()
+            .mass(0f)
+            .geometry(CollisionGeometry.sphere(0.5f).offset(0, 0, 3f))
+            .build());
+
+        world.register(entity, registry);
+
+        com.bulletphysics.linearmath.Transform bulletTransform = new com.bulletphysics.linearmath.Transform();
+        world.getBody(entity).getWorldTransform(bulletTransform);
+
+        // After 90° Y rotation: local (0,0,3) → world (3,0,0) approximately
+        assertEquals(3f, bulletTransform.origin.x, 0.1f);
+        assertEquals(5f, bulletTransform.origin.y, 0.1f);
+        assertEquals(0f, bulletTransform.origin.z, 0.1f);
+    }
+
+    @Test
     void dynamicBodyWithOffset_initialRegistrationPlacesBodyAtOffsetPosition() {
         int entity = createPhysicsEntity(0f, CollisionGeometry.sphere(0.5f).offset(0, 3f, 0), 0, 5, 0);
 
