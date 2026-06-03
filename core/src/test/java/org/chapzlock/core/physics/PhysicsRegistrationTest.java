@@ -11,10 +11,11 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Proves that physics registration happens immediately via EntitySystem's atomic commit.
+ * Proves that physics registration is deferred to PhysicsSystem.onUpdate().
  *
- * <p>EntitySystem guarantees all components are present before ComponentAddedEvent fires.
- * PhysicsSystem subscribes to that event and registers immediately — no deferred queue needed.
+ * <p>Bodies are queued on ComponentAddedEvent and processed at the start of the
+ * next physics step. This guarantees glTF child meshes are available for
+ * mesh-dependent shapes (TriangleMesh, ConvexHull).
  */
 class PhysicsRegistrationTest {
 
@@ -33,7 +34,7 @@ class PhysicsRegistrationTest {
     }
 
     @Test
-    void entityRegisteredImmediatelyOnInstantiate() {
+    void entityNotRegisteredBeforeOnUpdate() {
         int entity = entitySystem.builder("ball")
             .transform(Transform.at(0, 10, 0))
             .component(PhysicsBody.builder()
@@ -42,14 +43,28 @@ class PhysicsRegistrationTest {
                 .build())
             .instantiate();
 
-        // Registration happens immediately — no onUpdate() needed
-        Physics physics = ctx.getPhysics();
-        assertTrue(physics.isRegistered(entity),
-            "Body should be registered immediately after instantiate()");
+        assertFalse(ctx.getPhysics().isRegistered(entity),
+            "Body should NOT be registered before onUpdate() drains the queue");
     }
 
     @Test
-    void multipleEntitiesRegisteredImmediately() {
+    void entityRegisteredAfterOnUpdate() {
+        int entity = entitySystem.builder("ball")
+            .transform(Transform.at(0, 10, 0))
+            .component(PhysicsBody.builder()
+                .mass(1f)
+                .geometry(CollisionGeometry.sphere(1f))
+                .build())
+            .instantiate();
+
+        physicsSystem.onUpdate(1f / 60f);
+
+        assertTrue(ctx.getPhysics().isRegistered(entity),
+            "Body should be registered after onUpdate() drains the queue");
+    }
+
+    @Test
+    void multipleEntitiesRegisteredAfterOnUpdate() {
         int e1 = entitySystem.builder("sphere")
             .transform(Transform.at(0, 5, 0))
             .component(PhysicsBody.builder()
@@ -66,9 +81,45 @@ class PhysicsRegistrationTest {
                 .build())
             .instantiate();
 
+        physicsSystem.onUpdate(1f / 60f);
+
         Physics physics = ctx.getPhysics();
         assertTrue(physics.isRegistered(e1));
         assertTrue(physics.isRegistered(e2));
+    }
+
+    @Test
+    void entityDestroyedBeforeOnUpdate_skipsRegistration() {
+        int entity = entitySystem.builder("ball")
+            .transform(Transform.at(0, 5, 0))
+            .component(PhysicsBody.builder()
+                .mass(1f)
+                .geometry(CollisionGeometry.sphere(1f))
+                .build())
+            .instantiate();
+
+        registry.destroyEntity(entity);
+        physicsSystem.onUpdate(1f / 60f);
+
+        assertFalse(ctx.getPhysics().isRegistered(entity),
+            "Destroyed entity should be skipped during queue drain");
+    }
+
+    @Test
+    void physicsBodyRemovedBeforeOnUpdate_skipsRegistration() {
+        int entity = entitySystem.builder("ball")
+            .transform(Transform.at(0, 5, 0))
+            .component(PhysicsBody.builder()
+                .mass(1f)
+                .geometry(CollisionGeometry.sphere(1f))
+                .build())
+            .instantiate();
+
+        registry.removeComponent(entity, PhysicsBody.class);
+        physicsSystem.onUpdate(1f / 60f);
+
+        assertFalse(ctx.getPhysics().isRegistered(entity),
+            "Entity whose PhysicsBody was removed should be skipped");
     }
 
     @Test
@@ -81,6 +132,7 @@ class PhysicsRegistrationTest {
                 .build())
             .instantiate();
 
+        physicsSystem.onUpdate(1f / 60f);
         assertTrue(ctx.getPhysics().isRegistered(entity));
 
         registry.destroyEntity(entity);
@@ -98,6 +150,8 @@ class PhysicsRegistrationTest {
                 .geometry(CollisionGeometry.capsule(0.4f, 1.8f))
                 .build())
             .instantiate();
+
+        physicsSystem.onUpdate(1f / 60f);
 
         assertTrue(ctx.getPhysics().isRegistered(entity));
     }
