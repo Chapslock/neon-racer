@@ -47,8 +47,7 @@ public class CharacterGroundCheckSystem implements GameSystem {
 
     @Override
     public List<Class<? extends GameSystem>> runBefore() {
-        // CharacterMovementSystem and CharacterJumpSystem will be added here once they exist
-        return List.of();
+        return List.of(CharacterMovementSystem.class, CharacterJumpSystem.class);
     }
 
     @Override

@@ -44,7 +44,7 @@ public class CharacterRotationSystem implements GameSystem {
 
     @Override
     public List<Class<? extends GameSystem>> runBefore() {
-        return List.of();
+        return List.of(ThirdPersonCameraSystem.class);
     }
 
     @Override

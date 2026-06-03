@@ -50,7 +50,7 @@ public class CharacterMovementSystem implements GameSystem {
 
     @Override
     public List<Class<? extends GameSystem>> runBefore() {
-        return List.of();
+        return List.of(CharacterRotationSystem.class);
     }
 
     @Override

@@ -1,8 +1,15 @@
 package org.chapzlock.app.scene;
 
+import org.chapzlock.app.component.CharacterState;
 import org.chapzlock.app.component.PlayerInputComponent;
-import org.chapzlock.app.systems.PlayerInputSystem;
+import org.chapzlock.app.component.ThirdPersonCamera;
+import org.chapzlock.app.systems.CharacterGroundCheckSystem;
+import org.chapzlock.app.systems.CharacterJumpSystem;
+import org.chapzlock.app.systems.CharacterMovementSystem;
+import org.chapzlock.app.systems.CharacterRotationSystem;
 import org.chapzlock.app.systems.PlayerAnimationSystem;
+import org.chapzlock.app.systems.PlayerInputSystem;
+import org.chapzlock.app.systems.ThirdPersonCameraSystem;
 import org.chapzlock.app.tags.PlayerTag;
 import org.chapzlock.core.component.AmbientLight;
 import org.chapzlock.core.component.Attenuation;
@@ -14,11 +21,11 @@ import org.chapzlock.core.component.PhysicsDescriptor;
 import org.chapzlock.core.component.PointLight;
 import org.chapzlock.core.component.SpriteDescriptor;
 import org.chapzlock.core.component.Transform;
-import org.chapzlock.core.physics.CollisionGeometry;
+import org.chapzlock.core.ecs.EntityBuilder;
 import org.chapzlock.core.input.InputMap;
 import org.chapzlock.core.input.Key;
-import org.chapzlock.core.render.CameraFreeRoamSystem;
-import org.chapzlock.core.ecs.EntityBuilder;
+import org.chapzlock.core.input.MouseButton;
+import org.chapzlock.core.physics.CollisionGeometry;
 import org.chapzlock.core.scene.Scene;
 import org.joml.Vector3f;
 
@@ -27,7 +34,7 @@ public class ForestScene {
     public static Scene create() {
         return Scene.builder("forest")
             .entity("terrain", e -> e
-                .transform(Transform.at(0,0,0))
+                .transform(Transform.at(0, 0, 0))
                 .gltfModel("glb/terrain.glb")
                 .physics(PhysicsDescriptor.asStatic()
                     .shape(CollisionGeometry.triangleMesh())))
@@ -63,22 +70,30 @@ public class ForestScene {
                     .shape(CollisionGeometry.capsule(0.3f, 0.6f)
                         .offset(0, 0.3f, 0)))
                 .tag(new PlayerTag())
-                .component(new PlayerInputComponent()))
+                .component(new PlayerInputComponent())
+                .component(new CharacterState()))
             .entity("healthbar", e -> e
                 .transform(Transform.at(0, 0, 0, 0, 0, 0, 250))
                 .sprite(SpriteDescriptor.of("textures/health-bar.png")))
-
-            .entity(e -> e.camera(new Camera(new Vector3f(0, 3, 5))))
-
+            .entity(e -> e
+                .camera(new Camera(new Vector3f(0, 3, 5)))
+                .component(new ThirdPersonCamera()))
             .entity(EntityBuilder::sky)
             .systems(
                 new PlayerInputSystem(),
+                new CharacterGroundCheckSystem(),
+                new CharacterMovementSystem(),
+                new CharacterJumpSystem(),
+                new CharacterRotationSystem(),
                 new PlayerAnimationSystem(),
-                new CameraFreeRoamSystem())
+                new ThirdPersonCameraSystem())
             .inputMap(InputMap.builder()
                 .action("quit", Key.ESCAPE)
+                .action("jump", Key.SPACE)
+                .action("cameraOrbit", MouseButton.RIGHT)
                 .axis("moveForward", Key.S, Key.W)
                 .axis("moveRight", Key.A, Key.D)
+                .mouseAxis("lookX", "lookY")
                 .build())
             .build();
     }
