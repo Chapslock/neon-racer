@@ -42,8 +42,13 @@ public record ComponentRule(
      * @return true if the rule is violated
      */
     public boolean isViolated(List<? extends Component> components) {
-        boolean hasComponent = components.stream().anyMatch(c -> component.isInstance(c));
-        boolean hasRequired = components.stream().anyMatch(c -> requires.isInstance(c));
+        boolean hasComponent = false;
+        boolean hasRequired = false;
+        for (Component c : components) {
+            if (component.isInstance(c)) hasComponent = true;
+            if (requires.isInstance(c)) hasRequired = true;
+            if (hasComponent && hasRequired) return false;
+        }
         return hasComponent && !hasRequired;
     }
 }

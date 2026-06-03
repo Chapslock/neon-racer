@@ -53,6 +53,7 @@ public class ComponentRegistry {
 
     private final Map<BitSet, CachedQuery> queryCache = new HashMap<>();
     private final Map<String, Integer> nameIndex = new HashMap<>();
+    private final List<ComponentRule> componentRules = new ArrayList<>();
 
     private static class CachedQuery {
         final BitSet mask;
@@ -325,6 +326,25 @@ public class ComponentRegistry {
      */
     public boolean hasEntity(String name) {
         return nameIndex.containsKey(name);
+    }
+
+    /**
+     * Registers a component dependency rule for validation during entity creation.
+     *
+     * @param rule the dependency rule to register
+     * @see ComponentRule
+     */
+    public void addRule(ComponentRule rule) {
+        componentRules.add(rule);
+    }
+
+    /**
+     * Returns all registered component rules.
+     *
+     * @return unmodifiable view of the rules list
+     */
+    public List<ComponentRule> getRules() {
+        return java.util.Collections.unmodifiableList(componentRules);
     }
 
     /**

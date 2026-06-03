@@ -54,21 +54,6 @@ import org.chapzlock.core.render.TextureSystem;
  */
 public class EntitySystem implements GameSystem {
 
-    private static final List<ComponentRule> RULES = List.of(
-        ComponentRule.requires(Mesh.class, Transform.class,
-            "Mesh requires Transform"),
-        ComponentRule.requires(PhysicsBody.class, Transform.class,
-            "PhysicsBody requires Transform"),
-        ComponentRule.requires(PointLight.class, Transform.class,
-            "PointLight requires Transform"),
-        ComponentRule.requires(SpriteMaterial.class, Mesh.class,
-            "SpriteMaterial requires Mesh"),
-        ComponentRule.requires(PbrMaterial.class, Mesh.class,
-            "PbrMaterial requires Mesh"),
-        ComponentRule.requires(Skeleton.class, Mesh.class,
-            "Skeleton requires Mesh")
-    );
-
     private ComponentRegistry registry;
     private EngineContext ctx;
 
@@ -76,6 +61,16 @@ public class EntitySystem implements GameSystem {
     public void onInit(EngineContext ctx) {
         this.ctx = ctx;
         this.registry = ctx.getRegistry();
+        registerDefaultRules();
+    }
+
+    private void registerDefaultRules() {
+        registry.addRule(ComponentRule.requires(Mesh.class, Transform.class, "Mesh requires Transform"));
+        registry.addRule(ComponentRule.requires(PhysicsBody.class, Transform.class, "PhysicsBody requires Transform"));
+        registry.addRule(ComponentRule.requires(PointLight.class, Transform.class, "PointLight requires Transform"));
+        registry.addRule(ComponentRule.requires(SpriteMaterial.class, Mesh.class, "SpriteMaterial requires Mesh"));
+        registry.addRule(ComponentRule.requires(PbrMaterial.class, Mesh.class, "PbrMaterial requires Mesh"));
+        registry.addRule(ComponentRule.requires(Skeleton.class, Mesh.class, "Skeleton requires Mesh"));
     }
 
     /**
@@ -172,7 +167,7 @@ public class EntitySystem implements GameSystem {
     }
 
     private String checkRules(List<? extends Component> components, String entityName) {
-        for (ComponentRule rule : RULES) {
+        for (ComponentRule rule : registry.getRules()) {
             if (rule.isViolated(components)) {
                 return rule.message();
             }
