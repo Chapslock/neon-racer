@@ -189,12 +189,23 @@ class PhysicsWorld implements Disposable {
             Transform transform = registry.getComponent(entityId, Transform.class);
             if (transform == null) return;
 
-            Quat4f q = bulletTransform.getRotation(new Quat4f());
-            transform.setRotationQuaternion(PhysicsUtil.toQuaternionf(q));
+            // Only sync rotation from physics if the body can actually rotate.
+            // When angularFactor=0, game code owns rotation (e.g. character controllers).
+            boolean gameOwnsRotation = body.getAngularFactor() == 0f;
+            if (!gameOwnsRotation) {
+                Quat4f q = bulletTransform.getRotation(new Quat4f());
+                transform.setRotationQuaternion(PhysicsUtil.toQuaternionf(q));
+            }
 
             org.joml.Vector3f offset = entityOffsets.get(entityId);
             if (offset != null) {
-                Quaternionf rotation = PhysicsUtil.toQuaternionf(q);
+                Quaternionf rotation = new Quaternionf();
+                if (gameOwnsRotation) {
+                    transform.getRotationQuaternion(rotation);
+                } else {
+                    Quat4f q = bulletTransform.getRotation(new Quat4f());
+                    rotation.set(PhysicsUtil.toQuaternionf(q));
+                }
                 org.joml.Vector3f rotatedOffset = new org.joml.Vector3f(offset);
                 rotation.transform(rotatedOffset);
                 transform.setPosition(
