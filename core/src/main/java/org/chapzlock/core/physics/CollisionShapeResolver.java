@@ -42,6 +42,8 @@ class CollisionShapeResolver {
                 resolveTriangleMesh(meshData);
             case CollisionGeometry.Compound c ->
                 resolveCompound(c, meshData);
+            case CollisionGeometry.Offset o ->
+                resolve(o.inner(), meshData);
         };
     }
 

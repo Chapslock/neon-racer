@@ -84,4 +84,35 @@ class CollisionGeometryTest {
         assertThrows(IllegalArgumentException.class, () -> CollisionGeometry.convexHull(0));
         assertThrows(IllegalArgumentException.class, () -> CollisionGeometry.convexHull(-5));
     }
+
+    @Test
+    void offsetWrapsShapeWithVector() {
+        var capsule = CollisionGeometry.capsule(0.4f, 1.8f).offset(0, 0.9f, 0);
+        assertInstanceOf(CollisionGeometry.Offset.class, capsule);
+        var o = (CollisionGeometry.Offset) capsule;
+        assertInstanceOf(CollisionGeometry.Capsule.class, o.inner());
+        assertEquals(0f, o.offset().x, 0.001f);
+        assertEquals(0.9f, o.offset().y, 0.001f);
+        assertEquals(0f, o.offset().z, 0.001f);
+    }
+
+    @Test
+    void offsetOnAlreadyOffsetReplacesOffset() {
+        var shape = CollisionGeometry.box(1, 1, 1).offset(1, 2, 3).offset(4, 5, 6);
+        assertInstanceOf(CollisionGeometry.Offset.class, shape);
+        var o = (CollisionGeometry.Offset) shape;
+        assertInstanceOf(CollisionGeometry.Box.class, o.inner());
+        assertEquals(4f, o.offset().x, 0.001f);
+        assertEquals(5f, o.offset().y, 0.001f);
+        assertEquals(6f, o.offset().z, 0.001f);
+    }
+
+    @Test
+    void offsetWorksOnAllShapeTypes() {
+        assertInstanceOf(CollisionGeometry.Offset.class, CollisionGeometry.sphere(1f).offset(0, 1, 0));
+        assertInstanceOf(CollisionGeometry.Offset.class, CollisionGeometry.box(1, 1, 1).offset(0, 1, 0));
+        assertInstanceOf(CollisionGeometry.Offset.class, CollisionGeometry.capsule(0.5f, 2f).offset(0, 1, 0));
+        assertInstanceOf(CollisionGeometry.Offset.class, CollisionGeometry.convexHull().offset(0, 1, 0));
+        assertInstanceOf(CollisionGeometry.Offset.class, CollisionGeometry.triangleMesh().offset(0, 1, 0));
+    }
 }

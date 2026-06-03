@@ -48,7 +48,13 @@ public sealed interface CollisionGeometry {
     record ConvexHull(int maxVertices) implements CollisionGeometry {}
     record TriangleMesh() implements CollisionGeometry {}
     record Compound(List<Positioned> children) implements CollisionGeometry {}
+    record Offset(CollisionGeometry inner, Vector3f offset) implements CollisionGeometry {}
     record Positioned(CollisionGeometry shape, Vector3f offset) {}
+
+    default CollisionGeometry offset(float x, float y, float z) {
+        CollisionGeometry base = this instanceof Offset o ? o.inner() : this;
+        return new Offset(base, new Vector3f(x, y, z));
+    }
 
     static CollisionGeometry box(float hx, float hy, float hz) {
         return new Box(new Vector3f(hx, hy, hz));
