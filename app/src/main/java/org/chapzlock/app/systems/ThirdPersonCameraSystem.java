@@ -83,9 +83,12 @@ public class ThirdPersonCameraSystem implements GameSystem {
             tpc.setPitch(tpc.getPitch() - dy * tpc.getMouseSensitivity());
             tpc.setPitch(Math.max(tpc.getPitchMin(), Math.min(tpc.getPitchMax(), tpc.getPitch())));
         } else {
-            // Follow mode: lerp yaw toward player facing direction
-            float playerYaw = getPlayerYaw();
-            float yawDiff = playerYaw - tpc.getYaw();
+            // Follow mode: lerp yaw to place camera behind the player.
+            // Player rotation uses atan2(-dirZ, dirX) giving 90° for -Z facing.
+            // Camera orbital formula places camera at +Z when yaw=0.
+            // Offset of -90° aligns these two conventions.
+            float behindYaw = getPlayerYaw() - 90f;
+            float yawDiff = behindYaw - tpc.getYaw();
             // Normalize to [-180, 180]
             while (yawDiff > 180f) yawDiff -= 360f;
             while (yawDiff < -180f) yawDiff += 360f;
