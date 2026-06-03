@@ -1,124 +1,35 @@
 package org.chapzlock.core.component;
 
-
-import static org.joml.Math.cos;
-import static org.joml.Math.sin;
-import static org.joml.Math.toRadians;
-
 import org.chapzlock.core.ecs.Component;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
 
 import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Camera component defining position, rotation, and projection parameters.
+ * Camera projection parameters defining how the 3D world is projected onto screen.
  *
- * <p>Rotation uses degrees (x = pitch, y = yaw, z = roll).
- * Use {@code lookAt(target)} to point the camera at a world position.
+ * <p>This component is projection-only — it does NOT store position or rotation.
+ * The camera entity must also have a {@link Transform} component which provides
+ * spatial data (position, rotation). This follows industry convention (Unity, Unreal,
+ * Godot) where all spatial state lives on Transform uniformly.
+ *
+ * <p>The camera's view direction is derived from the Transform's rotation quaternion.
+ * Use {@link Transform#lookAt(org.joml.Vector3f)} to point the camera at a target.
+ *
+ * <p>Requires: {@link Transform} (enforced via ComponentRule).
  */
+@Getter
+@Setter
 public class Camera implements Component {
-    @Getter
-    @Setter
-    private Vector3f position = new Vector3f(0,0,0);
-    /**
-     * Camera rotation in degrees (x = pitch, y = yaw, z = roll)
-     */
-    @Getter
-    @Setter
-    private Vector3f rotation = new Vector3f(0, -90, 0);
-
-    /**
-     * Cache for camera view matrix to avoid constant memory reallocations
-     */
-    private final Matrix4f cameraViewMatrix = new Matrix4f();
-    /**
-     * Cache for projection matrix to avoid constant memory reallocations
-     */
-    private final Matrix4f projectionMatrix = new Matrix4f();
-    @Getter
-    @Setter
     private float fieldOfView = 70f;
-    @Getter
-    @Setter
     private float nearPlane = 0.1f;
-    @Getter
-    @Setter
     private float farPlane = 1000f;
 
-    public Camera(Vector3f position) {
-        this.position = position;
-    }
+    public Camera() {}
 
-
-    /**
-     * Returns the normalized forward (front) vector of the camera.
-     */
-    public Vector3f getCameraFront() {
-        float yawRad = toRadians(getYaw());
-        float pitchRad = toRadians(getPitch());
-
-        Vector3f front = new Vector3f();
-        front.x = cos(yawRad) * cos(pitchRad);
-        front.y = sin(pitchRad);
-        front.z = sin(yawRad) * cos(pitchRad);
-        return front.normalize();
-    }
-
-    public Vector3f getCameraUp() {
-        return new Vector3f(0, 1, 0);
-    }
-
-    public Vector3f getCameraRight() {
-        return new Vector3f(getCameraFront()).cross(getCameraUp()).normalize();
-    }
-
-    public float getYaw() {
-        return rotation.y;
-    }
-
-    public void setYaw(float value) {
-        rotation.y = value;
-    }
-
-    public float getPitch() {
-        return rotation.x;
-    }
-
-    public void setPitch(float value) {
-        rotation.x = value;
-    }
-
-    public void lookAt(Vector3f target) {
-        // direction from camera to target
-        Vector3f dir = new Vector3f(target).sub(position);
-        float len2 = dir.lengthSquared();
-        if (len2 == 0f) {
-            // target equals camera position; nothing to do
-            return;
-        }
-
-        dir.normalize();
-
-        // pitch: asin(y) -> range [-90,90] degrees
-        float pitchDeg = (float) Math.toDegrees(Math.asin(dir.y));
-
-        // yaw: atan2(z, x) -> range [-180,180] degrees
-        float yawDeg = (float) Math.toDegrees(Math.atan2(dir.z, dir.x));
-
-        // clamp pitch a bit to avoid looking straight up/down (optional)
-        final float MAX_PITCH = 89.0f;
-        if (pitchDeg > MAX_PITCH) {
-            pitchDeg = MAX_PITCH;
-        }
-        if (pitchDeg < -MAX_PITCH) {
-            pitchDeg = -MAX_PITCH;
-        }
-
-        // apply
-        this.rotation.x = pitchDeg;
-        this.rotation.y = yawDeg;
-        // keep roll (rotation.z) as-is
+    public Camera(float fieldOfView, float nearPlane, float farPlane) {
+        this.fieldOfView = fieldOfView;
+        this.nearPlane = nearPlane;
+        this.farPlane = farPlane;
     }
 }
