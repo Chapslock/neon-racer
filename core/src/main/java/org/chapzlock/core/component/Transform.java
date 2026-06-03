@@ -144,6 +144,41 @@ public class Transform implements Component {
         localDirty = true;
     }
 
+    /**
+     * Points this transform toward the given world-space target.
+     *
+     * <p>Computes a rotation from the direction vector (this position → target)
+     * and sets it as the transform's rotation. Uses pitch and yaw derived from
+     * the direction vector.
+     *
+     * <p>If the target equals the current position, does nothing.
+     *
+     * @param target the world-space position to look at
+     */
+    public void lookAt(Vector3f target) {
+        Vector3f dir = new Vector3f(target).sub(position);
+        float len2 = dir.lengthSquared();
+        if (len2 == 0f) {
+            return;
+        }
+        dir.normalize();
+
+        float pitchRad = (float) Math.asin(dir.y);
+        float yawRad = (float) Math.atan2(dir.z, dir.x);
+
+        float pitchDeg = (float) Math.toDegrees(pitchRad);
+        float yawDeg = (float) Math.toDegrees(yawRad);
+
+        final float MAX_PITCH = 89.0f;
+        pitchDeg = Math.max(-MAX_PITCH, Math.min(MAX_PITCH, pitchDeg));
+
+        rotationEuler.set(pitchDeg, yawDeg, 0f);
+        quatFromEuler();
+        eulerDirty = false;
+        quatDirty = false;
+        localDirty = true;
+    }
+
     // --- Matrices ---
 
     public Matrix4f getLocalMatrix() {
