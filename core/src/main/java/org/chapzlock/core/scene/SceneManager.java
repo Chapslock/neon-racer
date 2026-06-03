@@ -2,7 +2,6 @@ package org.chapzlock.core.scene;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +9,7 @@ import java.util.Queue;
 
 import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.ecs.GameSystem;
+import org.chapzlock.core.ecs.SystemOrdering;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.input.InputMap;
 import org.chapzlock.core.logging.Log;
@@ -382,16 +382,19 @@ public class SceneManager {
     /**
      * Rebuilds the cached active systems list from engine systems + all loaded scene systems.
      *
-     * <p>Systems are sorted by their {@code SystemPhase} ordinal, ensuring INPUT systems
-     * run before LOGIC, which runs before PHYSICS, which runs before RENDER.
+     * <p>Systems are sorted by their {@link org.chapzlock.core.ecs.SystemPhase} ordinal,
+     * ensuring INPUT systems run before LOGIC, which runs before PHYSICS, which runs before
+     * RENDER. Within each phase, systems are topologically sorted according to their
+     * {@link GameSystem#runBefore()} and {@link GameSystem#runAfter()} constraints.
+     *
+     * @throws IllegalStateException if a dependency cycle is detected within a phase
      */
     private void rebuildActiveSystemsList() {
         List<GameSystem> all = new ArrayList<>(engineSystems);
         for (SceneInstance instance : loadedScenes.values()) {
             all.addAll(instance.systems());
         }
-        all.sort(Comparator.comparingInt(s -> s.phase().ordinal()));
-        cachedActiveSystems = List.copyOf(all);
+        cachedActiveSystems = SystemOrdering.sort(all);
         activeSystemsDirty = false;
     }
 }
