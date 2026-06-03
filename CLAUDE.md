@@ -25,7 +25,7 @@ Two Gradle modules (Kotlin DSL):
 
 - `ecs/` — GameSystem, SystemPhase, Component, Tag, Entity, ComponentRegistry, ComponentStore, ComponentRule
 - `application/` — Application, EngineContext, ApplicationSpecification, Disposable, ApplicationUtil
-- `scene/` — Scene, SceneManager, SceneInstantiator, SceneInstance, SceneBuilder, EntityBlueprint, EntityBlueprintBuilder, DescriptorResolver, GltfSceneInstantiator, SceneLoadedEvent, SceneUnloadedEvent
+- `scene/` — Scene, SceneManager, SceneInstantiator, SceneInstance, SceneBuilder, EntityRecipe, GltfSceneInstantiator, SceneLoadedEvent, SceneUnloadedEvent
 - `render/` — RenderSystem, RenderPass, RenderContext, OpaquePass, SpritePass, PbrMaterialRenderer, SpriteRenderer, CameraSystem, MeshSystem, TextureSystem, ShaderSystem, RefCounted, ShaderProps, GL utilities
 - `component/` — All data components (Camera, Transform, Mesh, PbrMaterial, SpriteMaterial, PointLight, DirectionalLight, PhysicsBody, Skeleton, etc.)
 - `physics/` — PhysicsSystem and all physics utilities
@@ -56,20 +56,20 @@ Entities are plain integer IDs (`Entity.create(registry)`). Components are marke
 
 ### Scene System
 
-A `Scene` is an immutable blueprint describing entities (via `EntityBlueprint` + `EntityBlueprintBuilder`) and game-logic systems. Scenes are built via a fluent builder where everything is an entity:
+A `Scene` stores entity recipes (via `EntityRecipe` — a name + `Consumer<EntityBuilder>` lambda) and game-logic systems. Scenes are built via a fluent builder where everything is an entity with direct component attachment:
 
 ```java
 Scene.builder("name")
-    .entity("terrain", e -> e.gltfModel("models/track.glb"))
+    .entity("terrain", e -> e.component(new GltfModel("models/track.glb")))
     .entity("sun", e -> e.directionalLight(light))
-    .entity("player", e -> e.transform(Transform.at(0, 0, 0)).gltfModel("glb/car.glb").tag(new PlayerTag()))
+    .entity("player", e -> e.component(Transform.at(0, 0, 0)).component(new GltfModel("glb/car.glb")).tag(new PlayerTag()))
     .entity(e -> e.camera(cam))  // nameless entity
     .systems(new PlayerSystem())
     .inputMap(controls)
     .build();
 ```
 
-`SceneManager` manages scene lifecycle: one primary scene plus zero or more additive scenes. It delegates instantiation to `SceneInstantiator` which resolves descriptors, validates component rules, and returns a `SceneInstance`.
+`SceneManager` manages scene lifecycle: one primary scene plus zero or more additive scenes. It delegates instantiation to `SceneInstantiator` which validates component rules and returns a `SceneInstance`.
 
 **Transitions:** `loadImmediate(scene)` for initial load (synchronous). `load(scene)` queues a deferred transition (old scene unloaded, new scene instantiated at end-of-frame via `processPendingTransitions()`). `loadAdditive(scene)` adds a persistent overlay scene. `unload(scene)` removes an additive scene.
 
