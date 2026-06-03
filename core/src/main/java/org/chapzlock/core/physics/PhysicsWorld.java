@@ -191,7 +191,7 @@ class PhysicsWorld implements Disposable {
 
             // Only sync rotation from physics if the body can actually rotate.
             // When angularFactor=0, game code owns rotation (e.g. character controllers).
-            boolean gameOwnsRotation = body.getAngularFactor() == 0f;
+            boolean gameOwnsRotation = Math.abs(body.getAngularFactor()) < 1e-6f;
             if (!gameOwnsRotation) {
                 Quat4f q = bulletTransform.getRotation(new Quat4f());
                 transform.setRotationQuaternion(PhysicsUtil.toQuaternionf(q));
