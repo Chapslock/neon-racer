@@ -309,8 +309,9 @@ class PhysicsWorld implements Disposable {
      * Resolves mesh data for an entity, traversing child entities if needed.
      *
      * <p>When a glTF model is loaded, the parent entity gets a PhysicsBody but no Mesh component.
-     * The actual mesh data lives on child entities linked via the Hierarchy component. This method
-     * first checks the entity's own Mesh, then falls back to merging child meshes.
+     * The actual mesh data lives on descendant entities linked via the Hierarchy component. This
+     * method first checks the entity's own Mesh, then recursively traverses the entire subtree
+     * to collect all descendant meshes (like Unity's GetComponentsInChildren).
      *
      * @param entityId   the entity to resolve mesh data for
      * @param registry   the component registry to query
@@ -320,17 +321,24 @@ class PhysicsWorld implements Disposable {
     static RawMeshData resolveMeshData(int entityId, ComponentRegistry registry, MeshSystem meshSystem) {
         if (meshSystem == null) return null;
 
-        // 1. Check entity's own mesh
         Mesh mesh = registry.getComponent(entityId, Mesh.class);
         if (mesh != null) {
             return meshSystem.getRawMeshById(mesh.getId());
         }
 
-        // 2. Traverse child entities via Hierarchy
-        Hierarchy hierarchy = registry.getComponent(entityId, Hierarchy.class);
-        if (hierarchy == null || hierarchy.getChildCount() == 0) return null;
+        List<RawMeshData> descendantMeshes = new ArrayList<>();
+        collectMeshesRecursive(entityId, registry, meshSystem, descendantMeshes);
 
-        List<RawMeshData> childMeshes = new ArrayList<>();
+        if (descendantMeshes.isEmpty()) return null;
+        if (descendantMeshes.size() == 1) return descendantMeshes.get(0);
+        return RawMeshData.merge(descendantMeshes);
+    }
+
+    private static void collectMeshesRecursive(int entityId, ComponentRegistry registry,
+                                               MeshSystem meshSystem, List<RawMeshData> out) {
+        Hierarchy hierarchy = registry.getComponent(entityId, Hierarchy.class);
+        if (hierarchy == null || hierarchy.getChildCount() == 0) return;
+
         int[] children = hierarchy.getChildren();
         for (int i = 0; i < children.length; i++) {
             int childId = children[i];
@@ -338,14 +346,11 @@ class PhysicsWorld implements Disposable {
             if (childMesh != null) {
                 RawMeshData data = meshSystem.getRawMeshById(childMesh.getId());
                 if (data != null) {
-                    childMeshes.add(data);
+                    out.add(data);
                 }
             }
+            collectMeshesRecursive(childId, registry, meshSystem, out);
         }
-
-        if (childMeshes.isEmpty()) return null;
-        if (childMeshes.size() == 1) return childMeshes.get(0);
-        return RawMeshData.merge(childMeshes);
     }
 
     private static org.joml.Vector3f extractOffset(CollisionGeometry geometry) {

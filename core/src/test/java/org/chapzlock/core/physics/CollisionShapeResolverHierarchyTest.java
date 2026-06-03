@@ -108,6 +108,85 @@ class CollisionShapeResolverHierarchyTest {
     }
 
     @Test
+    void resolveMeshData_findsGrandchildMesh() {
+        // Simulates a character model: parent → glTF root → mesh node
+        int parent = Entity.create(registry);
+        registry.addComponent(parent, Transform.at(0, 0, 0));
+
+        int child = Entity.create(registry);
+        registry.addComponent(child, Transform.at(0, 0, 0));
+
+        int grandchild = Entity.create(registry);
+        registry.addComponent(grandchild, Transform.at(0, 0, 0));
+        registry.addComponent(grandchild, Mesh.builder().id(99).build());
+
+        Hierarchy childHierarchy = Hierarchy.childOf(parent);
+        childHierarchy.addChild(grandchild);
+        registry.addComponent(child, childHierarchy);
+
+        Hierarchy parentHierarchy = Hierarchy.root();
+        parentHierarchy.addChild(child);
+        registry.addComponent(parent, parentHierarchy);
+
+        registry.addComponent(grandchild, Hierarchy.childOf(child));
+
+        RawMeshData meshData = RawMeshData.builder()
+            .positions(new float[]{0, 0, 0, 1, 0, 0, 0, 1, 0})
+            .texCoords(new float[]{0, 0, 1, 0, 0, 1})
+            .indices(new int[]{0, 1, 2})
+            .build();
+        when(meshSystem.getRawMeshById(99)).thenReturn(meshData);
+
+        RawMeshData result = PhysicsWorld.resolveMeshData(parent, registry, meshSystem);
+
+        assertNotNull(result, "Should find mesh on grandchild via recursive traversal");
+        assertEquals(9, result.getPositions().length);
+    }
+
+    @Test
+    void resolveMeshData_findsMeshesAtMultipleLevels() {
+        // parent → child1 (has mesh) → grandchild (has mesh)
+        int parent = Entity.create(registry);
+        registry.addComponent(parent, Transform.at(0, 0, 0));
+
+        int child = Entity.create(registry);
+        registry.addComponent(child, Transform.at(0, 0, 0));
+        registry.addComponent(child, Mesh.builder().id(10).build());
+
+        int grandchild = Entity.create(registry);
+        registry.addComponent(grandchild, Transform.at(0, 0, 0));
+        registry.addComponent(grandchild, Mesh.builder().id(20).build());
+
+        Hierarchy childHierarchy = Hierarchy.childOf(parent);
+        childHierarchy.addChild(grandchild);
+        registry.addComponent(child, childHierarchy);
+
+        Hierarchy parentHierarchy = Hierarchy.root();
+        parentHierarchy.addChild(child);
+        registry.addComponent(parent, parentHierarchy);
+
+        registry.addComponent(grandchild, Hierarchy.childOf(child));
+
+        RawMeshData data1 = RawMeshData.builder()
+            .positions(new float[]{0, 0, 0, 1, 0, 0, 0, 1, 0})
+            .texCoords(new float[]{0, 0, 1, 0, 0, 1})
+            .indices(new int[]{0, 1, 2})
+            .build();
+        RawMeshData data2 = RawMeshData.builder()
+            .positions(new float[]{2, 0, 0, 3, 0, 0, 2, 1, 0})
+            .texCoords(new float[]{0, 0, 1, 0, 0, 1})
+            .indices(new int[]{0, 1, 2})
+            .build();
+        when(meshSystem.getRawMeshById(10)).thenReturn(data1);
+        when(meshSystem.getRawMeshById(20)).thenReturn(data2);
+
+        RawMeshData result = PhysicsWorld.resolveMeshData(parent, registry, meshSystem);
+
+        assertNotNull(result, "Should find meshes at child and grandchild levels");
+        assertEquals(18, result.getPositions().length);
+    }
+
+    @Test
     void resolveMeshData_returnsNull_whenNoMeshAnywhere() {
         int entity = Entity.create(registry);
         registry.addComponent(entity, Transform.at(0, 0, 0));
