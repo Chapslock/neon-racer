@@ -15,7 +15,7 @@ import lombok.Setter;
  * </ul>
  *
  * <p>Updated each frame by {@link org.chapzlock.app.systems.PlayerInputSystem}.
- * Consumed by {@link org.chapzlock.app.systems.PlayerMovementSystem} to move the character.
+ * Consumed by {@link org.chapzlock.app.systems.CharacterMovementSystem} to move the character.
  */
 @Getter
 @Setter

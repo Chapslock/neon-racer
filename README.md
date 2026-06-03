@@ -1,3 +1,10 @@
+## Engine TODO
+
+* particle effects
+* font rendering
+* save/load feature
+* UI/HUD enhancements
+
 ## Engine Architecture
 
 ### Core Systems
