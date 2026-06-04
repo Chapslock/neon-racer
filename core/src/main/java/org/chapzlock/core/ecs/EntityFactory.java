@@ -12,6 +12,7 @@ import org.chapzlock.core.animation.TargetPath;
 import org.chapzlock.core.asset.RawMeshDataFactory;
 import org.chapzlock.core.asset.gltf.GltfAnimationData;
 import org.chapzlock.core.asset.gltf.GltfAsset;
+import org.chapzlock.core.asset.gltf.GltfAssetManager;
 import org.chapzlock.core.asset.gltf.GltfMaterialData;
 import org.chapzlock.core.asset.gltf.GltfMeshData;
 import org.chapzlock.core.asset.gltf.GltfNodeData;
@@ -21,6 +22,7 @@ import org.chapzlock.core.component.AlphaMode;
 import org.chapzlock.core.component.AnimationClipSet;
 import org.chapzlock.core.component.AnimationState;
 import org.chapzlock.core.component.Camera;
+import org.chapzlock.core.component.GltfModel;
 import org.chapzlock.core.component.Hierarchy;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.Name;
@@ -93,15 +95,18 @@ public class EntityFactory {
     private final MeshRegistry meshRegistry;
     private final TextureRegistry textureRegistry;
     private final ShaderRegistry shaderRegistry;
+    private final GltfAssetManager gltfAssetManager;
 
     public EntityFactory(ComponentRegistry registry,
                          MeshRegistry meshRegistry,
                          TextureRegistry textureRegistry,
-                         ShaderRegistry shaderRegistry) {
+                         ShaderRegistry shaderRegistry,
+                         GltfAssetManager gltfAssetManager) {
         this.registry = registry;
         this.meshRegistry = meshRegistry;
         this.textureRegistry = textureRegistry;
         this.shaderRegistry = shaderRegistry;
+        this.gltfAssetManager = gltfAssetManager;
         registerDefaultRules();
     }
 
@@ -156,6 +161,14 @@ public class EntityFactory {
         // Add Name component if the entity has a non-internal name
         if (name != null && !name.startsWith("_")) {
             registry.addComponentsSilent(entityId, List.of(new Name(name)));
+        }
+
+        // Phase 4: glTF expansion — if entity has GltfModel, expand as child hierarchy
+        if (gltfAssetManager != null) {
+            GltfModel gltfModel = registry.getComponent(entityId, GltfModel.class);
+            if (gltfModel != null) {
+                gltfAssetManager.instantiate(gltfModel.resourcePath(), entityId);
+            }
         }
 
         // Fire ComponentAddedEvent for each component (entity is now fully assembled)

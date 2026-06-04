@@ -216,13 +216,14 @@ class SceneManagerTest {
         EventBus eb = new EventBus();
         ComponentRegistry reg = new ComponentRegistry(eb);
         org.chapzlock.core.ecs.SystemScheduler scheduler = new org.chapzlock.core.ecs.SystemScheduler();
+        org.chapzlock.core.asset.gltf.GltfAssetManager gltfAssetManager = new org.chapzlock.core.asset.gltf.GltfAssetManager(reg, meshRegistry, textureRegistry, null);
         org.chapzlock.core.ecs.EntityFactory entityFactory = new org.chapzlock.core.ecs.EntityFactory(
-            reg, meshRegistry, textureRegistry, null);
+            reg, meshRegistry, textureRegistry, null, gltfAssetManager);
         Engine assetEngine = new Engine(
             reg, eb, meshRegistry, textureRegistry, null, null,
             new org.chapzlock.core.application.Time(),
             new org.chapzlock.core.tween.TweenRegistry(),
-            new org.chapzlock.core.asset.gltf.GltfAssetManager(reg, meshRegistry, textureRegistry, null),
+            gltfAssetManager,
             scheduler, entityFactory, null, null,
             null, null, null, null, null
         );
