@@ -5,22 +5,20 @@ import org.chapzlock.core.ecs.Component;
 import lombok.Getter;
 
 /**
- * Sky component defining background color and fog parameters.
+ * Sky/background component defining the scene's clear color.
  *
- * <p>Only one Sky component should exist per scene.
- * Controls background clear color and distance fog rendering.
+ * <p>Only one Sky component should exist per scene. Controls what color
+ * fills the background behind all rendered geometry.
+ *
+ * <p>For distance fog, use the separate {@link Fog} component.
  */
 @Getter
 public class Sky implements Component {
     private Color color = new Color(153, 255, 255);
-    /**
-     * determines the thickness of the fog.
-     * increasing this value will decrease the general visibility of the scene.
-     */
-    private float fogDensity = 0.007f;
-    /**
-     * Determines how fast the visibility decreases with distance.
-     * Increasing this value will make the distance from fully visible to completely foggy smaller.
-     */
-    private float fogGradient = 1.5f;
+
+    public Sky() {}
+
+    public Sky(Color color) {
+        this.color = color;
+    }
 }

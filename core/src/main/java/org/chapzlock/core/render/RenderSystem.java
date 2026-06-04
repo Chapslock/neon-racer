@@ -5,6 +5,7 @@ import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
 import static org.lwjgl.opengl.GL11.GL_CULL_FACE;
 import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
 import static org.lwjgl.opengl.GL11.glClear;
+import static org.lwjgl.opengl.GL11.glClearColor;
 import static org.lwjgl.opengl.GL11.glCullFace;
 import static org.lwjgl.opengl.GL11.glEnable;
 
@@ -45,6 +46,13 @@ public class RenderSystem implements GameSystem {
     public void onRender(float deltaTime) {
         if (!renderContext.beginFrame()) {
             return;
+        }
+        var sky = renderContext.getSky();
+        if (sky != null) {
+            var color = sky.getColor();
+            glClearColor(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha());
+        } else {
+            glClearColor(0f, 0f, 0f, 1f);
         }
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         for (RenderPass pass : passes) {

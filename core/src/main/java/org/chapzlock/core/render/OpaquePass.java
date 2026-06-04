@@ -1,14 +1,11 @@
 package org.chapzlock.core.render;
 
-import static org.lwjgl.opengl.GL11.glClearColor;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.chapzlock.core.application.EngineContext;
-import org.chapzlock.core.component.Color;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.OpaqueLayer;
 import org.chapzlock.core.component.PbrMaterial;
@@ -62,11 +59,6 @@ public class OpaquePass implements RenderPass {
 
     @Override
     public void execute(RenderContext ctx) {
-        if (ctx.getSky() != null) {
-            Color color = ctx.getSky().getColor();
-            glClearColor(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha());
-        }
-
         ComponentRegistry registry = ctx.getRegistry();
 
         if (!pbrRenderQueue.isEmpty()) {
