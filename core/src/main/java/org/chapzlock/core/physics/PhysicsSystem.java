@@ -70,10 +70,17 @@ public class PhysicsSystem implements GameSystem {
         this.config = config;
     }
 
+    public PhysicsSystem(PhysicsWorldConfig config, CameraSystem cameraSystem) {
+        this.config = config;
+        this.cameraSystem = cameraSystem;
+    }
+
     @Override
     public void onInit(EngineContext ctx) {
         this.registry = ctx.getRegistry();
-        this.cameraSystem = ctx.getCameraSystem();
+        if (this.cameraSystem == null) {
+            this.cameraSystem = ctx.getCameraSystem();
+        }
 
         this.world = new PhysicsWorld(config);
         this.world.setMeshRegistry(ctx.getMeshRegistry());

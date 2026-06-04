@@ -1,8 +1,6 @@
 package org.chapzlock.core.application;
 
-import java.util.List;
-
-import org.chapzlock.core.ecs.GameSystem;
+import org.chapzlock.core.physics.PhysicsWorldConfig;
 import org.chapzlock.core.scene.Scene;
 import org.chapzlock.core.window.WindowSpecification;
 
@@ -16,7 +14,7 @@ import lombok.Setter;
  * <p>Fields:
  * <ul>
  *   <li>{@code windowSpec} — window configuration</li>
- *   <li>{@code engineSystems} — always-active systems (e.g., PhysicsSystem, RenderSystem)</li>
+ *   <li>{@code physicsConfig} — physics world configuration (gravity, time step, debug rendering)</li>
  *   <li>{@code initialScene} — first scene to load on startup</li>
  * </ul>
  */
@@ -26,9 +24,9 @@ import lombok.Setter;
 public class ApplicationSpecification {
     /** Window configuration. */
     private WindowSpecification windowSpec;
-    /** Always-active systems (e.g., PhysicsSystem, RenderSystem). */
+    /** Physics world configuration. Defaults to standard Earth gravity, 60Hz, no debug. */
     @Builder.Default
-    private List<GameSystem> engineSystems = List.of();
+    private PhysicsWorldConfig physicsConfig = PhysicsWorldConfig.defaults();
     /** First scene to load on startup. */
     private Scene initialScene;
 }

@@ -21,9 +21,12 @@ import lombok.Getter;
  * Container for all engine subsystems.
  *
  * <p>Created by {@link Application} at startup and passed to systems via {@code onInit()}.
- * Contains: {@code ComponentRegistry}, {@code EventBus}, {@code Window}, GPU systems
+ * Contains: {@code ComponentRegistry}, {@code EventBus}, {@code Window}, GPU registries
  * ({@code MeshRegistry}, {@code TextureRegistry}, {@code ShaderRegistry}),
- * {@code CameraSystem}, {@code Time}, {@code TweenManager}, {@code SceneManager}, {@code InputMap}.
+ * {@code Time}, {@code TweenManager}, {@code SceneManager}, {@code InputMap}.
+ *
+ * <p>{@code CameraSystem} is set after construction because it is created as an engine system
+ * (not a subsystem) and must be available to other systems during their {@code onInit()}.
  *
  * <p>For unit tests, use {@link #testContext()} to create a minimal context with no GPU subsystems.
  */
@@ -35,7 +38,6 @@ public class EngineContext implements Disposable {
     private final MeshRegistry meshRegistry;
     private final TextureRegistry textureRegistry;
     private final ShaderRegistry shaderRegistry;
-    private final CameraSystem cameraSystem;
     private final Window window;
     private final Time time;
     private final TweenManager tweenManager;
@@ -49,6 +51,11 @@ public class EngineContext implements Disposable {
     private InputMap activeInputMap;
     private Physics physics;
     private EntitySystem entitySystem;
+    /**
+     * Set after construction by Application.createEngineSystems(). Available to all
+     * engine systems during their onInit() call.
+     */
+    private CameraSystem cameraSystem;
 
     /**
      * Creates a minimal context for unit tests (no GPU systems).
@@ -92,5 +99,9 @@ public class EngineContext implements Disposable {
 
     public void setEntitySystem(EntitySystem entitySystem) {
         this.entitySystem = entitySystem;
+    }
+
+    public void setCameraSystem(CameraSystem cameraSystem) {
+        this.cameraSystem = cameraSystem;
     }
 }

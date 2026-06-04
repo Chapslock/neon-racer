@@ -6,21 +6,25 @@ import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
 
 import java.util.List;
 
+import org.chapzlock.core.animation.AnimationSystem;
 import org.chapzlock.core.asset.gltf.GltfAssetRegistry;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.EntitySystem;
 import org.chapzlock.core.ecs.GameSystem;
+import org.chapzlock.core.ecs.TransformSystem;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.input.InputMap;
 import org.chapzlock.core.logging.Log;
+import org.chapzlock.core.physics.PhysicsSystem;
 import org.chapzlock.core.render.CameraSystem;
 import org.chapzlock.core.render.MeshRegistry;
+import org.chapzlock.core.render.RenderSystem;
 import org.chapzlock.core.render.ShaderRegistry;
 import org.chapzlock.core.render.TextureRegistry;
 import org.chapzlock.core.scene.SceneManager;
 import org.chapzlock.core.tween.TweenManager;
+import org.chapzlock.core.tween.TweenSystem;
 import org.chapzlock.core.window.Window;
-import org.chapzlock.core.window.WindowSpecification;
 
 import lombok.Getter;
 
@@ -31,7 +35,7 @@ import lombok.Getter;
  * <pre>{@code
  * Application.create(ApplicationSpecification.builder()
  *     .windowSpec(WindowSpecification.builder().title("Game").width(1280).height(720).build())
- *     .engineSystems(List.of(new PhysicsSystem(), new RenderSystem()))
+ *     .physicsConfig(PhysicsWorldConfig.withDebug())
  *     .initialScene(myScene)
  *     .build())
  * .run();
@@ -56,7 +60,7 @@ public class Application {
     public void run() {
         createSubsystems();
 
-        List<GameSystem> engineSystems = appSpec.getEngineSystems();
+        List<GameSystem> engineSystems = createEngineSystems();
         sceneManager.registerEngineSystems(engineSystems);
         engineSystems.forEach(system -> system.onInit(context));
 
@@ -86,7 +90,6 @@ public class Application {
             ShaderRegistry shaderRegistry = new ShaderRegistry();
             TextureRegistry textureRegistry = new TextureRegistry();
             MeshRegistry meshRegistry = new MeshRegistry();
-            CameraSystem cameraSystem = new CameraSystem(appSpec.getWindowSpec());
             Time time = new Time();
             TweenManager tweenManager = new TweenManager();
             GltfAssetRegistry gltfAssetRegistry = new GltfAssetRegistry();
@@ -97,14 +100,13 @@ public class Application {
                 .meshRegistry(meshRegistry)
                 .textureRegistry(textureRegistry)
                 .shaderRegistry(shaderRegistry)
-                .cameraSystem(cameraSystem)
                 .window(window)
                 .time(time)
                 .tweenManager(tweenManager)
                 .gltfAssetRegistry(gltfAssetRegistry)
                 .build();
 
-            Log.debug("Subsystems initialized: MeshRegistry, TextureRegistry, ShaderRegistry, CameraSystem");
+            Log.debug("Subsystems initialized: MeshRegistry, TextureRegistry, ShaderRegistry");
 
             sceneManager = new SceneManager(context);
             context.setSceneManager(sceneManager);
@@ -121,6 +123,18 @@ public class Application {
             }
             throw new RuntimeException("Failed to initialize engine subsystems", e);
         }
+    }
+
+    private List<GameSystem> createEngineSystems() {
+        CameraSystem cameraSystem = new CameraSystem(appSpec.getWindowSpec());
+        context.setCameraSystem(cameraSystem);
+        return List.of(
+            new TweenSystem(),
+            new AnimationSystem(),
+            new TransformSystem(),
+            new PhysicsSystem(appSpec.getPhysicsConfig(), cameraSystem),
+            new RenderSystem()
+        );
     }
 
     private void mainLoop() {
