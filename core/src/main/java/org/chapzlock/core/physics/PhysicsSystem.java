@@ -76,7 +76,7 @@ public class PhysicsSystem implements GameSystem {
         this.cameraSystem = ctx.getCameraSystem();
 
         this.world = new PhysicsWorld(config);
-        this.world.setMeshSystem(ctx.getMeshSystem());
+        this.world.setMeshRegistry(ctx.getMeshRegistry());
 
         Physics physics = new Physics(world);
         ctx.setPhysics(physics);

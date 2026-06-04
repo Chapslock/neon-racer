@@ -24,7 +24,7 @@ import lombok.Getter;
 public class RenderContext {
 
     private final ComponentRegistry registry;
-    private final MeshSystem meshSystem;
+    private final MeshRegistry meshRegistry;
     private final ShaderSystem shaderSystem;
     private final TextureSystem textureSystem;
     private final CameraSystem cameraSystem;
@@ -45,7 +45,7 @@ public class RenderContext {
 
     public RenderContext(EngineContext ctx) {
         this.registry = ctx.getRegistry();
-        this.meshSystem = ctx.getMeshSystem();
+        this.meshRegistry = ctx.getMeshRegistry();
         this.shaderSystem = ctx.getShaderSystem();
         this.textureSystem = ctx.getTextureSystem();
         this.cameraSystem = ctx.getCameraSystem();

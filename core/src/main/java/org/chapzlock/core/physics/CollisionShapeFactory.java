@@ -27,7 +27,7 @@ import lombok.experimental.UtilityClass;
  *   (useful to cancel visual pivot offsets without modifying vertex data).
  *
  * Notes:
- * - The returned shapes should be cached/reused where appropriate (MeshSystem-like caching).
+ * - The returned shapes should be cached/reused where appropriate (MeshRegistry-like caching).
  * - Convex hull creation may be slow for very large meshes; consider simplified collision meshes for complex models.
  */
 @UtilityClass

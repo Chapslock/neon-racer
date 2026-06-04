@@ -16,7 +16,7 @@ import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.logging.Log;
-import org.chapzlock.core.render.MeshSystem;
+import org.chapzlock.core.render.MeshRegistry;
 import org.joml.Quaternionf;
 
 import com.bulletphysics.collision.broadphase.AxisSweep3;
@@ -86,7 +86,7 @@ class PhysicsWorld implements Disposable {
     private final PhysicsDebugDrawer debugDrawer = new PhysicsDebugDrawer();
 
     private final PhysicsWorldConfig config;
-    private MeshSystem meshSystem;
+    private MeshRegistry meshRegistry;
 
     PhysicsWorld(PhysicsWorldConfig config) {
         this.config = config;
@@ -105,8 +105,8 @@ class PhysicsWorld implements Disposable {
         }
     }
 
-    void setMeshSystem(MeshSystem meshSystem) {
-        this.meshSystem = meshSystem;
+    void setMeshRegistry(MeshRegistry meshRegistry) {
+        this.meshRegistry = meshRegistry;
     }
 
     /**
@@ -136,7 +136,7 @@ class PhysicsWorld implements Disposable {
             return;
         }
 
-        RawMeshData meshData = resolveMeshData(entityId, registry, meshSystem);
+        RawMeshData meshData = resolveMeshData(entityId, registry, meshRegistry);
         CollisionShape shape = shapeResolver.resolve(config.getGeometry(), meshData);
 
         org.joml.Vector3f offset = extractOffset(config.getGeometry());
@@ -379,19 +379,19 @@ class PhysicsWorld implements Disposable {
      *
      * @param entityId   the entity to resolve mesh data for
      * @param registry   the component registry to query
-     * @param meshSystem the mesh system that holds raw mesh data (may be null in headless mode)
+     * @param meshRegistry the mesh registry that holds raw mesh data (may be null in headless mode)
      * @return the resolved mesh data, or null if no mesh data is available
      */
-    static RawMeshData resolveMeshData(int entityId, ComponentRegistry registry, MeshSystem meshSystem) {
-        if (meshSystem == null) return null;
+    static RawMeshData resolveMeshData(int entityId, ComponentRegistry registry, MeshRegistry meshRegistry) {
+        if (meshRegistry == null) return null;
 
         Mesh mesh = registry.getComponent(entityId, Mesh.class);
         if (mesh != null) {
-            return meshSystem.getRawMeshById(mesh.getId());
+            return meshRegistry.getRawMeshById(mesh.getId());
         }
 
         List<RawMeshData> descendantMeshes = new ArrayList<>();
-        collectMeshesRecursive(entityId, registry, meshSystem, descendantMeshes);
+        collectMeshesRecursive(entityId, registry, meshRegistry, descendantMeshes);
 
         if (descendantMeshes.isEmpty()) return null;
         if (descendantMeshes.size() == 1) return descendantMeshes.get(0);
@@ -399,7 +399,7 @@ class PhysicsWorld implements Disposable {
     }
 
     private static void collectMeshesRecursive(int entityId, ComponentRegistry registry,
-                                               MeshSystem meshSystem, List<RawMeshData> out) {
+                                               MeshRegistry meshRegistry, List<RawMeshData> out) {
         Hierarchy hierarchy = registry.getComponent(entityId, Hierarchy.class);
         if (hierarchy == null || hierarchy.getChildCount() == 0) return;
 
@@ -408,12 +408,12 @@ class PhysicsWorld implements Disposable {
             int childId = children[i];
             Mesh childMesh = registry.getComponent(childId, Mesh.class);
             if (childMesh != null) {
-                RawMeshData data = meshSystem.getRawMeshById(childMesh.getId());
+                RawMeshData data = meshRegistry.getRawMeshById(childMesh.getId());
                 if (data != null) {
                     out.add(data);
                 }
             }
-            collectMeshesRecursive(childId, registry, meshSystem, out);
+            collectMeshesRecursive(childId, registry, meshRegistry, out);
         }
     }
 

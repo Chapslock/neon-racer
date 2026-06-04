@@ -14,7 +14,7 @@ import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.ecs.SystemPhase;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.event.Subscription;
-import org.chapzlock.core.render.MeshSystem;
+import org.chapzlock.core.render.MeshRegistry;
 import org.chapzlock.core.render.TextureSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -214,13 +214,13 @@ class SceneManagerTest {
 
     @Test
     void loadRetainsAssetsAndUnloadReleasesAssets() {
-        MeshSystem meshSystem = new MeshSystem();
+        MeshRegistry meshRegistry = new MeshRegistry();
         TextureSystem textureSystem = new TextureSystem();
         EventBus eb = new EventBus();
         EngineContext assetCtx = EngineContext.builder()
             .registry(new ComponentRegistry(eb))
             .eventBus(eb)
-            .meshSystem(meshSystem)
+            .meshRegistry(meshRegistry)
             .textureSystem(textureSystem)
             .time(new org.chapzlock.core.application.Time())
             .tweenManager(new org.chapzlock.core.tween.TweenManager())
@@ -241,12 +241,12 @@ class SceneManagerTest {
 
         sm.loadImmediate(scene);
 
-        assertEquals(1, meshSystem.getRefCount(42));
+        assertEquals(1, meshRegistry.getRefCount(42));
         assertEquals(1, textureSystem.getRefCount(7));
 
         sm.loadImmediate(simpleScene("replace"));
 
-        assertEquals(0, meshSystem.getRefCount(42));
+        assertEquals(0, meshRegistry.getRefCount(42));
         assertEquals(0, textureSystem.getRefCount(7));
     }
 

@@ -203,7 +203,7 @@ public class MeshUtil {
     /**
      * Frees all GPU resources (VBOs and VAO) associated with a mesh.
      *
-     * <p>Called by MeshSystem when a mesh's reference count reaches zero (all scenes
+     * <p>Called by MeshRegistry when a mesh's reference count reaches zero (all scenes
      * using it have been unloaded) or during engine shutdown.
      *
      * @param mesh the mesh whose GPU resources should be freed

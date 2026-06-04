@@ -18,7 +18,7 @@ import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.event.ComponentAddedEvent;
 import org.chapzlock.core.logging.Log;
-import org.chapzlock.core.render.MeshSystem;
+import org.chapzlock.core.render.MeshRegistry;
 import org.chapzlock.core.render.TextureSystem;
 
 /**
@@ -155,8 +155,8 @@ public class EntitySystem implements GameSystem {
 
         // Auto-create UI quad mesh if SpriteLayer is present without Mesh
         if (hasSpriteLayer && !hasMesh) {
-            MeshSystem meshSystem = ctx.getMeshSystem();
-            Mesh mesh = meshSystem.load(RawMeshDataFactory.createUi());
+            MeshRegistry meshRegistry = ctx.getMeshRegistry();
+            Mesh mesh = meshRegistry.load(RawMeshDataFactory.createUi());
             result.add(mesh);
         }
 

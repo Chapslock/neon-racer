@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
  * <p>Each {@code Integer} field (nullable) represents an optional VBO. If null, that vertex
  * attribute is not present in this mesh and its shader location will receive default values.
  *
- * <p>Created by {@link org.chapzlock.core.render.MeshSystem#load(String)}.
+ * <p>Created by {@link org.chapzlock.core.render.MeshRegistry#load(String)}.
  * Reference-counted — retained on scene load, released on scene unload.
  *
  * @see org.chapzlock.core.render.MeshUtil#bindMeshDataToGpu

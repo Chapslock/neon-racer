@@ -7,7 +7,7 @@ import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.Entity;
-import org.chapzlock.core.render.MeshSystem;
+import org.chapzlock.core.render.MeshRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -18,13 +18,13 @@ class CollisionShapeResolverHierarchyTest {
 
     private EngineContext ctx;
     private ComponentRegistry registry;
-    private MeshSystem meshSystem;
+    private MeshRegistry meshRegistry;
 
     @BeforeEach
     void setUp() {
         ctx = EngineContext.testContext();
         registry = ctx.getRegistry();
-        meshSystem = mock(MeshSystem.class);
+        meshRegistry = mock(MeshRegistry.class);
     }
 
     @Test
@@ -46,9 +46,9 @@ class CollisionShapeResolverHierarchyTest {
             .texCoords(new float[]{0, 0, 1, 0, 0, 1})
             .indices(new int[]{0, 1, 2})
             .build();
-        when(meshSystem.getRawMeshById(42)).thenReturn(meshData);
+        when(meshRegistry.getRawMeshById(42)).thenReturn(meshData);
 
-        RawMeshData result = PhysicsWorld.resolveMeshData(parent, registry, meshSystem);
+        RawMeshData result = PhysicsWorld.resolveMeshData(parent, registry, meshRegistry);
 
         assertNotNull(result);
         assertEquals(9, result.getPositions().length);
@@ -65,9 +65,9 @@ class CollisionShapeResolverHierarchyTest {
             .texCoords(new float[]{0, 0, 1, 0, 0, 1})
             .indices(new int[]{0, 1, 2})
             .build();
-        when(meshSystem.getRawMeshById(10)).thenReturn(ownData);
+        when(meshRegistry.getRawMeshById(10)).thenReturn(ownData);
 
-        RawMeshData result = PhysicsWorld.resolveMeshData(entity, registry, meshSystem);
+        RawMeshData result = PhysicsWorld.resolveMeshData(entity, registry, meshRegistry);
 
         assertSame(ownData, result);
     }
@@ -97,10 +97,10 @@ class CollisionShapeResolverHierarchyTest {
             .texCoords(new float[]{0, 0, 1, 0, 0, 1})
             .indices(new int[]{0, 1, 2})
             .build();
-        when(meshSystem.getRawMeshById(1)).thenReturn(data1);
-        when(meshSystem.getRawMeshById(2)).thenReturn(data2);
+        when(meshRegistry.getRawMeshById(1)).thenReturn(data1);
+        when(meshRegistry.getRawMeshById(2)).thenReturn(data2);
 
-        RawMeshData result = PhysicsWorld.resolveMeshData(parent, registry, meshSystem);
+        RawMeshData result = PhysicsWorld.resolveMeshData(parent, registry, meshRegistry);
 
         assertNotNull(result);
         assertEquals(18, result.getPositions().length);
@@ -135,9 +135,9 @@ class CollisionShapeResolverHierarchyTest {
             .texCoords(new float[]{0, 0, 1, 0, 0, 1})
             .indices(new int[]{0, 1, 2})
             .build();
-        when(meshSystem.getRawMeshById(99)).thenReturn(meshData);
+        when(meshRegistry.getRawMeshById(99)).thenReturn(meshData);
 
-        RawMeshData result = PhysicsWorld.resolveMeshData(parent, registry, meshSystem);
+        RawMeshData result = PhysicsWorld.resolveMeshData(parent, registry, meshRegistry);
 
         assertNotNull(result, "Should find mesh on grandchild via recursive traversal");
         assertEquals(9, result.getPositions().length);
@@ -177,10 +177,10 @@ class CollisionShapeResolverHierarchyTest {
             .texCoords(new float[]{0, 0, 1, 0, 0, 1})
             .indices(new int[]{0, 1, 2})
             .build();
-        when(meshSystem.getRawMeshById(10)).thenReturn(data1);
-        when(meshSystem.getRawMeshById(20)).thenReturn(data2);
+        when(meshRegistry.getRawMeshById(10)).thenReturn(data1);
+        when(meshRegistry.getRawMeshById(20)).thenReturn(data2);
 
-        RawMeshData result = PhysicsWorld.resolveMeshData(parent, registry, meshSystem);
+        RawMeshData result = PhysicsWorld.resolveMeshData(parent, registry, meshRegistry);
 
         assertNotNull(result, "Should find meshes at child and grandchild levels");
         assertEquals(18, result.getPositions().length);
@@ -191,7 +191,7 @@ class CollisionShapeResolverHierarchyTest {
         int entity = Entity.create(registry);
         registry.addComponent(entity, Transform.at(0, 0, 0));
 
-        RawMeshData result = PhysicsWorld.resolveMeshData(entity, registry, meshSystem);
+        RawMeshData result = PhysicsWorld.resolveMeshData(entity, registry, meshRegistry);
 
         assertNull(result);
     }

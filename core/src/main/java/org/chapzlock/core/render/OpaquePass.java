@@ -69,7 +69,7 @@ public class OpaquePass implements RenderPass {
                 pbrRenderer.applyPbr(ctx, pbrMaterial);
                 for (int entityId : entityIds) {
                     pbrRenderer.prepareEntity(ctx, entityId);
-                    ctx.getMeshSystem().render(registry.getComponent(entityId, Mesh.class));
+                    ctx.getMeshRegistry().render(registry.getComponent(entityId, Mesh.class));
                 }
                 pbrRenderer.unapply();
             }

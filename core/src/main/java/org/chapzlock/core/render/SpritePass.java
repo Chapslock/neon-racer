@@ -62,7 +62,7 @@ public class SpritePass implements RenderPass {
             for (int entityId : entityIds) {
                 Transform transform = registry.getComponent(entityId, Transform.class);
                 spriteRenderer.renderEntity(transform);
-                ctx.getMeshSystem().render(registry.getComponent(entityId, Mesh.class));
+                ctx.getMeshRegistry().render(registry.getComponent(entityId, Mesh.class));
             }
             spriteRenderer.endBatch();
         }

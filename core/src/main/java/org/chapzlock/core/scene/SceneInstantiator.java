@@ -239,9 +239,9 @@ public class SceneInstantiator {
      * @param assets the scene's tracked asset IDs
      */
     private void retainAll(SceneAssets assets) {
-        if (context.getMeshSystem() == null) return;
+        if (context.getMeshRegistry() == null) return;
         for (int id : assets.meshIds) {
-            context.getMeshSystem().retain(id);
+            context.getMeshRegistry().retain(id);
         }
         for (int id : assets.textureIds) {
             context.getTextureSystem().retain(id);
@@ -260,9 +260,9 @@ public class SceneInstantiator {
      * @param assets the scene's tracked asset IDs
      */
     private void releaseAll(SceneAssets assets) {
-        if (context.getMeshSystem() == null) return;
+        if (context.getMeshRegistry() == null) return;
         for (int id : assets.meshIds) {
-            context.getMeshSystem().release(id);
+            context.getMeshRegistry().release(id);
         }
         for (int id : assets.textureIds) {
             context.getTextureSystem().release(id);

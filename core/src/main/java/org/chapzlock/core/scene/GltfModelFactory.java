@@ -30,7 +30,7 @@ import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.Entity;
-import org.chapzlock.core.render.MeshSystem;
+import org.chapzlock.core.render.MeshRegistry;
 import org.chapzlock.core.render.PbrShaderProps;
 import org.chapzlock.core.render.ShaderSystem;
 import org.chapzlock.core.render.TextureSystem;
@@ -46,7 +46,7 @@ import org.chapzlock.core.render.TextureSystem;
  * <p><strong>How it works:</strong>
  * <ol>
  *   <li>For each glTF node: create an entity with Transform, Hierarchy</li>
- *   <li>If the node has a mesh: upload to GPU via MeshSystem, add Mesh + PbrMaterial + OpaqueLayer</li>
+ *   <li>If the node has a mesh: upload to GPU via MeshRegistry, add Mesh + PbrMaterial + OpaqueLayer</li>
  *   <li>Wire up parent-child relationships in Hierarchy components</li>
  *   <li>Track named nodes for later lookup via GltfInstance</li>
  * </ol>
@@ -76,7 +76,7 @@ import org.chapzlock.core.render.TextureSystem;
 public class GltfModelFactory {
 
     private final ComponentRegistry registry;
-    private final MeshSystem meshSystem;
+    private final MeshRegistry meshRegistry;
     private final TextureSystem textureSystem;
     private final ShaderSystem shaderSystem;
 
@@ -91,7 +91,7 @@ public class GltfModelFactory {
      */
     public GltfModelFactory(EngineContext ctx) {
         this.registry = ctx.getRegistry();
-        this.meshSystem = ctx.getMeshSystem();
+        this.meshRegistry = ctx.getMeshRegistry();
         this.textureSystem = ctx.getTextureSystem();
         this.shaderSystem = ctx.getShaderSystem();
     }
@@ -168,7 +168,7 @@ public class GltfModelFactory {
         // Phase 3: Upload meshes and create materials.
         // Only runs for nodes that reference a mesh (meshIndex >= 0).
         // Skipped entirely if GPU systems are null (unit test mode).
-        if (meshSystem != null && shaderSystem != null) {
+        if (meshRegistry != null && shaderSystem != null) {
             Shader pbrShader = getOrCreatePbrShader();
             instantiateMeshes(asset, nodes, entityIds, pbrShader);
         }
@@ -281,7 +281,7 @@ public class GltfModelFactory {
         }
 
         // Phase 3: Meshes — same as instantiate()
-        if (meshSystem != null && shaderSystem != null) {
+        if (meshRegistry != null && shaderSystem != null) {
             Shader pbrShader = getOrCreatePbrShader();
             instantiateMeshes(asset, nodes, entityIds, pbrShader);
         }
@@ -325,7 +325,7 @@ public class GltfModelFactory {
                 GltfMeshData.Primitive primitive = primitives.get(primIdx);
 
                 // Upload vertex data (positions, normals, UVs, indices) to GPU buffers
-                Mesh mesh = meshSystem.load(primitive.meshData());
+                Mesh mesh = meshRegistry.load(primitive.meshData());
 
                 // Resolve material: use the referenced material or a default white one
                 GltfMaterialData matData = primitive.materialIndex() >= 0

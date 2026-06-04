@@ -14,7 +14,7 @@ import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.input.InputMap;
 import org.chapzlock.core.logging.Log;
 import org.chapzlock.core.render.CameraSystem;
-import org.chapzlock.core.render.MeshSystem;
+import org.chapzlock.core.render.MeshRegistry;
 import org.chapzlock.core.render.ShaderSystem;
 import org.chapzlock.core.render.TextureSystem;
 import org.chapzlock.core.scene.SceneManager;
@@ -85,7 +85,7 @@ public class Application {
 
             ShaderSystem shaderSystem = new ShaderSystem();
             TextureSystem textureSystem = new TextureSystem();
-            MeshSystem meshSystem = new MeshSystem();
+            MeshRegistry meshRegistry = new MeshRegistry();
             CameraSystem cameraSystem = new CameraSystem(appSpec.getWindowSpec());
             Time time = new Time();
             TweenManager tweenManager = new TweenManager();
@@ -94,7 +94,7 @@ public class Application {
             context = EngineContext.builder()
                 .registry(registry)
                 .eventBus(eventBus)
-                .meshSystem(meshSystem)
+                .meshRegistry(meshRegistry)
                 .textureSystem(textureSystem)
                 .shaderSystem(shaderSystem)
                 .cameraSystem(cameraSystem)
@@ -104,7 +104,7 @@ public class Application {
                 .gltfAssetRegistry(gltfAssetRegistry)
                 .build();
 
-            Log.debug("Subsystems initialized: MeshSystem, TextureSystem, ShaderSystem, CameraSystem");
+            Log.debug("Subsystems initialized: MeshRegistry, TextureSystem, ShaderSystem, CameraSystem");
 
             sceneManager = new SceneManager(context);
             context.setSceneManager(sceneManager);

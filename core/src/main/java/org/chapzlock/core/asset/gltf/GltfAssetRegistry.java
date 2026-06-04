@@ -12,7 +12,7 @@ import java.util.Map;
  * re-instantiate from the cached CPU-side data.
  *
  * <p><strong>What is NOT cached here:</strong> GPU resources (meshes, textures) are managed
- * separately by MeshSystem and TextureSystem with their own reference counting. This registry
+ * separately by MeshRegistry and TextureSystem with their own reference counting. This registry
  * only caches the intermediate parse result ({@link GltfAsset}).
  *
  * <p><strong>Lifecycle:</strong> Owned by {@link org.chapzlock.core.application.EngineContext}.
@@ -39,7 +39,7 @@ public class GltfAssetRegistry {
 
     /**
      * Removes all cached assets, freeing memory.
-     * Does NOT affect GPU resources — those are managed by MeshSystem/TextureSystem.
+     * Does NOT affect GPU resources — those are managed by MeshRegistry/TextureSystem.
      */
     public void clear() {
         cache.clear();

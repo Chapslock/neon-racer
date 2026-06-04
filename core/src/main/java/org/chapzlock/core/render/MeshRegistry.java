@@ -18,7 +18,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
  * (for texturing), and indices (which vertices form triangles). A mesh lives on the GPU in
  * Vertex Buffer Objects (VBOs) grouped into a Vertex Array Object (VAO).
  *
- * <p><strong>What this system does:</strong>
+ * <p><strong>What this registry does:</strong>
  * <ul>
  *   <li><em>Upload:</em> Takes CPU-side {@link RawMeshData} (float/int arrays) and uploads
  *       it to the GPU via {@link MeshUtil#bindMeshDataToGpu}. Returns a {@link Mesh}
@@ -36,7 +36,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
  * {@link #release(int)} is called. The mesh is deleted from GPU memory only when its
  * reference count drops to zero.
  *
- * <p><strong>Usage:</strong> Game code does not interact with this system directly. The
+ * <p><strong>Usage:</strong> Game code does not interact with this registry directly. The
  * {@link org.chapzlock.core.scene.GltfModelFactory} and
  * {@link org.chapzlock.core.ecs.EntitySystem} use it during scene instantiation.
  *
@@ -44,7 +44,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
  * @see MeshUtil
  * @see RawMeshData
  */
-public class MeshSystem implements Disposable {
+public class MeshRegistry implements Disposable {
 
     /** All uploaded meshes, indexed by their engine-assigned ID. */
     private final Map<Integer, Mesh> meshPool = new Int2ObjectOpenHashMap<>();
@@ -66,7 +66,7 @@ public class MeshSystem implements Disposable {
      */
     private final RefCounted refCounted = new RefCounted(this::deleteMesh);
 
-    public MeshSystem() {
+    public MeshRegistry() {
     }
 
     /**

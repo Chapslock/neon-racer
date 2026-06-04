@@ -7,7 +7,7 @@ import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.input.InputMap;
 import org.chapzlock.core.physics.Physics;
 import org.chapzlock.core.render.CameraSystem;
-import org.chapzlock.core.render.MeshSystem;
+import org.chapzlock.core.render.MeshRegistry;
 import org.chapzlock.core.render.ShaderSystem;
 import org.chapzlock.core.render.TextureSystem;
 import org.chapzlock.core.scene.SceneManager;
@@ -22,7 +22,7 @@ import lombok.Getter;
  *
  * <p>Created by {@link Application} at startup and passed to systems via {@code onInit()}.
  * Contains: {@code ComponentRegistry}, {@code EventBus}, {@code Window}, GPU systems
- * ({@code MeshSystem}, {@code TextureSystem}, {@code ShaderSystem}),
+ * ({@code MeshRegistry}, {@code TextureSystem}, {@code ShaderSystem}),
  * {@code CameraSystem}, {@code Time}, {@code TweenManager}, {@code SceneManager}, {@code InputMap}.
  *
  * <p>For unit tests, use {@link #testContext()} to create a minimal context with no GPU subsystems.
@@ -32,7 +32,7 @@ import lombok.Getter;
 public class EngineContext implements Disposable {
     private final ComponentRegistry registry;
     private final EventBus eventBus;
-    private final MeshSystem meshSystem;
+    private final MeshRegistry meshRegistry;
     private final TextureSystem textureSystem;
     private final ShaderSystem shaderSystem;
     private final CameraSystem cameraSystem;
@@ -74,7 +74,7 @@ public class EngineContext implements Disposable {
     public void dispose() {
         if (shaderSystem != null) shaderSystem.dispose();
         if (textureSystem != null) textureSystem.dispose();
-        if (meshSystem != null) meshSystem.dispose();
+        if (meshRegistry != null) meshRegistry.dispose();
         if (eventBus != null) eventBus.clearAllListeners();
     }
 
