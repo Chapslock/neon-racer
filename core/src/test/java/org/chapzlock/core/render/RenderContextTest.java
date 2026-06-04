@@ -37,7 +37,7 @@ class RenderContextTest {
 
     @Test
     void beginFrameCollectsDirectionalLight() {
-        createEntityWith(new Camera(new Vector3f(0, 0, 0)));
+        createEntityWith(new Camera(), Transform.at(0, 0, 0));
         createEntityWith(DirectionalLight.builder().direction(new Vector3f(0, -1, 0)).build());
 
         ctx.beginFrame();
@@ -48,7 +48,7 @@ class RenderContextTest {
 
     @Test
     void beginFrameDirectionalLightNullWhenAbsent() {
-        createEntityWith(new Camera(new Vector3f(0, 0, 0)));
+        createEntityWith(new Camera(), Transform.at(0, 0, 0));
 
         ctx.beginFrame();
 
@@ -57,7 +57,7 @@ class RenderContextTest {
 
     @Test
     void beginFrameCollectsMultiplePointLights() {
-        createEntityWith(new Camera(new Vector3f(0, 0, 0)));
+        createEntityWith(new Camera(), Transform.at(0, 0, 0));
         createEntityWith(PointLight.builder().build(), Transform.at(1, 0, 0));
         createEntityWith(PointLight.builder().build(), Transform.at(2, 0, 0));
         createEntityWith(PointLight.builder().build(), Transform.at(3, 0, 0));
@@ -69,7 +69,7 @@ class RenderContextTest {
 
     @Test
     void beginFrameReadsPointLightPositionFromTransform() {
-        createEntityWith(new Camera(new Vector3f(0, 0, 0)));
+        createEntityWith(new Camera(), Transform.at(0, 0, 0));
         createEntityWith(PointLight.builder().build(), Transform.at(5, 10, 15));
 
         ctx.beginFrame();
@@ -80,7 +80,7 @@ class RenderContextTest {
 
     @Test
     void beginFrameCapsPointLightsAtMaxCount() {
-        createEntityWith(new Camera(new Vector3f(0, 0, 0)));
+        createEntityWith(new Camera(), Transform.at(0, 0, 0));
         for (int i = 0; i < 10; i++) {
             createEntityWith(PointLight.builder().build(), Transform.at(i, 0, 0));
         }
@@ -92,7 +92,7 @@ class RenderContextTest {
 
     @Test
     void beginFrameFogPresentReturnsFogComponent() {
-        createEntityWith(new Camera(new Vector3f(0, 0, 0)));
+        createEntityWith(new Camera(), Transform.at(0, 0, 0));
         createEntityWith(Fog.builder().density(0.01f).gradient(2.0f).build());
 
         ctx.beginFrame();
@@ -105,7 +105,7 @@ class RenderContextTest {
 
     @Test
     void beginFrameFogAbsentReturnsNull() {
-        createEntityWith(new Camera(new Vector3f(0, 0, 0)));
+        createEntityWith(new Camera(), Transform.at(0, 0, 0));
 
         ctx.beginFrame();
 
@@ -115,7 +115,7 @@ class RenderContextTest {
 
     @Test
     void beginFrameAmbientPresentReturnsStrength() {
-        createEntityWith(new Camera(new Vector3f(0, 0, 0)));
+        createEntityWith(new Camera(), Transform.at(0, 0, 0));
         createEntityWith(AmbientLight.builder().strength(0.4f).build());
 
         ctx.beginFrame();
@@ -126,7 +126,7 @@ class RenderContextTest {
 
     @Test
     void beginFrameAmbientAbsentFallsBackToDefault() {
-        createEntityWith(new Camera(new Vector3f(0, 0, 0)));
+        createEntityWith(new Camera(), Transform.at(0, 0, 0));
 
         ctx.beginFrame();
 
@@ -136,7 +136,7 @@ class RenderContextTest {
 
     @Test
     void beginFrameExtractsCameraPosition() {
-        createEntityWith(new Camera(new Vector3f(5, 10, 15)));
+        createEntityWith(new Camera(), Transform.at(5, 10, 15));
 
         ctx.beginFrame();
 

@@ -71,7 +71,7 @@ class EntityBuilderTest {
         PointLight pointLight = PointLight.builder().build();
         Fog fog = Fog.builder().density(0.01f).gradient(2.0f).build();
         AmbientLight ambient = AmbientLight.builder().strength(0.5f).build();
-        Camera camera = new Camera(new org.joml.Vector3f(0, 5, 10));
+        Camera camera = new Camera();
 
         EntityBuilder builder = new EntityBuilder("full")
             .transform(transform)

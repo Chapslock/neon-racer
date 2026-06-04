@@ -21,7 +21,7 @@ import org.chapzlock.core.input.InputMap;
  *     .entity("terrain", e -> e.component(new GltfModel("models/track.glb")))
  *     .entity("sun", e -> e.directionalLight(DirectionalLight.builder()...build()))
  *     .entity("player", e -> e.transform(Transform.at(0, 0, 0)).component(new GltfModel("glb/car.glb")))
- *     .entity(e -> e.camera(new Camera(new Vector3f(0, 5, 10))))
+ *     .entity(e -> e.transform(Transform.at(0, 5, 10)).component(new Camera()))
  *     .entity(e -> e.sky())
  *     .systems(new PlayerSystem(), new AISystem())
  *     .inputMap(raceInputs)

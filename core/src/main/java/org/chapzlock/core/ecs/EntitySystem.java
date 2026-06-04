@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.asset.RawMeshDataFactory;
+import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.Name;
 import org.chapzlock.core.component.PbrMaterial;
@@ -65,6 +66,7 @@ public class EntitySystem implements GameSystem {
     }
 
     private void registerDefaultRules() {
+        registry.addRule(ComponentRule.requires(Camera.class, Transform.class, "Camera requires Transform"));
         registry.addRule(ComponentRule.requires(Mesh.class, Transform.class, "Mesh requires Transform"));
         registry.addRule(ComponentRule.requires(PhysicsBody.class, Transform.class, "PhysicsBody requires Transform"));
         registry.addRule(ComponentRule.requires(PointLight.class, Transform.class, "PointLight requires Transform"));

@@ -42,7 +42,7 @@ class SceneBuilderTest {
     @Test
     void namelessEntityGetsInternalName() {
         Scene scene = Scene.builder("test")
-            .entity(e -> e.component(new Camera(new Vector3f(0, 5, 10))))
+            .entity(e -> e.transform(Transform.at(0, 5, 10)).component(new Camera()))
             .build();
 
         assertEquals(1, scene.getEntities().size());
@@ -106,9 +106,9 @@ class SceneBuilderTest {
 
     @Test
     void entityBuilderCamera() {
-        Camera cam = new Camera(new Vector3f(0, 5, 10));
+        Camera cam = new Camera();
         Scene scene = Scene.builder("test")
-            .entity(e -> e.component(cam))
+            .entity(e -> e.transform(Transform.at(0, 5, 10)).component(cam))
             .build();
 
         EntityBuilder applied = applyRecipe(scene.getEntities().get(0));

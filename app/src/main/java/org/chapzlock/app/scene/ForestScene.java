@@ -41,13 +41,13 @@ public class ForestScene {
                 .component(new GltfModel("glb/terrain.glb"))
                 .component(PhysicsBody.asStatic()
                     .shape(CollisionGeometry.triangleMesh())))
-            .entity("sun", e -> e
+            .entity("sky", e -> e
                 .component(DirectionalLight.builder()
                     .direction(new Vector3f(-0.2f, -1f, -0.3f))
                     .color(new Color(1.0f, 0.95f, 0.8f))
                     .build()))
             .entity("torch-1", e -> e
-                .transform(Transform.at(0, -50, -5))
+                .transform(Transform.at(0, 0, 0))
                 .component(PointLight.builder()
                     .color(new Color(1.0f, 0.3f, 0.1f))
                     .attenuation(Attenuation.DEFAULT)
@@ -69,7 +69,8 @@ public class ForestScene {
                 .component(new SpriteMaterial("textures/health-bar.png"))
                 .component(new SpriteLayer()))
             .entity(e -> e
-                .component(new Camera(new Vector3f(0, 3, 5)))
+                .transform(Transform.at(0, 3, 5))
+                .component(new Camera())
                 .component(new ThirdPersonCamera()))
             .entity(e -> e.component(new Sky()))
             .systems(

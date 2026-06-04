@@ -5,7 +5,6 @@ import java.util.List;
 import org.chapzlock.app.component.CharacterState;
 import org.chapzlock.app.component.ThirdPersonCamera;
 import org.chapzlock.core.application.EngineContext;
-import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.GameSystem;
@@ -79,9 +78,14 @@ public class ThirdPersonCameraSystem implements GameSystem {
         if (camOpt.isEmpty()) return;
         ThirdPersonCamera tpc = camOpt.get();
 
-        var cameraOpt = registry.getSingleton(Camera.class);
-        if (cameraOpt.isEmpty()) return;
-        Camera camera = cameraOpt.get();
+        final Transform[] camTransformHolder = {null};
+        registry.forEach(ThirdPersonCamera.class, Transform.class, (entityId, tpcComp, transform) -> {
+            if (camTransformHolder[0] == null) {
+                camTransformHolder[0] = transform;
+            }
+        });
+        Transform camTransform = camTransformHolder[0];
+        if (camTransform == null) return;
 
         Vector3f playerPos = getPlayerPosition();
         if (playerPos == null) return;
@@ -143,14 +147,16 @@ public class ThirdPersonCameraSystem implements GameSystem {
         float camY = playerPos.y + tpc.getHeightOffset() + verticalDist;
         float camZ = playerPos.z + (float) (horizontalDist * Math.cos(yawRad));
 
-        // Smooth position
-        Vector3f currentPos = camera.getPosition();
+        // Smooth position (write to Transform)
+        Vector3f currentPos = new Vector3f();
+        camTransform.getPosition(currentPos);
         float t = Math.min(1f, tpc.getFollowSmoothing() * deltaTime);
         currentPos.lerp(new Vector3f(camX, camY, camZ), t);
+        camTransform.setPosition(currentPos);
 
-        // Look at player
+        // Look at player (write rotation to Transform)
         Vector3f lookTarget = new Vector3f(playerPos.x, playerPos.y + tpc.getHeightOffset(), playerPos.z);
-        camera.lookAt(lookTarget);
+        camTransform.lookAt(lookTarget);
     }
 
     private Vector3f getPlayerPosition() {
