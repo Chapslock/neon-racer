@@ -147,9 +147,9 @@ public class Transform implements Component {
     /**
      * Points this transform toward the given world-space target.
      *
-     * <p>Computes a rotation from the direction vector (this position → target)
-     * and sets it as the transform's rotation. Uses pitch and yaw derived from
-     * the direction vector.
+     * <p>Computes a rotation quaternion that maps the engine's forward axis (+X)
+     * onto the direction from this position to the target. Uses yaw (Y-axis rotation)
+     * and pitch (elevation) decomposition to avoid roll.
      *
      * <p>If the target equals the current position, does nothing.
      *
@@ -163,18 +163,11 @@ public class Transform implements Component {
         }
         dir.normalize();
 
-        float pitchRad = (float) Math.asin(dir.y);
-        float yawRad = (float) Math.atan2(dir.z, dir.x);
+        float yawRad = (float) Math.atan2(-dir.z, dir.x);
+        float pitchRad = (float) Math.asin(Math.max(-1f, Math.min(1f, dir.y)));
 
-        float pitchDeg = (float) Math.toDegrees(pitchRad);
-        float yawDeg = (float) Math.toDegrees(yawRad);
-
-        final float MAX_PITCH = 89.0f;
-        pitchDeg = Math.max(-MAX_PITCH, Math.min(MAX_PITCH, pitchDeg));
-
-        rotationEuler.set(pitchDeg, yawDeg, 0f);
-        quatFromEuler();
-        eulerDirty = false;
+        rotationQuat.identity().rotateY(yawRad).rotateZ(pitchRad);
+        eulerDirty = true;
         quatDirty = false;
         localDirty = true;
     }

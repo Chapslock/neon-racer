@@ -210,6 +210,91 @@ class TransformTest {
         assertEquals(9f, t.getZ());
     }
 
+    @Test
+    void lookAtPointsForwardAxisAtTarget() {
+        Transform t = Transform.at(0, 0, 0);
+        t.lookAt(new Vector3f(5, 0, 0));
+
+        Vector3f forward = extractForward(t);
+        assertEquals(1f, forward.x, 0.001f);
+        assertEquals(0f, forward.y, 0.001f);
+        assertEquals(0f, forward.z, 0.001f);
+    }
+
+    @Test
+    void lookAtNegativeZ() {
+        Transform t = Transform.at(0, 0, 0);
+        t.lookAt(new Vector3f(0, 0, -5));
+
+        Vector3f forward = extractForward(t);
+        assertEquals(0f, forward.x, 0.001f);
+        assertEquals(0f, forward.y, 0.001f);
+        assertEquals(-1f, forward.z, 0.001f);
+    }
+
+    @Test
+    void lookAtPositiveZ() {
+        Transform t = Transform.at(0, 0, 0);
+        t.lookAt(new Vector3f(0, 0, 5));
+
+        Vector3f forward = extractForward(t);
+        assertEquals(0f, forward.x, 0.001f);
+        assertEquals(0f, forward.y, 0.001f);
+        assertEquals(1f, forward.z, 0.001f);
+    }
+
+    @Test
+    void lookAtWithElevation() {
+        Transform t = Transform.at(0, 0, 0);
+        t.lookAt(new Vector3f(1, 1, 0));
+
+        Vector3f forward = extractForward(t);
+        float expected = (float) (1.0 / Math.sqrt(2));
+        assertEquals(expected, forward.x, 0.001f);
+        assertEquals(expected, forward.y, 0.001f);
+        assertEquals(0f, forward.z, 0.001f);
+    }
+
+    @Test
+    void lookAtFromNonOriginPosition() {
+        Transform t = Transform.at(3, 5, 7);
+        t.lookAt(new Vector3f(3, 5, 12));
+
+        Vector3f forward = extractForward(t);
+        assertEquals(0f, forward.x, 0.001f);
+        assertEquals(0f, forward.y, 0.001f);
+        assertEquals(1f, forward.z, 0.001f);
+    }
+
+    @Test
+    void lookAtSamePositionDoesNothing() {
+        Transform t = Transform.at(1, 2, 3);
+        t.setRotationEuler(45, 30, 0);
+        Quaternionf before = new Quaternionf();
+        t.getRotationQuaternion(before);
+
+        t.lookAt(new Vector3f(1, 2, 3));
+
+        Quaternionf after = new Quaternionf();
+        t.getRotationQuaternion(after);
+        assertEquals(before.x, after.x, 0.001f);
+        assertEquals(before.y, after.y, 0.001f);
+        assertEquals(before.z, after.z, 0.001f);
+        assertEquals(before.w, after.w, 0.001f);
+    }
+
+    /**
+     * Extracts the forward direction by rotating +X by the transform's quaternion,
+     * matching CameraSystem's convention.
+     */
+    private Vector3f extractForward(Transform t) {
+        Quaternionf q = new Quaternionf();
+        t.getRotationQuaternion(q);
+        Vector3f forward = new Vector3f(1, 0, 0);
+        q.transform(forward);
+        return forward.normalize();
+    }
+
     private void assertMatrixEquals(Matrix4f expected, Matrix4f actual, float epsilon) {
         for (int col = 0; col < 4; col++) {
             for (int row = 0; row < 4; row++) {

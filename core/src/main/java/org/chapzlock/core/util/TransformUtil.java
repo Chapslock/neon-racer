@@ -15,11 +15,11 @@ public final class TransformUtil {
     private TransformUtil() {}
 
     /**
-     * Extracts the forward direction (-Z axis) from the transform's world matrix.
+     * Extracts the forward direction (+X axis) from the transform's world matrix.
      */
     public static Vector3f forward(Transform transform, Vector3f dest) {
         Matrix4f m = transform.getWorldMatrix();
-        return dest.set(-m.m20(), -m.m21(), -m.m22()).normalize();
+        return dest.set(m.m00(), m.m01(), m.m02()).normalize();
     }
 
     /**
