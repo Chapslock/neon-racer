@@ -135,19 +135,20 @@ class InputMapTest {
 
     @Test
     void unknownActionLogsWarningOnce() {
-        var originalOut = System.out;
         var outContent = new java.io.ByteArrayOutputStream();
-        System.setOut(new java.io.PrintStream(outContent));
+        var errContent = new java.io.ByteArrayOutputStream();
+        org.chapzlock.core.logging.LogEngine.setOutput(
+            new java.io.PrintStream(outContent), new java.io.PrintStream(errContent));
 
         try {
             inputMap.isPressed("typo_action");
             inputMap.isPressed("typo_action");
             String output = outContent.toString();
-            assertEquals(1, output.split("\\[WARN\\]").length - 1,
+            assertEquals(1, output.split("\\[WARN ?\\]").length - 1,
                 "Warning should fire exactly once per unregistered action");
             assertTrue(output.contains("typo_action"));
         } finally {
-            System.setOut(originalOut);
+            org.chapzlock.core.logging.LogEngine.resetOutput();
         }
     }
 }

@@ -40,6 +40,8 @@ import com.bulletphysics.linearmath.IDebugDraw;
  */
 class PhysicsDebugDrawer extends IDebugDraw implements Disposable {
 
+    private static final Log log = Log.create(PhysicsDebugDrawer.class);
+
     private record Line(org.joml.Vector3f from, org.joml.Vector3f to, org.joml.Vector3f color) {}
 
     private final List<Line> lines = new ArrayList<>();
@@ -71,7 +73,7 @@ class PhysicsDebugDrawer extends IDebugDraw implements Disposable {
 
     @Override
     public void reportErrorWarning(String warningString) {
-        Log.error("[Physics] " + warningString);
+        log.error("[Physics] %s", warningString);
     }
 
     @Override

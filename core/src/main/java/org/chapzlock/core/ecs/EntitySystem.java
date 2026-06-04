@@ -55,6 +55,8 @@ import org.chapzlock.core.render.TextureRegistry;
  */
 public class EntitySystem implements GameSystem {
 
+    private static final Log log = Log.create(EntitySystem.class);
+
     private ComponentRegistry registry;
     private EngineContext ctx;
 
@@ -105,7 +107,7 @@ public class EntitySystem implements GameSystem {
         // Phase 2: Validate component rules
         String violation = checkRules(resolved, name);
         if (violation != null) {
-            Log.error("EntitySystem", "Entity '" + name + "' failed validation: " + violation);
+            log.error("Entity '%s' failed validation: %s", name, violation);
             return -1;
         }
 

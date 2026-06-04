@@ -52,6 +52,8 @@ import com.bulletphysics.linearmath.Transform;
  */
 public class Physics {
 
+    private static final Log log = Log.create(Physics.class);
+
     private final PhysicsWorld world;
 
     Physics(PhysicsWorld world) {
@@ -253,7 +255,7 @@ public class Physics {
     private RigidBody getBodyOrWarn(int entityId, String methodName) {
         RigidBody body = world.getBody(entityId);
         if (body == null) {
-            Log.debug("Physics." + methodName + "() called on unregistered entity " + entityId + ". No-op.");
+            log.debug("Physics.%s() called on unregistered entity %d. No-op.", methodName, entityId);
         }
         return body;
     }

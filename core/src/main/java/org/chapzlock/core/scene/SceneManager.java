@@ -50,6 +50,8 @@ import lombok.Getter;
  */
 public class SceneManager {
 
+    private static final Log log = Log.create(SceneManager.class);
+
     private final EngineContext context;
     private final EventBus eventBus;
     private final SceneInstantiator instantiator;
@@ -284,23 +286,30 @@ public class SceneManager {
     }
 
     private void doLoad(Scene scene) {
-        Log.debug("Loading scene \"" + scene.getName() + "\" (" + scene.getEntities().size() + " entities, " + scene.getSystems().size() + " systems)");
+        log.info("--- Loading scene \"%s\" ---", scene.getName());
+        long startMs = System.currentTimeMillis();
         if (primaryScene != null) {
             doTeardown(primaryScene);
             eventBus.publish(new SceneUnloadedEvent(primaryScene.getName()));
         }
         primaryScene = scene;
         doInstantiate(scene);
+        long elapsed = System.currentTimeMillis() - startMs;
+        SceneInstance instance = loadedScenes.get(scene);
+        int entityCount = instance != null ? instance.entityIds().size() : 0;
+        int systemCount = instance != null ? instance.systems().size() : 0;
+        log.info("Scene \"%s\" loaded in %dms (%d entities, %d systems)",
+            scene.getName(), elapsed, entityCount, systemCount);
         eventBus.publish(new SceneLoadedEvent(scene.getName()));
         activeSystemsDirty = true;
     }
 
     private void doLoadAdditive(Scene scene) {
-        Log.debug("Loading additive scene \"" + scene.getName() + "\"");
+        log.debug("Loading additive scene \"%s\"", scene.getName());
         for (Scene existing : additiveScenes) {
             if (existing.getName().equals(scene.getName())) {
-                Log.warn("Scene \"" + scene.getName() + "\" is already loaded as additive. " +
-                    "Ignoring duplicate loadAdditive() call. If you want to reload it, unload() first.");
+                log.warn("Scene \"%s\" is already loaded as additive. Ignoring duplicate loadAdditive() call. If you want to reload it, unload() first.",
+                    scene.getName());
                 return;
             }
         }
@@ -324,8 +333,8 @@ public class SceneManager {
             activeSystemsDirty = true;
         } else {
             List<String> activeNames = getActiveScenes().stream().map(Scene::getName).toList();
-            Log.warn("Attempted to unload scene \"" + scene.getName() + "\" but it is not currently loaded. " +
-                "Currently active scenes: " + activeNames + ". Check your scene transition logic.");
+            log.warn("Attempted to unload scene \"%s\" but it is not currently loaded. Currently active scenes: %s. Check your scene transition logic.",
+                scene.getName(), activeNames);
         }
     }
 
@@ -353,7 +362,7 @@ public class SceneManager {
      * handlers may reference entities that are about to be destroyed.
      */
     private void doTeardown(Scene scene) {
-        Log.debug("Tearing down scene \"" + scene.getName() + "\"");
+        log.info("--- Unloading scene \"%s\" ---", scene.getName());
         InputMap inputMap = scene.getInputMap();
         if (inputMap != null) {
             inputMap.deactivate();

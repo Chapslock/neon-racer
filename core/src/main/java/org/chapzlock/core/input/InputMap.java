@@ -42,6 +42,9 @@ import org.chapzlock.core.logging.Log;
  * }</pre>
  */
 public class InputMap {
+
+    private static final Log log = Log.create(InputMap.class);
+
     private final Map<String, List<Key>> actionBindings;
     private final Map<String, Key[]> axisBindings;
     private final Map<String, List<MouseButton>> mouseActionBindings;
@@ -93,10 +96,9 @@ public class InputMap {
         subscriptions.add(eventBus.subscribe(MouseButtonPressedEvent.class, this::handleMouseButtonPressed));
         subscriptions.add(eventBus.subscribe(MouseButtonReleasedEvent.class, this::handleMouseButtonReleased));
         subscriptions.add(eventBus.subscribe(MouseMovedEvent.class, this::handleMouseMoved));
-        Log.debug("InputMap activated with actions: " + actionBindings.keySet() +
-            ", mouseActions: " + mouseActionBindings.keySet() +
-            ", axes: " + axisBindings.keySet() +
-            (mouseXAxisName != null ? ", mouseAxes: [" + mouseXAxisName + ", " + mouseYAxisName + "]" : ""));
+        log.debug("InputMap activated with actions: %s, mouseActions: %s, axes: %s%s",
+            actionBindings.keySet(), mouseActionBindings.keySet(), axisBindings.keySet(),
+            mouseXAxisName != null ? ", mouseAxes: [" + mouseXAxisName + ", " + mouseYAxisName + "]" : "");
     }
 
     /**
@@ -116,7 +118,7 @@ public class InputMap {
         hasMouseBaseline = false;
         lastMouseX = Double.NaN;
         lastMouseY = Double.NaN;
-        Log.debug("InputMap deactivated");
+        log.debug("InputMap deactivated");
     }
 
     /**
@@ -226,8 +228,7 @@ public class InputMap {
         if (warnedActions.add(action)) {
             Set<String> allActions = new HashSet<>(actionBindings.keySet());
             allActions.addAll(mouseActionBindings.keySet());
-            Log.warn("InputMap: queried unregistered action \"" + action +
-                "\". Registered actions: " + allActions);
+            log.warn("Queried unregistered action \"%s\". Registered actions: %s", action, allActions);
         }
         return true;
     }
@@ -235,8 +236,7 @@ public class InputMap {
     private boolean isUnregisteredAxis(String axisName) {
         if (axisBindings.containsKey(axisName)) return false;
         if (warnedAxes.add(axisName)) {
-            Log.warn("InputMap: queried unregistered axis \"" + axisName +
-                "\". Registered axes: " + axisBindings.keySet());
+            log.warn("Queried unregistered axis \"%s\". Registered axes: %s", axisName, axisBindings.keySet());
         }
         return true;
     }
@@ -244,8 +244,8 @@ public class InputMap {
     private boolean isUnregisteredMouseAxis(String axisName) {
         if (axisName != null && (axisName.equals(mouseXAxisName) || axisName.equals(mouseYAxisName))) return false;
         if (warnedMouseAxes.add(axisName)) {
-            Log.warn("InputMap: queried unregistered mouse axis \"" + axisName +
-                "\". Registered mouse axes: [" + mouseXAxisName + ", " + mouseYAxisName + "]");
+            log.warn("Queried unregistered mouse axis \"%s\". Registered mouse axes: [%s, %s]",
+                axisName, mouseXAxisName, mouseYAxisName);
         }
         return true;
     }

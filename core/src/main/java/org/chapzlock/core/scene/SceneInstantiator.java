@@ -42,6 +42,8 @@ import org.chapzlock.core.logging.Log;
  */
 public class SceneInstantiator {
 
+    private static final Log log = Log.create(SceneInstantiator.class);
+
     private final EngineContext context;
     private final ComponentRegistry registry;
 
@@ -120,19 +122,19 @@ public class SceneInstantiator {
                 }
 
                 String name = recipe.name();
-                Log.debug("  Entity \"" + (name != null ? name : "<anonymous>") + "\" created (id=" + entityId + ")");
+                log.debug("  Entity \"%s\" created (id=%d)", name != null ? name : "<anonymous>", entityId);
             } catch (org.chapzlock.core.asset.gltf.GltfLoadException e) {
                 String name = recipe.name();
-                Log.error("Scene \"" + scene.getName() + "\", entity \"" + (name != null ? name : "<anonymous>") +
-                    "\": glTF load failed for model asset. " + e.getMessage());
+                log.error("Scene \"%s\", entity \"%s\": glTF load failed for model asset. %s",
+                    scene.getName(), name != null ? name : "<anonymous>", e.getMessage());
             } catch (IllegalStateException e) {
                 String name = recipe.name();
-                Log.error("Scene \"" + scene.getName() + "\", entity \"" + (name != null ? name : "<anonymous>") +
-                    "\": Component validation error. " + e.getMessage());
+                log.error("Scene \"%s\", entity \"%s\": Component validation error. %s",
+                    scene.getName(), name != null ? name : "<anonymous>", e.getMessage());
             } catch (Exception e) {
                 String name = recipe.name();
-                Log.error("Scene \"" + scene.getName() + "\", entity \"" + (name != null ? name : "<anonymous>") +
-                    "\": Unexpected error during instantiation. " + e.getClass().getSimpleName() + ": " + e.getMessage());
+                log.error("Scene \"%s\", entity \"%s\": Unexpected error during instantiation. %s: %s",
+                    scene.getName(), name != null ? name : "<anonymous>", e.getClass().getSimpleName(), e.getMessage());
             }
         }
         retainAll(assets);
@@ -140,8 +142,8 @@ public class SceneInstantiator {
         List<GameSystem> systems = initSystems(scene);
 
         if (scene.getEntities().isEmpty()) {
-            Log.warn("Scene \"" + scene.getName() + "\" has no entities. " +
-                "Did you forget to add .entity() calls to the builder?");
+            log.warn("Scene \"%s\" has no entities. Did you forget to add .entity() calls to the builder?",
+                scene.getName());
         }
 
         return new SceneInstance(scene, entityIds, assets, systems);
@@ -202,7 +204,7 @@ public class SceneInstantiator {
      * @throws org.chapzlock.core.asset.gltf.GltfLoadException if the file cannot be loaded or parsed
      */
     public GltfInstance loadGltf(String resourcePath) {
-        Log.debug("Loading glTF: " + resourcePath);
+        log.debug("Loading glTF: %s", resourcePath);
         GltfAsset asset = context.getGltfAssetRegistry().getOrLoad(resourcePath);
         GltfModelFactory modelFactory = new GltfModelFactory(context);
         return modelFactory.instantiate(asset);
@@ -289,9 +291,8 @@ public class SceneInstantiator {
             try {
                 system.onInit(context);
             } catch (Exception e) {
-                Log.error("Scene \"" + scene.getName() + "\": " + system.getClass().getSimpleName() +
-                    ".onInit() threw exception. This system will be disabled. " +
-                    "Fix the error in onInit() and reload the scene. Error: " + e.getMessage());
+                log.error("Scene \"%s\": %s.onInit() threw exception. This system will be disabled. Fix the error in onInit() and reload the scene. Error: %s",
+                    scene.getName(), system.getClass().getSimpleName(), e.getMessage());
                 failedSystems.add(system);
             }
         }

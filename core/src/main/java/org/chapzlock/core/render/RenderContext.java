@@ -23,6 +23,8 @@ import lombok.Getter;
 @Getter
 public class RenderContext {
 
+    private static final Log log = Log.create(RenderContext.class);
+
     private final ComponentRegistry registry;
     private final MeshRegistry meshRegistry;
     private final ShaderRegistry shaderRegistry;
@@ -67,7 +69,7 @@ public class RenderContext {
 
         if (foundCamera[0] == null) {
             if (!warnedNoCamera) {
-                Log.warn("RenderContext", "No entity with Camera + Transform found — rendering is skipped. Add .transform(...).component(new Camera()) to your scene.");
+                log.warn("No entity with Camera + Transform found — rendering is skipped. Add .transform(...).component(new Camera()) to your scene.");
                 warnedNoCamera = true;
             }
             return false;
@@ -89,15 +91,14 @@ public class RenderContext {
 
         int dirLightCount = registry.count(DirectionalLight.class);
         if (dirLightCount > 1) {
-            Log.warn("RenderContext", "Scene has " + dirLightCount + " directional lights. Only the first is used.");
+            log.warn("Scene has %d directional lights. Only the first is used.", dirLightCount);
         }
         this.directionalLight = registry.getSingleton(DirectionalLight.class).orElse(null);
 
         this.pointLights = new ArrayList<>();
         int pointLightCount = registry.count(PointLight.class);
         if (pointLightCount > PointLight.MAX_COUNT) {
-            Log.warn("RenderContext", "Scene has " + pointLightCount + " point lights. Only first " +
-                PointLight.MAX_COUNT + " are rendered.");
+            log.warn("Scene has %d point lights. Only first %d are rendered.", pointLightCount, PointLight.MAX_COUNT);
         }
         final int[] index = {0};
         registry.forEach(PointLight.class, Transform.class, (entityId, light, transform) -> {

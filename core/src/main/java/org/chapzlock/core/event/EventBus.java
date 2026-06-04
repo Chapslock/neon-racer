@@ -50,6 +50,9 @@ import lombok.NonNull;
  * }</pre>
  */
 public final class EventBus {
+
+    private static final Log log = Log.create(EventBus.class);
+
     /**
      * Cache of dispatch order (class hierarchy + interfaces) for each event class.
      */
@@ -143,7 +146,7 @@ public final class EventBus {
                         return true;
                     }
                 } catch (Exception ex) {
-                    Log.error("EventBus listener failed for " + event.getClass().getSimpleName(), ex);
+                    log.error("Listener failed for " + event.getClass().getSimpleName(), ex);
                 }
             }
         }

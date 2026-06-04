@@ -42,6 +42,8 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
  */
 public class TextureRegistry implements Disposable {
 
+    private static final Log log = Log.create(TextureRegistry.class);
+
     /** All loaded textures, indexed by their engine-assigned ID. */
     private final Map<Integer, Texture> texturePool = new Int2ObjectOpenHashMap<>();
 
@@ -108,7 +110,7 @@ public class TextureRegistry implements Disposable {
         texturePool.put(texture.getId(), texture);
         filePathToIdMap.put(key, texture.getId());
         idToKeyMap.put(texture.getId(), key);
-        Log.debug("Texture loaded: \"" + filePath + "\" → id=" + texture.getId() + " (" + rawImageData.getWidth() + "x" + rawImageData.getHeight() + (srgb ? ", sRGB" : "") + ")");
+        log.debug("Texture loaded: \"%s\" → id=%d (%dx%d%s)", filePath, texture.getId(), rawImageData.getWidth(), rawImageData.getHeight(), srgb ? ", sRGB" : "");
         return texture;
     }
 
@@ -162,7 +164,7 @@ public class TextureRegistry implements Disposable {
         texturePool.put(texture.getId(), texture);
         filePathToIdMap.put(key, texture.getId());
         idToKeyMap.put(texture.getId(), key);
-        Log.debug("Texture loaded from memory: \"" + cacheKey + "\" → id=" + texture.getId() + " (" + rawImageData.getWidth() + "x" + rawImageData.getHeight() + (srgb ? ", sRGB" : "") + ")");
+        log.debug("Texture loaded from memory: \"%s\" → id=%d (%dx%d%s)", cacheKey, texture.getId(), rawImageData.getWidth(), rawImageData.getHeight(), srgb ? ", sRGB" : "");
         return texture;
     }
 
@@ -261,7 +263,7 @@ public class TextureRegistry implements Disposable {
             if (key != null) {
                 filePathToIdMap.remove(key);
             }
-            Log.debug("Texture released and deleted from GPU: id=" + assetId);
+            log.debug("Texture released and deleted from GPU: id=%d", assetId);
         }
     }
 

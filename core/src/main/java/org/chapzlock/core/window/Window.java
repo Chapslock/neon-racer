@@ -67,6 +67,8 @@ import org.lwjgl.opengl.GLCapabilities;
  */
 public class Window {
 
+    private static final Log log = Log.create(Window.class);
+
     private long id = NULL;
     private final WindowSpecification specs;
     private GLCapabilities glCapabilities;
@@ -126,7 +128,7 @@ public class Window {
         initializeCallbacks();
 
         glfwShowWindow(id);
-        Log.debug("GLFW window shown: \"" + specs.getTitle() + "\"");
+        log.debug("GLFW window shown: \"%s\"", specs.getTitle());
     }
 
     public void makeContextCurrent() {

@@ -69,6 +69,8 @@ import it.unimi.dsi.fastutil.ints.IntList;
  */
 class PhysicsWorld implements Disposable {
 
+    private static final Log log = Log.create(PhysicsWorld.class);
+
     private final DiscreteDynamicsWorld dynamicsWorld;
     private final CollisionConfiguration collisionConfig;
     private final CollisionDispatcher dispatcher;
@@ -124,15 +126,14 @@ class PhysicsWorld implements Disposable {
         PhysicsBody config = registry.getComponent(entityId, PhysicsBody.class);
         Transform transform = registry.getComponent(entityId, Transform.class);
         if (config == null || transform == null) {
-            Log.warn("Physics registration skipped for entity " + entityId +
-                ": missing " + (config == null ? "PhysicsBody" : "Transform"));
+            log.warn("Physics registration skipped for entity %d: missing %s", entityId,
+                config == null ? "PhysicsBody" : "Transform");
             return;
         }
 
         if (config.getGeometry() instanceof CollisionGeometry.TriangleMesh && config.getMass() != 0) {
-            Log.error("Physics registration skipped for entity " + entityId +
-                ": TriangleMesh geometry cannot be used with dynamic bodies (mass > 0). " +
-                "TriangleMesh is a static-only shape. Use CollisionGeometry.capsule(), box(), or sphere() for dynamic bodies.");
+            log.error("Physics registration skipped for entity %d: TriangleMesh geometry cannot be used with dynamic bodies (mass > 0). TriangleMesh is a static-only shape. Use CollisionGeometry.capsule(), box(), or sphere() for dynamic bodies.",
+                entityId);
             return;
         }
 
@@ -151,8 +152,7 @@ class PhysicsWorld implements Disposable {
         bodyToEntity.put(body, entityId);
         collisionCache.setEntityLayer(entityId, config.getLayer());
 
-        Log.debug("Physics body registered: entity=" + entityId +
-            " mass=" + config.getMass() + " shape=" + config.getGeometry().getClass().getSimpleName());
+        log.debug("Physics body registered: entity=%d mass=%.1f shape=%s", entityId, config.getMass(), config.getGeometry().getClass().getSimpleName());
     }
 
     void queueRemoval(int entityId) {
@@ -168,7 +168,7 @@ class PhysicsWorld implements Disposable {
                 dynamicsWorld.removeRigidBody(body);
                 body.destroy();
                 entityOffsets.remove(entityId);
-                Log.debug("Physics body removed: entity=" + entityId);
+                log.debug("Physics body removed: entity=%d", entityId);
             }
         }
         pendingRemovals.clear();

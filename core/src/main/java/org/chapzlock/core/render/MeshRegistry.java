@@ -46,6 +46,8 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
  */
 public class MeshRegistry implements Disposable {
 
+    private static final Log log = Log.create(MeshRegistry.class);
+
     /** All uploaded meshes, indexed by their engine-assigned ID. */
     private final Map<Integer, Mesh> meshPool = new Int2ObjectOpenHashMap<>();
 
@@ -83,7 +85,7 @@ public class MeshRegistry implements Disposable {
     public Mesh load(RawMeshData rawMeshData) {
         Integer existingId = rawMeshDataToIdMap.get(rawMeshData);
         if (existingId != null) {
-            Log.debug("Mesh cache hit: id=" + existingId + " (" + meshPool.get(existingId).getVertexCount() + " indices)");
+            log.debug("Mesh cache hit: id=%d (%d indices)", existingId, meshPool.get(existingId).getVertexCount());
             return meshPool.get(existingId);
         }
         Mesh mesh = MeshUtil.bindMeshDataToGpu(rawMeshData);
@@ -91,7 +93,7 @@ public class MeshRegistry implements Disposable {
         rawMeshDataPool.put(mesh.getId(), rawMeshData);
         rawMeshDataToIdMap.put(rawMeshData, mesh.getId());
         idToRawMeshDataMap.put(mesh.getId(), rawMeshData);
-        Log.debug("Mesh uploaded to GPU: id=" + mesh.getId() + ", " + mesh.getVertexCount() + " indices");
+        log.debug("Mesh uploaded to GPU: id=%d, %d indices", mesh.getId(), mesh.getVertexCount());
         return mesh;
     }
 
@@ -165,7 +167,7 @@ public class MeshRegistry implements Disposable {
         Mesh mesh = meshPool.remove(assetId);
         if (mesh != null) {
             MeshUtil.delete(mesh);
-            Log.debug("Mesh released and deleted from GPU: id=" + assetId);
+            log.debug("Mesh released and deleted from GPU: id=%d", assetId);
         }
         rawMeshDataPool.remove(assetId);
         RawMeshData rawData = idToRawMeshDataMap.remove(assetId);

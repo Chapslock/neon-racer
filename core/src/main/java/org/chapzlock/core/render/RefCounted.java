@@ -28,6 +28,8 @@ import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
  */
 public class RefCounted {
 
+    private static final Log log = Log.create(RefCounted.class);
+
     private final Int2IntOpenHashMap refCounts = new Int2IntOpenHashMap();
     private final IntConsumer onRelease;
 
@@ -58,7 +60,7 @@ public class RefCounted {
     public void release(int id) {
         int current = refCounts.getOrDefault(id, 0);
         if (current <= 0) {
-            Log.warn("RefCounted", "release() called on id=" + id + " with refCount=" + current + ". Ignoring.");
+            log.warn("release() called on id=%d with refCount=%d. Ignoring.", id, current);
             return;
         }
         int count = current - 1;

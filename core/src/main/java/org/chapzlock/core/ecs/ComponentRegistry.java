@@ -40,6 +40,8 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
  */
 public class ComponentRegistry {
 
+    private static final Log log = Log.create(ComponentRegistry.class);
+
     private final EventBus eventBus;
 
     private final Map<Class<? extends Component>, Integer> typeToId = new Object2IntOpenHashMap<>();
@@ -135,9 +137,8 @@ public class ComponentRegistry {
     @SuppressWarnings("unchecked")
     public <T extends Component> void addComponent(int entityId, T component) {
         if (!entityExists(entityId)) {
-            Log.warn("ComponentRegistry", "Attempted to add " + component.getClass().getSimpleName() +
-                " to non-existent entity " + entityId + ". Ignoring. Ensure the entity was created " +
-                "via Entity.create() and has not been destroyed.");
+            log.warn("Attempted to add %s to non-existent entity %d. Ignoring. Ensure the entity was created via Entity.create() and has not been destroyed.",
+                component.getClass().getSimpleName(), entityId);
             return;
         }
         int typeId = getOrRegisterTypeId(component.getClass());
@@ -150,8 +151,8 @@ public class ComponentRegistry {
         if (component instanceof Name nameComp) {
             String nameValue = nameComp.getValue();
             if (nameIndex.containsKey(nameValue)) {
-                Log.debug("ComponentRegistry", "Name \"" + nameValue + "\" already in use by entity " +
-                    nameIndex.get(nameValue) + " — overwriting with entity " + entityId);
+                log.debug("Name \"%s\" already in use by entity %d — overwriting with entity %d",
+                    nameValue, nameIndex.get(nameValue), entityId);
             }
             nameIndex.put(nameValue, entityId);
         }
@@ -166,9 +167,8 @@ public class ComponentRegistry {
     @SuppressWarnings("unchecked")
     public <T extends Component> void addComponents(int entityId, T... components) {
         if (!entityExists(entityId)) {
-            Log.warn("ComponentRegistry", "Attempted to add components to non-existent entity " +
-                entityId + ". Ignoring. Ensure the entity was created via Entity.create() and " +
-                "has not been destroyed.");
+            log.warn("Attempted to add components to non-existent entity %d. Ignoring. Ensure the entity was created via Entity.create() and has not been destroyed.",
+                entityId);
             return;
         }
         for (T component : components) {
@@ -186,8 +186,8 @@ public class ComponentRegistry {
             if (component instanceof Name nameComp) {
                 String nameValue = nameComp.getValue();
                 if (nameIndex.containsKey(nameValue)) {
-                    Log.debug("ComponentRegistry", "Name \"" + nameValue + "\" already in use by entity " +
-                        nameIndex.get(nameValue) + " — overwriting with entity " + entityId);
+                    log.debug("Name \"%s\" already in use by entity %d — overwriting with entity %d",
+                        nameValue, nameIndex.get(nameValue), entityId);
                 }
                 nameIndex.put(nameValue, entityId);
             }
@@ -214,9 +214,8 @@ public class ComponentRegistry {
     @SuppressWarnings("unchecked")
     public void addComponentsSilent(int entityId, List<? extends Component> components) {
         if (!entityExists(entityId)) {
-            Log.warn("ComponentRegistry", "Attempted to silently add components to non-existent entity " +
-                entityId + ". Ignoring. Ensure the entity was created via Entity.create() and " +
-                "has not been destroyed.");
+            log.warn("Attempted to silently add components to non-existent entity %d. Ignoring. Ensure the entity was created via Entity.create() and has not been destroyed.",
+                entityId);
             return;
         }
         BitSet mask = entityComponentMasks.computeIfAbsent(entityId, e -> new BitSet());
@@ -228,8 +227,8 @@ public class ComponentRegistry {
             if (component instanceof Name nameComp) {
                 String nameValue = nameComp.getValue();
                 if (nameIndex.containsKey(nameValue)) {
-                    Log.debug("ComponentRegistry", "Name \"" + nameValue + "\" already in use by entity " +
-                        nameIndex.get(nameValue) + " — overwriting with entity " + entityId);
+                    log.debug("Name \"%s\" already in use by entity %d — overwriting with entity %d",
+                        nameValue, nameIndex.get(nameValue), entityId);
                 }
                 nameIndex.put(nameValue, entityId);
             }
@@ -384,9 +383,8 @@ public class ComponentRegistry {
         }
 
         if (cached.entityIds.size() > 1) {
-            Log.debug("ComponentRegistry", "getSingleton(" + type.getSimpleName() +
-                ") found " + cached.entityIds.size() + " entities — returning first. " +
-                "Use forEach() if multiple are intentional.");
+            log.debug("getSingleton(%s) found %d entities — returning first. Use forEach() if multiple are intentional.",
+                type.getSimpleName(), cached.entityIds.size());
         }
 
         ComponentStore<T> store = (ComponentStore<T>) stores.get(typeId);

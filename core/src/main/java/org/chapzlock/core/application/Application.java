@@ -5,6 +5,7 @@ import static org.lwjgl.glfw.GLFW.glfwPollEvents;
 import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
 
 import java.util.List;
+import java.util.Map;
 
 import org.chapzlock.core.animation.AnimationSystem;
 import org.chapzlock.core.asset.gltf.GltfAssetRegistry;
@@ -16,6 +17,7 @@ import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.input.InputMap;
 import org.chapzlock.core.logging.Log;
 import org.chapzlock.core.physics.PhysicsSystem;
+import org.chapzlock.core.ecs.SystemPhase;
 import org.chapzlock.core.render.CameraSystem;
 import org.chapzlock.core.render.MeshRegistry;
 import org.chapzlock.core.render.RenderSystem;
@@ -42,6 +44,9 @@ import lombok.Getter;
  * }</pre>
  */
 public class Application {
+
+    private static final Log log = Log.create(Application.class);
+
     @Getter
     private final ApplicationSpecification appSpec;
     private EngineContext context;
@@ -58,6 +63,9 @@ public class Application {
      * Starts the application and enters the main loop. Blocks until the window is closed.
      */
     public void run() {
+        log.info("Engine starting: %s (%dx%d)", appSpec.getWindowSpec().getTitle(),
+            appSpec.getWindowSpec().getWidth(), appSpec.getWindowSpec().getHeight());
+
         createSubsystems();
 
         List<GameSystem> engineSystems = createEngineSystems();
@@ -71,6 +79,7 @@ public class Application {
         logActiveSystems(sceneManager.getActiveSystems());
         mainLoop();
 
+        log.info("--- Shutdown ---");
         sceneManager.unloadAll();
         engineSystems.forEach(GameSystem::onDestroy);
         context.dispose();
@@ -85,7 +94,7 @@ public class Application {
         try {
             window = new Window(appSpec.getWindowSpec(), eventBus);
             window.create(0);
-            Log.debug("Window created: " + appSpec.getWindowSpec().getWidth() + "x" + appSpec.getWindowSpec().getHeight());
+            log.debug("Window created: %dx%d", appSpec.getWindowSpec().getWidth(), appSpec.getWindowSpec().getHeight());
 
             ShaderRegistry shaderRegistry = new ShaderRegistry();
             TextureRegistry textureRegistry = new TextureRegistry();
@@ -106,7 +115,7 @@ public class Application {
                 .gltfAssetRegistry(gltfAssetRegistry)
                 .build();
 
-            Log.debug("Subsystems initialized: MeshRegistry, TextureRegistry, ShaderRegistry");
+            log.info("Subsystems initialized: MeshRegistry, TextureRegistry, ShaderRegistry");
 
             sceneManager = new SceneManager(context);
             context.setSceneManager(sceneManager);
@@ -138,7 +147,7 @@ public class Application {
     }
 
     private void mainLoop() {
-        Log.debug("Main loop started");
+        log.info("--- Main loop started ---");
         isRunning = true;
         float lastTime = getTime();
 
@@ -182,12 +191,15 @@ public class Application {
     }
 
     private void logActiveSystems(List<GameSystem> systems) {
-        StringBuilder sb = new StringBuilder("Active system execution order:\n");
+        Map<SystemPhase, Long> phaseCounts = systems.stream()
+            .collect(java.util.stream.Collectors.groupingBy(GameSystem::phase, java.util.stream.Collectors.counting()));
+        String phaseSummary = phaseCounts.entrySet().stream()
+            .map(e -> e.getKey() + "=" + e.getValue())
+            .collect(java.util.stream.Collectors.joining(", "));
+        log.info("Systems active: %d (%s)", systems.size(), phaseSummary);
         for (GameSystem system : systems) {
-            sb.append("  [").append(system.phase()).append("] ")
-              .append(system.getClass().getSimpleName()).append("\n");
+            log.debug("  [%s] %s", system.phase(), system.getClass().getSimpleName());
         }
-        Log.info(sb.toString());
     }
 
     /**

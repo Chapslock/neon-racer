@@ -25,6 +25,8 @@ import org.joml.Vector3f;
  */
 public class CameraSystem {
 
+    private static final Log log = Log.create(CameraSystem.class);
+
     private final WindowSpecification windowSpec;
     private final Matrix4f cameraViewMatrix = new Matrix4f();
     private final Matrix4f projectionMatrix = new Matrix4f();
@@ -51,10 +53,10 @@ public class CameraSystem {
      */
     public Matrix4f calculateProjectionMatrix(Camera camera) {
         if (camera.getFieldOfView() <= 0 || camera.getFieldOfView() > 180) {
-            Log.warn("CameraSystem: degenerate FOV=" + camera.getFieldOfView() + " (expected 0 < fov <= 180 degrees). Projection matrix may be invalid.");
+            log.warn("Degenerate FOV=%.1f (expected 0 < fov <= 180 degrees). Projection matrix may be invalid.", camera.getFieldOfView());
         }
         if (windowSpec.getAspectRatio() <= 0) {
-            Log.warn("CameraSystem: degenerate aspect ratio=" + windowSpec.getAspectRatio() + " (window may not be initialized yet).");
+            log.warn("Degenerate aspect ratio=%.3f (window may not be initialized yet).", windowSpec.getAspectRatio());
         }
         if (!isCameraSettingsSame(camera)) {
             this.cachedFieldOfView = camera.getFieldOfView();

@@ -29,6 +29,8 @@ import org.joml.Matrix4f;
  */
 public class TransformSystem implements GameSystem {
 
+    private static final Log log = Log.create(TransformSystem.class);
+
     private ComponentRegistry registry;
     private final Set<Integer> visited = new HashSet<>();
 
@@ -58,8 +60,7 @@ public class TransformSystem implements GameSystem {
     private void propagateToChildren(Hierarchy parentHierarchy, Matrix4f parentWorldMatrix) {
         for (int childId : parentHierarchy.getChildren()) {
             if (!visited.add(childId)) {
-                Log.error("TransformSystem", "Cycle detected in hierarchy: entity " + childId +
-                    " is visited twice. Skipping to prevent stack overflow.");
+                log.error("Cycle detected in hierarchy: entity %d is visited twice. Skipping to prevent stack overflow.", childId);
                 continue;
             }
 

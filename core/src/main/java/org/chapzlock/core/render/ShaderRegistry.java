@@ -49,6 +49,8 @@ import org.joml.Vector4f;
  */
 public class ShaderRegistry implements Disposable {
 
+    private static final Log log = Log.create(ShaderRegistry.class);
+
     /**
      * Uniform location cache: programId → (uniformName → location).
      * Avoids repeated GPU queries for the same uniform each frame.
@@ -115,7 +117,7 @@ public class ShaderRegistry implements Disposable {
         shader.setProgramId(programId);
         allProgramIds.add(programId);
         uniformCache.put(programId, new HashMap<>());
-        Log.debug("Shader compiled: " + shader.getVertexPath() + " + " + shader.getFragmentPath() + " → programId=" + programId);
+        log.debug("Shader compiled: %s + %s → programId=%d", shader.getVertexPath(), shader.getFragmentPath(), programId);
     }
 
     /**
@@ -179,10 +181,8 @@ public class ShaderRegistry implements Disposable {
         return uniformMappings.computeIfAbsent(name, k -> {
             int uniformLocation = ShaderUtil.getUniformLocation(programId, k);
             if (uniformLocation < 0) {
-                Log.warn("ShaderRegistry", "Uniform \"" + k + "\" not found in shader (vertex=" +
-                    shader.getVertexPath() + ", fragment=" + shader.getFragmentPath() +
-                    "). It may have been removed or optimized away by the GLSL compiler. " +
-                    "Check the shader source file.");
+                log.warn("Uniform \"%s\" not found in shader (vertex=%s, fragment=%s). It may have been removed or optimized away by the GLSL compiler. Check the shader source file.",
+                    k, shader.getVertexPath(), shader.getFragmentPath());
             }
             return uniformLocation;
         });
@@ -262,7 +262,7 @@ public class ShaderRegistry implements Disposable {
         if (currentlyActiveProgramId == programId) {
             currentlyActiveProgramId = 0;
         }
-        Log.debug("Shader program released and deleted: programId=" + programId);
+        log.debug("Shader program released and deleted: programId=%d", programId);
     }
 
     /**
