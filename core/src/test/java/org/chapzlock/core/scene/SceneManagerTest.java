@@ -214,22 +214,18 @@ class SceneManagerTest {
         MeshRegistry meshRegistry = new MeshRegistry();
         TextureRegistry textureRegistry = new TextureRegistry();
         EventBus eb = new EventBus();
+        ComponentRegistry reg = new ComponentRegistry(eb);
         org.chapzlock.core.ecs.SystemScheduler scheduler = new org.chapzlock.core.ecs.SystemScheduler();
+        org.chapzlock.core.ecs.EntityFactory entityFactory = new org.chapzlock.core.ecs.EntityFactory(
+            reg, meshRegistry, textureRegistry, null);
         Engine assetEngine = new Engine(
-            new ComponentRegistry(eb),
-            eb,
-            meshRegistry,
-            textureRegistry,
-            null, null,
+            reg, eb, meshRegistry, textureRegistry, null, null,
             new org.chapzlock.core.application.Time(),
             new org.chapzlock.core.tween.TweenRegistry(),
             new org.chapzlock.core.asset.gltf.GltfAssetRegistry(),
-            scheduler,
+            scheduler, entityFactory, null, null,
             null, null, null, null, null
         );
-        org.chapzlock.core.ecs.EntityFactory entityFactory = new org.chapzlock.core.ecs.EntityFactory(
-            assetEngine.getRegistry(), meshRegistry, textureRegistry, null);
-        assetEngine.setEntityFactory(entityFactory);
         SceneManager sm = new SceneManager(assetEngine, scheduler);
 
         Mesh fakeMesh = Mesh.builder().id(42).build();

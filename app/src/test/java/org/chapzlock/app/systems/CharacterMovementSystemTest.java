@@ -29,11 +29,10 @@ class CharacterMovementSystemTest {
 
     @BeforeEach
     void setUp() {
-        engine = Engine.testEngine();
+        engine = Engine.testEngineWithPhysics();
         registry = engine.getRegistry();
 
-        physicsSystem = new PhysicsSystem();
-        physicsSystem.onInit(engine);
+        physicsSystem = engine.getPhysicsSystem();
         physics = engine.getPhysics();
 
         player = createPlayer();

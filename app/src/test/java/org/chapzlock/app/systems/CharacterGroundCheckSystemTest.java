@@ -23,12 +23,9 @@ class CharacterGroundCheckSystemTest {
 
     @BeforeEach
     void setUp() {
-        engine = Engine.testEngine();
+        engine = Engine.testEngineWithPhysics();
         registry = engine.getRegistry();
-
-        // PhysicsSystem creates PhysicsWorld + Physics internally, sets engine.physics
-        physicsSystem = new PhysicsSystem();
-        physicsSystem.onInit(engine);
+        physicsSystem = engine.getPhysicsSystem();
 
         system = new CharacterGroundCheckSystem();
         system.onInit(engine);

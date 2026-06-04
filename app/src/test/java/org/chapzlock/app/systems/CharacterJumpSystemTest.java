@@ -36,12 +36,11 @@ class CharacterJumpSystemTest {
 
     @BeforeEach
     void setUp() {
-        engine = Engine.testEngine();
+        engine = Engine.testEngineWithPhysics();
         registry = engine.getRegistry();
         eventBus = engine.getEventBus();
 
-        physicsSystem = new PhysicsSystem();
-        physicsSystem.onInit(engine);
+        physicsSystem = engine.getPhysicsSystem();
         physics = engine.getPhysics();
 
         // Build and activate InputMap with "jump" action bound to SPACE

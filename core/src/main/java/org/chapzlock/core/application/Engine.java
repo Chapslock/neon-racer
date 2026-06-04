@@ -54,15 +54,14 @@ public class Engine implements Disposable {
     private final TransformSystem transformSystem;
     private final PhysicsSystem physicsSystem;
     private final RenderSystem renderSystem;
+    private final EntityFactory entityFactory;
+    private final CameraProjection cameraProjection;
+    private final Physics physics;
     /**
-     * Set after construction due to circular dependency: SceneManager needs
-     * Engine in its constructor, but Engine holds SceneManager.
-     * This is intentional — set once during Application.run() and never changed after.
+     * Set once via {@link #initSceneManager(SceneManager)} due to circular dependency:
+     * SceneManager needs Engine in its constructor, but Engine holds SceneManager.
      */
     private SceneManager sceneManager;
-    private Physics physics;
-    private EntityFactory entityFactory;
-    private CameraProjection cameraProjection;
 
     public Engine(ComponentRegistry registry,
            EventBus eventBus,
@@ -74,6 +73,9 @@ public class Engine implements Disposable {
            TweenRegistry tweenRegistry,
            GltfAssetRegistry gltfAssetRegistry,
            SystemScheduler scheduler,
+           EntityFactory entityFactory,
+           CameraProjection cameraProjection,
+           Physics physics,
            TweenSystem tweenSystem,
            AnimationSystem animationSystem,
            TransformSystem transformSystem,
@@ -89,6 +91,9 @@ public class Engine implements Disposable {
         this.tweenRegistry = tweenRegistry;
         this.gltfAssetRegistry = gltfAssetRegistry;
         this.scheduler = scheduler;
+        this.entityFactory = entityFactory;
+        this.cameraProjection = cameraProjection;
+        this.physics = physics;
         this.tweenSystem = tweenSystem;
         this.animationSystem = animationSystem;
         this.transformSystem = transformSystem;
@@ -139,20 +144,19 @@ public class Engine implements Disposable {
         PhysicsSystem physicsSystem = new PhysicsSystem(physicsConfig, cameraProjection, physicsWorld);
         RenderSystem renderSystem = new RenderSystem();
 
-        // Assemble engine
+        // EntityFactory
+        EntityFactory entityFactory = new EntityFactory(registry, meshRegistry, textureRegistry, shaderRegistry);
+
+        // Assemble engine (immutable after this — except sceneManager)
         Engine engine = new Engine(
             registry, eventBus, meshRegistry, textureRegistry, shaderRegistry,
             window, time, tweenRegistry, gltfAssetRegistry,
-            scheduler, tweenSystem, animationSystem, transformSystem, physicsSystem, renderSystem);
-        engine.setCameraProjection(cameraProjection);
-        engine.setPhysics(physics);
+            scheduler, entityFactory, cameraProjection, physics,
+            tweenSystem, animationSystem, transformSystem, physicsSystem, renderSystem);
 
-        // Wire components that need the full Engine reference
-        EntityFactory entityFactory = new EntityFactory(registry, meshRegistry, textureRegistry, shaderRegistry);
-        engine.setEntityFactory(entityFactory);
-
+        // SceneManager needs Engine for system.onInit(engine) — the one circular dep
         SceneManager sceneManager = new SceneManager(engine, scheduler);
-        engine.setSceneManager(sceneManager);
+        engine.initSceneManager(sceneManager);
 
         // Register permanent systems into scheduler
         scheduler.addPermanent(tweenSystem);
@@ -183,21 +187,54 @@ public class Engine implements Disposable {
      */
     public static Engine testEngine() {
         EventBus eventBus = new EventBus();
+        ComponentRegistry registry = new ComponentRegistry(eventBus);
         SystemScheduler scheduler = new SystemScheduler();
+        GltfAssetRegistry gltfAssetRegistry = new GltfAssetRegistry();
+        EntityFactory entityFactory = new EntityFactory(registry, null, null, null);
+
         Engine engine = new Engine(
-            new ComponentRegistry(eventBus),
-            eventBus,
-            null, null, null, null,
-            new Time(),
-            new TweenRegistry(),
-            new GltfAssetRegistry(),
-            scheduler,
-            null, null, null, null, null
-        );
-        EntityFactory entityFactory = new EntityFactory(engine.getRegistry(), null, null, null);
-        engine.setEntityFactory(entityFactory);
+            registry, eventBus, null, null, null, null,
+            new Time(), new TweenRegistry(), gltfAssetRegistry,
+            scheduler, entityFactory, null, null,
+            null, null, null, null, null);
+
         SceneManager sceneManager = new SceneManager(engine, scheduler);
-        engine.setSceneManager(sceneManager);
+        engine.initSceneManager(sceneManager);
+
+        return engine;
+    }
+
+    /**
+     * Creates a minimal engine for unit tests that need physics (no GPU systems).
+     *
+     * <p>Unlike {@link #testEngine()}, this includes a functioning PhysicsSystem and Physics
+     * instance. Use this when testing systems that interact with the physics world.
+     *
+     * @return a test engine with physics, ComponentRegistry, EventBus, Time, and TweenRegistry
+     */
+    public static Engine testEngineWithPhysics() {
+        EventBus eventBus = new EventBus();
+        ComponentRegistry registry = new ComponentRegistry(eventBus);
+        SystemScheduler scheduler = new SystemScheduler();
+        GltfAssetRegistry gltfAssetRegistry = new GltfAssetRegistry();
+        EntityFactory entityFactory = new EntityFactory(registry, null, null, null);
+
+        PhysicsWorldConfig physicsConfig = PhysicsWorldConfig.defaults();
+        PhysicsWorld physicsWorld = new PhysicsWorld(physicsConfig);
+        Physics physics = new Physics(physicsWorld);
+        PhysicsSystem physicsSystem = new PhysicsSystem(physicsConfig, null, physicsWorld);
+
+        Engine engine = new Engine(
+            registry, eventBus, null, null, null, null,
+            new Time(), new TweenRegistry(), gltfAssetRegistry,
+            scheduler, entityFactory, null, physics,
+            null, null, null, physicsSystem, null);
+
+        SceneManager sceneManager = new SceneManager(engine, scheduler);
+        engine.initSceneManager(sceneManager);
+
+        physicsSystem.onInit(engine);
+
         return engine;
     }
 
@@ -216,19 +253,18 @@ public class Engine implements Disposable {
         if (window != null) window.destroy();
     }
 
-    public void setSceneManager(SceneManager sceneManager) {
+    /**
+     * Sets the SceneManager — the single allowed mutation after construction.
+     * Package-private; can only be called once. Exists because SceneManager needs Engine
+     * in its constructor (for {@code system.onInit(engine)} calls), creating a circular dependency.
+     *
+     * @param sceneManager the scene manager to set
+     * @throws IllegalStateException if called more than once
+     */
+    void initSceneManager(SceneManager sceneManager) {
+        if (this.sceneManager != null) {
+            throw new IllegalStateException("SceneManager already initialized");
+        }
         this.sceneManager = sceneManager;
-    }
-
-    public void setPhysics(Physics physics) {
-        this.physics = physics;
-    }
-
-    public void setEntityFactory(EntityFactory entityFactory) {
-        this.entityFactory = entityFactory;
-    }
-
-    public void setCameraProjection(CameraProjection cameraProjection) {
-        this.cameraProjection = cameraProjection;
     }
 }

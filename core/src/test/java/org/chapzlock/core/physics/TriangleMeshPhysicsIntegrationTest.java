@@ -30,12 +30,10 @@ class TriangleMeshPhysicsIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        engine = Engine.testEngine();
+        engine = Engine.testEngineWithPhysics();
         registry = engine.getRegistry();
         entityFactory = engine.getEntityFactory();
-
-        physicsSystem = new PhysicsSystem(PhysicsWorldConfig.defaults());
-        physicsSystem.onInit(engine);
+        physicsSystem = engine.getPhysicsSystem();
     }
 
     @Test

@@ -87,13 +87,6 @@ public class PhysicsSystem implements GameSystem {
         if (this.cameraProjection == null) {
             this.cameraProjection = engine.getCameraProjection();
         }
-        if (this.world == null) {
-            // Fallback for cases where PhysicsSystem is used without Engine.create()
-            this.world = new PhysicsWorld(config);
-            this.world.setMeshRegistry(engine.getMeshRegistry());
-            Physics physics = new Physics(world);
-            engine.setPhysics(physics);
-        }
         subscribeToLifecycleEvents(engine.getEventBus());
     }
 
