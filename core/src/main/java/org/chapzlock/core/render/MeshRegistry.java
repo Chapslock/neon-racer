@@ -88,12 +88,14 @@ public class MeshRegistry implements Disposable {
             log.debug("Mesh cache hit: id=%d (%d indices)", existingId, meshPool.get(existingId).getVertexCount());
             return meshPool.get(existingId);
         }
+        long start = System.nanoTime();
         Mesh mesh = MeshUtil.bindMeshDataToGpu(rawMeshData);
+        long elapsedMs = (System.nanoTime() - start) / 1_000_000;
         meshPool.put(mesh.getId(), mesh);
         rawMeshDataPool.put(mesh.getId(), rawMeshData);
         rawMeshDataToIdMap.put(rawMeshData, mesh.getId());
         idToRawMeshDataMap.put(mesh.getId(), rawMeshData);
-        log.debug("Mesh uploaded to GPU: id=%d, %d indices", mesh.getId(), mesh.getVertexCount());
+        log.debug("Mesh uploaded in %dms: id=%d, %d indices", elapsedMs, mesh.getId(), mesh.getVertexCount());
         return mesh;
     }
 

@@ -105,12 +105,14 @@ public class TextureRegistry implements Disposable {
         if (existingId != null) {
             return texturePool.get(existingId);
         }
+        long start = System.nanoTime();
         RawImageData rawImageData = FileUtils.loadRawImage(filePath, flipVertically);
         Texture texture = TextureUtil.bindTextureDataToGpu(rawImageData, srgb);
+        long elapsedMs = (System.nanoTime() - start) / 1_000_000;
         texturePool.put(texture.getId(), texture);
         filePathToIdMap.put(key, texture.getId());
         idToKeyMap.put(texture.getId(), key);
-        log.debug("Texture loaded: \"%s\" → id=%d (%dx%d%s)", filePath, texture.getId(), rawImageData.getWidth(), rawImageData.getHeight(), srgb ? ", sRGB" : "");
+        log.debug("Texture loaded in %dms: \"%s\" → id=%d (%dx%d%s)", elapsedMs, filePath, texture.getId(), rawImageData.getWidth(), rawImageData.getHeight(), srgb ? ", sRGB" : "");
         return texture;
     }
 
@@ -159,12 +161,14 @@ public class TextureRegistry implements Disposable {
         if (existingId != null) {
             return texturePool.get(existingId);
         }
+        long start = System.nanoTime();
         RawImageData rawImageData = FileUtils.loadRawImageFromMemory(imageBytes, cacheKey, flipVertically);
         Texture texture = TextureUtil.bindTextureDataToGpu(rawImageData, srgb);
+        long elapsedMs = (System.nanoTime() - start) / 1_000_000;
         texturePool.put(texture.getId(), texture);
         filePathToIdMap.put(key, texture.getId());
         idToKeyMap.put(texture.getId(), key);
-        log.debug("Texture loaded from memory: \"%s\" → id=%d (%dx%d%s)", cacheKey, texture.getId(), rawImageData.getWidth(), rawImageData.getHeight(), srgb ? ", sRGB" : "");
+        log.debug("Texture loaded in %dms: \"%s\" → id=%d (%dx%d%s)", elapsedMs, cacheKey, texture.getId(), rawImageData.getWidth(), rawImageData.getHeight(), srgb ? ", sRGB" : "");
         return texture;
     }
 

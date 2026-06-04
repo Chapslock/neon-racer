@@ -109,15 +109,17 @@ public class ShaderRegistry implements Disposable {
         if (shader.isCompiled()) {
             return;
         }
+        long start = System.nanoTime();
         String vertexShader = FileUtils.loadAsString(shader.getVertexPath());
         String fragmentShader = FileUtils.loadAsString(shader.getFragmentPath());
         int vertexShaderId = ShaderUtil.compileShader(vertexShader, GL_VERTEX_SHADER);
         int fragmentShaderId = ShaderUtil.compileShader(fragmentShader, GL_FRAGMENT_SHADER);
         int programId = ShaderUtil.linkShaderProgram(vertexShaderId, fragmentShaderId);
+        long elapsedMs = (System.nanoTime() - start) / 1_000_000;
         shader.setProgramId(programId);
         allProgramIds.add(programId);
         uniformCache.put(programId, new HashMap<>());
-        log.debug("Shader compiled: %s + %s → programId=%d", shader.getVertexPath(), shader.getFragmentPath(), programId);
+        log.debug("Shader compiled in %dms: %s + %s → programId=%d", elapsedMs, shader.getVertexPath(), shader.getFragmentPath(), programId);
     }
 
     /**
