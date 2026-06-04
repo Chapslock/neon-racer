@@ -1,16 +1,18 @@
 package org.chapzlock.core.logging;
 
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class LogEngine {
 
-    private static LogLevel globalLevel = resolveGlobalLevel();
+    private static volatile LogLevel globalLevel = resolveGlobalLevel();
     private static final Map<String, LogLevel> classOverrides = new ConcurrentHashMap<>();
-    private static long startNanos = System.nanoTime();
-    private static PrintStream out = System.out;
-    private static PrintStream err = System.err;
+    private static volatile long startNanos = System.nanoTime();
+    private static volatile PrintStream out = System.out;
+    private static volatile PrintStream err = System.err;
 
     private static final String[] LEVEL_LABELS = {"TRACE", "DEBUG", "INFO ", "WARN ", "ERROR"};
 
@@ -57,7 +59,9 @@ public class LogEngine {
 
     public static void emit(LogLevel level, String source, String message, Throwable t) {
         emit(level, source, message);
-        t.printStackTrace(err);
+        StringWriter sw = new StringWriter();
+        t.printStackTrace(new PrintWriter(sw));
+        err.print(sw);
     }
 
     public static void resetClock() {
