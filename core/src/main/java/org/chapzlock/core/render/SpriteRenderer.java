@@ -35,7 +35,7 @@ import org.lwjgl.opengl.GL11;
  */
 public class SpriteRenderer {
 
-    private final ShaderSystem shaderSystem;
+    private final ShaderRegistry shaderRegistry;
     private final TextureRegistry textureRegistry;
     private final Matrix4f projection;
     private Shader shader;
@@ -43,13 +43,13 @@ public class SpriteRenderer {
     /**
      * Creates a sprite renderer for the given window dimensions.
      *
-     * @param shaderSystem the shader system for compiling and setting uniforms
+     * @param shaderRegistry the shader registry for compiling and setting uniforms
      * @param textureRegistry the texture registry for binding textures to units
      * @param windowSpec window dimensions used to set up orthographic projection
      */
-    public SpriteRenderer(ShaderSystem shaderSystem, TextureRegistry textureRegistry,
+    public SpriteRenderer(ShaderRegistry shaderRegistry, TextureRegistry textureRegistry,
                           WindowSpecification windowSpec) {
-        this.shaderSystem = shaderSystem;
+        this.shaderRegistry = shaderRegistry;
         this.textureRegistry = textureRegistry;
         this.projection = new Matrix4f().identity()
             .ortho2D(0f, windowSpec.getWidth(), windowSpec.getHeight(), 0f);
@@ -60,7 +60,7 @@ public class SpriteRenderer {
      */
     public void init() {
         this.shader = new Shader(SpriteShaderProps.VERTEX_FILE, SpriteShaderProps.FRAGMENT_FILE);
-        shaderSystem.compileAndLink(shader);
+        shaderRegistry.compileAndLink(shader);
     }
 
     /**
@@ -70,17 +70,17 @@ public class SpriteRenderer {
      * @param material the sprite material for this batch
      */
     public void beginBatch(SpriteMaterial material) {
-        shaderSystem.use(shader);
+        shaderRegistry.use(shader);
 
         GL11.glDisable(GL11.GL_DEPTH_TEST);
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         GL11.glDisable(GL11.GL_CULL_FACE);
 
-        shaderSystem.setUniform(shader, SpriteShaderProps.UNIFORM_PROJECTION_MATRIX, projection);
+        shaderRegistry.setUniform(shader, SpriteShaderProps.UNIFORM_PROJECTION_MATRIX, projection);
         textureRegistry.bind(material.texture(), 0);
-        shaderSystem.setUniform(shader, SpriteShaderProps.UNIFORM_TEXTURE_SAMPLER, 0);
-        shaderSystem.setUniform(shader, SpriteShaderProps.UNIFORM_TINT_COLOR, material.tint());
+        shaderRegistry.setUniform(shader, SpriteShaderProps.UNIFORM_TEXTURE_SAMPLER, 0);
+        shaderRegistry.setUniform(shader, SpriteShaderProps.UNIFORM_TINT_COLOR, material.tint());
     }
 
     /**
@@ -89,7 +89,7 @@ public class SpriteRenderer {
      * @param transform the entity's screen-space transform
      */
     public void renderEntity(Transform transform) {
-        shaderSystem.setUniform(shader,
+        shaderRegistry.setUniform(shader,
             SpriteShaderProps.UNIFORM_TRANSFORMATION_MATRIX, transform.getLocalMatrix());
     }
 
@@ -100,6 +100,6 @@ public class SpriteRenderer {
         GL11.glEnable(GL11.GL_DEPTH_TEST);
         GL11.glDisable(GL11.GL_BLEND);
         GL11.glEnable(GL11.GL_CULL_FACE);
-        shaderSystem.clearProgram();
+        shaderRegistry.clearProgram();
     }
 }

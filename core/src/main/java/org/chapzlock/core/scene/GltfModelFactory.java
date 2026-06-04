@@ -32,7 +32,7 @@ import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.Entity;
 import org.chapzlock.core.render.MeshRegistry;
 import org.chapzlock.core.render.PbrShaderProps;
-import org.chapzlock.core.render.ShaderSystem;
+import org.chapzlock.core.render.ShaderRegistry;
 import org.chapzlock.core.render.TextureRegistry;
 
 /**
@@ -78,7 +78,7 @@ public class GltfModelFactory {
     private final ComponentRegistry registry;
     private final MeshRegistry meshRegistry;
     private final TextureRegistry textureRegistry;
-    private final ShaderSystem shaderSystem;
+    private final ShaderRegistry shaderRegistry;
 
     /**
      * Creates an instantiator connected to the engine's subsystems.
@@ -93,7 +93,7 @@ public class GltfModelFactory {
         this.registry = ctx.getRegistry();
         this.meshRegistry = ctx.getMeshRegistry();
         this.textureRegistry = ctx.getTextureRegistry();
-        this.shaderSystem = ctx.getShaderSystem();
+        this.shaderRegistry = ctx.getShaderRegistry();
     }
 
     /**
@@ -168,7 +168,7 @@ public class GltfModelFactory {
         // Phase 3: Upload meshes and create materials.
         // Only runs for nodes that reference a mesh (meshIndex >= 0).
         // Skipped entirely if GPU systems are null (unit test mode).
-        if (meshRegistry != null && shaderSystem != null) {
+        if (meshRegistry != null && shaderRegistry != null) {
             Shader pbrShader = getOrCreatePbrShader();
             instantiateMeshes(asset, nodes, entityIds, pbrShader);
         }
@@ -281,7 +281,7 @@ public class GltfModelFactory {
         }
 
         // Phase 3: Meshes — same as instantiate()
-        if (meshRegistry != null && shaderSystem != null) {
+        if (meshRegistry != null && shaderRegistry != null) {
             Shader pbrShader = getOrCreatePbrShader();
             instantiateMeshes(asset, nodes, entityIds, pbrShader);
         }
@@ -390,7 +390,7 @@ public class GltfModelFactory {
      */
     private Shader getOrCreatePbrShader() {
         Shader shader = new Shader(PbrShaderProps.VERTEX_FILE, PbrShaderProps.FRAGMENT_FILE);
-        shaderSystem.compileAndLink(shader);
+        shaderRegistry.compileAndLink(shader);
         return shader;
     }
 

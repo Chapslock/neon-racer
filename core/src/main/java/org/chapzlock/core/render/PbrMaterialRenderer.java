@@ -39,7 +39,7 @@ import org.joml.Vector3f;
  */
 public class PbrMaterialRenderer {
 
-    private final ShaderSystem shaderSystem;
+    private final ShaderRegistry shaderRegistry;
     private final TextureRegistry textureRegistry;
 
     /**
@@ -83,8 +83,8 @@ public class PbrMaterialRenderer {
      */
     private float[] blendedNormalDeltas;
 
-    public PbrMaterialRenderer(ShaderSystem shaderSystem, TextureRegistry textureRegistry) {
-        this.shaderSystem = shaderSystem;
+    public PbrMaterialRenderer(ShaderRegistry shaderRegistry, TextureRegistry textureRegistry) {
+        this.shaderRegistry = shaderRegistry;
         this.textureRegistry = textureRegistry;
     }
 
@@ -100,19 +100,19 @@ public class PbrMaterialRenderer {
      */
     public void applyPbr(RenderContext ctx, PbrMaterial material) {
         Shader shader = material.getShader();
-        shaderSystem.use(shader);
+        shaderRegistry.use(shader);
 
         // Matrices
-        shaderSystem.setUniform(shader, UNIFORM_VIEW_MATRIX, ctx.getViewMatrix());
-        shaderSystem.setUniform(shader, UNIFORM_PROJECTION_MATRIX, ctx.getProjectionMatrix());
+        shaderRegistry.setUniform(shader, UNIFORM_VIEW_MATRIX, ctx.getViewMatrix());
+        shaderRegistry.setUniform(shader, UNIFORM_PROJECTION_MATRIX, ctx.getProjectionMatrix());
 
         // Material factors
-        shaderSystem.setUniform(shader, UNIFORM_BASE_COLOR_FACTOR, material.getBaseColorFactor());
-        shaderSystem.setUniform(shader, UNIFORM_METALLIC_FACTOR, material.getMetallicFactor());
-        shaderSystem.setUniform(shader, UNIFORM_ROUGHNESS_FACTOR, material.getRoughnessFactor());
-        shaderSystem.setUniform(shader, UNIFORM_EMISSIVE_FACTOR, material.getEmissiveFactor());
-        shaderSystem.setUniform(shader, UNIFORM_ALPHA_CUTOFF, material.getAlphaCutoff());
-        shaderSystem.setUniform(shader, UNIFORM_ALPHA_MODE, material.getAlphaMode().ordinal());
+        shaderRegistry.setUniform(shader, UNIFORM_BASE_COLOR_FACTOR, material.getBaseColorFactor());
+        shaderRegistry.setUniform(shader, UNIFORM_METALLIC_FACTOR, material.getMetallicFactor());
+        shaderRegistry.setUniform(shader, UNIFORM_ROUGHNESS_FACTOR, material.getRoughnessFactor());
+        shaderRegistry.setUniform(shader, UNIFORM_EMISSIVE_FACTOR, material.getEmissiveFactor());
+        shaderRegistry.setUniform(shader, UNIFORM_ALPHA_CUTOFF, material.getAlphaCutoff());
+        shaderRegistry.setUniform(shader, UNIFORM_ALPHA_MODE, material.getAlphaMode().ordinal());
 
         // Textures
         bindTextureIfPresent(shader, material.getBaseColorMap(), 0,
@@ -127,30 +127,30 @@ public class PbrMaterialRenderer {
             UNIFORM_EMISSIVE_MAP, UNIFORM_HAS_EMISSIVE_MAP);
 
         // Camera position (needed for specular calculations in fragment shader)
-        shaderSystem.setUniform(shader, UNIFORM_CAMERA_POSITION, ctx.getCameraPosition());
-        shaderSystem.setUniform(shader, UNIFORM_AMBIENT_STRENGTH, ctx.getEffectiveAmbientStrength());
+        shaderRegistry.setUniform(shader, UNIFORM_CAMERA_POSITION, ctx.getCameraPosition());
+        shaderRegistry.setUniform(shader, UNIFORM_AMBIENT_STRENGTH, ctx.getEffectiveAmbientStrength());
 
         // Directional light
         boolean hasDirLight = ctx.getDirectionalLight() != null;
-        shaderSystem.setUniform(shader, UNIFORM_HAS_DIR_LIGHT, hasDirLight);
+        shaderRegistry.setUniform(shader, UNIFORM_HAS_DIR_LIGHT, hasDirLight);
         if (hasDirLight) {
-            shaderSystem.setUniform(shader, UNIFORM_DIR_LIGHT_DIRECTION,
+            shaderRegistry.setUniform(shader, UNIFORM_DIR_LIGHT_DIRECTION,
                 ctx.getDirectionalLight().getDirection());
-            shaderSystem.setUniform(shader, UNIFORM_DIR_LIGHT_COLOR,
+            shaderRegistry.setUniform(shader, UNIFORM_DIR_LIGHT_COLOR,
                 ctx.getDirectionalLight().getColor().toVector3f());
         }
 
         // Point lights
         List<RenderContext.PointLightInstance> lights = ctx.getPointLights();
-        shaderSystem.setUniform(shader, UNIFORM_NUM_POINT_LIGHTS, lights.size());
+        shaderRegistry.setUniform(shader, UNIFORM_NUM_POINT_LIGHTS, lights.size());
         for (int i = 0; i < lights.size(); i++) {
             RenderContext.PointLightInstance pl = lights.get(i);
-            shaderSystem.setUniform(shader, UNIFORM_POINT_LIGHT_POSITIONS + "[" + i + "]",
+            shaderRegistry.setUniform(shader, UNIFORM_POINT_LIGHT_POSITIONS + "[" + i + "]",
                 pl.position());
-            shaderSystem.setUniform(shader, UNIFORM_POINT_LIGHT_COLORS + "[" + i + "]",
+            shaderRegistry.setUniform(shader, UNIFORM_POINT_LIGHT_COLORS + "[" + i + "]",
                 pl.color().toVector3f());
             Attenuation att = pl.attenuation();
-            shaderSystem.setUniform(shader, UNIFORM_POINT_LIGHT_ATTENUATION + "[" + i + "]",
+            shaderRegistry.setUniform(shader, UNIFORM_POINT_LIGHT_ATTENUATION + "[" + i + "]",
                 new Vector3f(att.constant(), att.linear(), att.quadratic()));
         }
     }
@@ -183,12 +183,12 @@ public class PbrMaterialRenderer {
             ? transform.getWorldMatrix()
             : new Matrix4f();
 
-        shaderSystem.setUniform(material.getShader(), UNIFORM_MODEL_MATRIX, modelMatrix);
+        shaderRegistry.setUniform(material.getShader(), UNIFORM_MODEL_MATRIX, modelMatrix);
 
         // --- GPU Skinning: upload joint matrices if the entity has a skeleton ---
         Skeleton skeleton = ctx.getRegistry().getComponent(entityId, Skeleton.class);
         if (skeleton != null) {
-            shaderSystem.setUniform(material.getShader(), UNIFORM_HAS_SKIN, true);
+            shaderRegistry.setUniform(material.getShader(), UNIFORM_HAS_SKIN, true);
             int[] jointEntities = skeleton.getJointEntities();
             Matrix4f[] inverseBindMatrices = skeleton.getInverseBindMatrices();
             modelMatrix.invert(tempInverseModel);
@@ -204,11 +204,11 @@ public class PbrMaterialRenderer {
                 } else {
                     tempJointMatrix.identity();
                 }
-                shaderSystem.setUniform(material.getShader(),
+                shaderRegistry.setUniform(material.getShader(),
                     UNIFORM_JOINT_MATRICES + "[" + j + "]", tempJointMatrix);
             }
         } else {
-            shaderSystem.setUniform(material.getShader(), UNIFORM_HAS_SKIN, false);
+            shaderRegistry.setUniform(material.getShader(), UNIFORM_HAS_SKIN, false);
         }
 
         // --- Morph Targets: compute blended deltas on CPU and upload as vertex attributes ---
@@ -216,10 +216,10 @@ public class PbrMaterialRenderer {
         Mesh mesh = ctx.getRegistry().getComponent(entityId, Mesh.class);
         if (morphTargets != null && morphTargets.getPositionDeltaArrays() != null
                 && hasNonZeroWeight(morphTargets.getWeights()) && mesh != null) {
-            shaderSystem.setUniform(material.getShader(), UNIFORM_HAS_MORPH_TARGETS, true);
+            shaderRegistry.setUniform(material.getShader(), UNIFORM_HAS_MORPH_TARGETS, true);
             uploadBlendedMorphDeltas(mesh, morphTargets);
         } else {
-            shaderSystem.setUniform(material.getShader(), UNIFORM_HAS_MORPH_TARGETS, false);
+            shaderRegistry.setUniform(material.getShader(), UNIFORM_HAS_MORPH_TARGETS, false);
             // Disable morph attribute slots to prevent stale data from a previous entity
             if (mesh != null) {
                 MeshUtil.disableMorphAttributes(mesh.getVaoId(),
@@ -229,7 +229,7 @@ public class PbrMaterialRenderer {
     }
 
     public void unapply() {
-        shaderSystem.clearProgram();
+        shaderRegistry.clearProgram();
     }
 
     /**
@@ -372,10 +372,10 @@ public class PbrMaterialRenderer {
                                       String samplerUniform, String flagUniform) {
         if (texture != null) {
             textureRegistry.bind(texture, unit);
-            shaderSystem.setUniform(shader, samplerUniform, unit);
-            shaderSystem.setUniform(shader, flagUniform, true);
+            shaderRegistry.setUniform(shader, samplerUniform, unit);
+            shaderRegistry.setUniform(shader, flagUniform, true);
         } else {
-            shaderSystem.setUniform(shader, flagUniform, false);
+            shaderRegistry.setUniform(shader, flagUniform, false);
         }
     }
 }

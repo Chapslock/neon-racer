@@ -247,7 +247,7 @@ public class SceneInstantiator {
             context.getTextureRegistry().retain(id);
         }
         for (int id : assets.shaderProgramIds) {
-            context.getShaderSystem().retain(id);
+            context.getShaderRegistry().retain(id);
         }
     }
 
@@ -268,7 +268,7 @@ public class SceneInstantiator {
             context.getTextureRegistry().release(id);
         }
         for (int id : assets.shaderProgramIds) {
-            context.getShaderSystem().release(id);
+            context.getShaderRegistry().release(id);
         }
     }
 

@@ -39,8 +39,8 @@ class LogTest {
 
     @Test
     void debug_withTag_includesTagInBrackets() {
-        Log.debug("ShaderSystem", "compiled program 5");
-        assertEquals("[DEBUG] [ShaderSystem] compiled program 5\n", outCapture.toString());
+        Log.debug("ShaderRegistry", "compiled program 5");
+        assertEquals("[DEBUG] [ShaderRegistry] compiled program 5\n", outCapture.toString());
     }
 
     @Test
@@ -64,7 +64,7 @@ class LogTest {
     @Test
     void debug_whenDisabled_doesNotOutput() {
         Log.setDebugEnabled(false);
-        Log.debug("ShaderSystem", "should not appear");
+        Log.debug("ShaderRegistry", "should not appear");
         assertEquals("", outCapture.toString());
     }
 }

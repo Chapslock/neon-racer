@@ -60,7 +60,7 @@ import lombok.experimental.UtilityClass;
  * Locations are stable for the lifetime of a program (they don't change frame-to-frame), so
  * they should be cached.
  *
- * @see ShaderSystem
+ * @see ShaderRegistry
  * @see PbrShaderProps
  */
 @UtilityClass

@@ -16,7 +16,7 @@ graph TD
     EC --> EB[EventBus]
     EC --> MS[MeshSystem]
     EC --> TS[TextureSystem]
-    EC --> SS[ShaderSystem]
+    EC --> SS[ShaderRegistry]
     EC --> CS[CameraSystem]
     EC --> SM[SceneManager]
     EC --> Win[Window]

@@ -11,7 +11,7 @@ import lombok.Setter;
  * Shader component storing GLSL source paths and compiled program ID.
  *
  * <p>Created by specifying vertex and fragment shader paths.
- * Compiled by {@link org.chapzlock.core.render.ShaderSystem}.
+ * Compiled by {@link org.chapzlock.core.render.ShaderRegistry}.
  */
 @Builder
 @Getter

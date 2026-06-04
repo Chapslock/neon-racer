@@ -47,7 +47,7 @@ import org.joml.Vector4f;
  * @see ShaderUtil
  * @see PbrShaderProps
  */
-public class ShaderSystem implements Disposable {
+public class ShaderRegistry implements Disposable {
 
     /**
      * Uniform location cache: programId → (uniformName → location).
@@ -69,7 +69,7 @@ public class ShaderSystem implements Disposable {
      */
     private final RefCounted refCounted = new RefCounted(this::deleteProgram);
 
-    public ShaderSystem() {
+    public ShaderRegistry() {
     }
 
     /**
@@ -179,7 +179,7 @@ public class ShaderSystem implements Disposable {
         return uniformMappings.computeIfAbsent(name, k -> {
             int uniformLocation = ShaderUtil.getUniformLocation(programId, k);
             if (uniformLocation < 0) {
-                Log.warn("ShaderSystem", "Uniform \"" + k + "\" not found in shader (vertex=" +
+                Log.warn("ShaderRegistry", "Uniform \"" + k + "\" not found in shader (vertex=" +
                     shader.getVertexPath() + ", fragment=" + shader.getFragmentPath() +
                     "). It may have been removed or optimized away by the GLSL compiler. " +
                     "Check the shader source file.");

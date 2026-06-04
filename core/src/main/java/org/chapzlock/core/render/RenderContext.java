@@ -25,7 +25,7 @@ public class RenderContext {
 
     private final ComponentRegistry registry;
     private final MeshRegistry meshRegistry;
-    private final ShaderSystem shaderSystem;
+    private final ShaderRegistry shaderRegistry;
     private final TextureRegistry textureRegistry;
     private final CameraSystem cameraSystem;
     private final SceneManager sceneManager;
@@ -46,7 +46,7 @@ public class RenderContext {
     public RenderContext(EngineContext ctx) {
         this.registry = ctx.getRegistry();
         this.meshRegistry = ctx.getMeshRegistry();
-        this.shaderSystem = ctx.getShaderSystem();
+        this.shaderRegistry = ctx.getShaderRegistry();
         this.textureRegistry = ctx.getTextureRegistry();
         this.cameraSystem = ctx.getCameraSystem();
         this.sceneManager = ctx.getSceneManager();

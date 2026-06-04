@@ -19,12 +19,12 @@ import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
  * from GPU memory.
  *
  * <p><strong>Usage:</strong> Each GPU resource system ({@link MeshRegistry}, {@link TextureRegistry},
- * {@link ShaderSystem}) owns a RefCounted instance with a cleanup callback that frees the
+ * {@link ShaderRegistry}) owns a RefCounted instance with a cleanup callback that frees the
  * specific resource type.
  *
  * @see MeshRegistry
  * @see TextureRegistry
- * @see ShaderSystem
+ * @see ShaderRegistry
  */
 public class RefCounted {
 

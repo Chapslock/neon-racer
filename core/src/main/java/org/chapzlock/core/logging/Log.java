@@ -29,7 +29,7 @@ import lombok.experimental.UtilityClass;
  * <p><strong>Usage:</strong>
  * <pre>{@code
  * Log.debug("Loading scene...");                    // tagless
- * Log.debug("ShaderSystem", "Compiled programId=5"); // tagged
+ * Log.debug("ShaderRegistry", "Compiled programId=5"); // tagged
  * Log.warn("RenderContext", "No camera found");
  * }</pre>
  */
