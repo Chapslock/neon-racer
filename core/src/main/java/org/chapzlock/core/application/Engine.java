@@ -5,7 +5,7 @@ import java.util.List;
 import org.chapzlock.core.animation.AnimationSystem;
 import org.chapzlock.core.asset.gltf.GltfAssetRegistry;
 import org.chapzlock.core.ecs.ComponentRegistry;
-import org.chapzlock.core.ecs.EntitySystem;
+import org.chapzlock.core.ecs.EntityFactory;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.ecs.TransformSystem;
 import org.chapzlock.core.event.EventBus;
@@ -58,7 +58,7 @@ public class Engine implements Disposable {
      */
     private SceneManager sceneManager;
     private Physics physics;
-    private EntitySystem entitySystem;
+    private EntityFactory entityFactory;
     private CameraProjection cameraProjection;
 
     public Engine(ComponentRegistry registry,
@@ -95,7 +95,7 @@ public class Engine implements Disposable {
            SceneManager sceneManager,
            CameraProjection cameraProjection,
            Physics physics,
-           EntitySystem entitySystem,
+           EntityFactory entityFactory,
            List<GameSystem> engineSystems) {
         this.registry = registry;
         this.eventBus = eventBus;
@@ -109,7 +109,7 @@ public class Engine implements Disposable {
         this.sceneManager = sceneManager;
         this.cameraProjection = cameraProjection;
         this.physics = physics;
-        this.entitySystem = entitySystem;
+        this.entityFactory = entityFactory;
         this.engineSystems = engineSystems;
     }
 
@@ -164,9 +164,9 @@ public class Engine implements Disposable {
             null, cameraProjection, physics, null, engineSystems);
 
         // Wire components that need the full Engine reference
-        EntitySystem entitySystem = new EntitySystem();
-        entitySystem.onInit(engine);
-        engine.setEntitySystem(entitySystem);
+        EntityFactory entityFactory = new EntityFactory();
+        entityFactory.init(engine);
+        engine.setEntityFactory(entityFactory);
 
         SceneManager sceneManager = new SceneManager(engine);
         engine.setSceneManager(sceneManager);
@@ -202,9 +202,9 @@ public class Engine implements Disposable {
             new GltfAssetRegistry(),
             List.of()
         );
-        EntitySystem entitySystem = new EntitySystem();
-        entitySystem.onInit(engine);
-        engine.setEntitySystem(entitySystem);
+        EntityFactory entityFactory = new EntityFactory();
+        entityFactory.init(engine);
+        engine.setEntityFactory(entityFactory);
         SceneManager sceneManager = new SceneManager(engine);
         engine.setSceneManager(sceneManager);
         return engine;
@@ -233,8 +233,8 @@ public class Engine implements Disposable {
         this.physics = physics;
     }
 
-    public void setEntitySystem(EntitySystem entitySystem) {
-        this.entitySystem = entitySystem;
+    public void setEntityFactory(EntityFactory entityFactory) {
+        this.entityFactory = entityFactory;
     }
 
     public void setCameraProjection(CameraProjection cameraProjection) {

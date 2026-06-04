@@ -15,25 +15,25 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class EntitySystemTest {
+class EntityFactoryTest {
 
     private Engine engine;
     private ComponentRegistry registry;
     private EventBus eventBus;
-    private EntitySystem entitySystem;
+    private EntityFactory entityFactory;
 
     @BeforeEach
     void setUp() {
         engine = Engine.testEngine();
         registry = engine.getRegistry();
         eventBus = engine.getEventBus();
-        entitySystem = new EntitySystem();
-        entitySystem.onInit(engine);
+        entityFactory = new EntityFactory();
+        entityFactory.init(engine);
     }
 
     @Test
     void instantiate_createsEntityWithAllComponents() {
-        int entityId = entitySystem.builder("test")
+        int entityId = entityFactory.builder("test")
             .transform(Transform.at(1, 2, 3))
             .instantiate();
 
@@ -53,7 +53,7 @@ class EntitySystemTest {
             return false;
         });
 
-        entitySystem.builder("test")
+        entityFactory.builder("test")
             .transform(Transform.at(0, 0, 0))
             .component(PhysicsBody.dynamic(1f).shape(CollisionGeometry.sphere(1f)))
             .instantiate();
@@ -65,7 +65,7 @@ class EntitySystemTest {
     @Test
     void instantiate_validatesRules_rejectsInvalid() {
         // PhysicsBody requires Transform — omitting Transform should fail
-        int entityId = entitySystem.builder("invalid")
+        int entityId = entityFactory.builder("invalid")
             .component(PhysicsBody.dynamic(1f).shape(CollisionGeometry.sphere(1f)))
             .instantiate();
 
@@ -80,7 +80,7 @@ class EntitySystemTest {
             return false;
         });
 
-        entitySystem.builder("invalid")
+        entityFactory.builder("invalid")
             .component(PhysicsBody.dynamic(1f).shape(CollisionGeometry.sphere(1f)))
             .instantiate();
 
@@ -95,7 +95,7 @@ class EntitySystemTest {
         );
         List<Tag> tags = List.of();
 
-        int entityId = entitySystem.instantiate("from-direct", components, tags);
+        int entityId = entityFactory.instantiate("from-direct", components, tags);
 
         assertTrue(entityId >= 0);
         assertNotNull(registry.getComponent(entityId, Transform.class));

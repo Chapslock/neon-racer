@@ -41,27 +41,26 @@ import org.chapzlock.core.render.TextureRegistry;
  * <p>Usage:
  * <pre>{@code
  * // Via builder (preferred for runtime spawning)
- * int id = entitySystem.builder("bullet")
+ * int id = entityFactory.builder("bullet")
  *     .transform(Transform.at(x, y, z))
  *     .component(new Velocity(dir))
  *     .instantiate();
  *
  * // Via direct call (used internally by scene loading)
- * int id = entitySystem.instantiate(name, components, tags);
+ * int id = entityFactory.instantiate(name, components, tags);
  * }</pre>
  *
  * @see EntityBuilder#instantiate()
  * @see ComponentRule
  */
-public class EntitySystem implements GameSystem {
+public class EntityFactory {
 
-    private static final Log log = Log.create(EntitySystem.class);
+    private static final Log log = Log.create(EntityFactory.class);
 
     private ComponentRegistry registry;
     private Engine engine;
 
-    @Override
-    public void onInit(Engine engine) {
+    public void init(Engine engine) {
         this.engine = engine;
         this.registry = engine.getRegistry();
         registerDefaultRules();
@@ -78,7 +77,7 @@ public class EntitySystem implements GameSystem {
     }
 
     /**
-     * Creates a new {@link EntityBuilder} linked to this system, enabling the
+     * Creates a new {@link EntityBuilder} linked to this factory, enabling the
      * {@link EntityBuilder#instantiate()} terminal operation.
      *
      * @param name the entity name (nullable for anonymous entities)
@@ -86,7 +85,7 @@ public class EntitySystem implements GameSystem {
      */
     public EntityBuilder builder(String name) {
         EntityBuilder b = new EntityBuilder(name);
-        b.setEntitySystem(this);
+        b.setEntityFactory(this);
         return b;
     }
 
@@ -177,15 +176,5 @@ public class EntitySystem implements GameSystem {
             }
         }
         return null;
-    }
-
-    @Override
-    public void onUpdate(float deltaTime) {
-        // Future: process pending deferred spawns (IO completion)
-    }
-
-    @Override
-    public void onDestroy() {
-        // No resources to clean up
     }
 }

@@ -10,7 +10,7 @@ import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.SpriteMaterial;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.EntityBuilder;
-import org.chapzlock.core.ecs.EntitySystem;
+import org.chapzlock.core.ecs.EntityFactory;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.logging.Log;
 
@@ -18,7 +18,7 @@ import org.chapzlock.core.logging.Log;
  * Creates and tears down the runtime state of a scene.
  *
  * <p><strong>What this does:</strong> Takes a {@link Scene} blueprint and brings it to life
- * by delegating entity creation to {@link EntitySystem}, tracking GPU assets for reference
+ * by delegating entity creation to {@link EntityFactory}, tracking GPU assets for reference
  * counting, loading glTF models as child entities, and initializing game systems. On teardown,
  * it reverses all of these steps.
  *
@@ -28,9 +28,9 @@ import org.chapzlock.core.logging.Log;
  * into this dedicated class gives SceneManager a single responsibility (lifecycle orchestration)
  * and makes instantiation independently testable.
  *
- * <p><strong>Delegation to EntitySystem:</strong> Entity creation (component resolution,
+ * <p><strong>Delegation to EntityFactory:</strong> Entity creation (component resolution,
  * component rule validation, and atomic component commit) is fully handled by
- * {@link EntitySystem#instantiate(String, List, List)}. This class retains only scene-level
+ * {@link EntityFactory#instantiate(String, List, List)}. This class retains only scene-level
  * concerns: the entity loop, glTF loading, GPU asset tracking, and system lifecycle.
  *
  * <p><strong>Usage:</strong> This class is not used directly by game code. It is owned by
@@ -38,7 +38,7 @@ import org.chapzlock.core.logging.Log;
  *
  * @see SceneInstance
  * @see SceneManager
- * @see EntitySystem
+ * @see EntityFactory
  */
 public class SceneInstantiator {
 
@@ -50,7 +50,7 @@ public class SceneInstantiator {
     /**
      * Creates a new scene instantiator bound to the given engine context.
      *
-     * <p>The instantiator uses the context to access the EntitySystem (for entity creation),
+     * <p>The instantiator uses the context to access the EntityFactory (for entity creation),
      * GPU systems (for asset reference counting), and the glTF asset registry
      * (for loading 3D models).
      *
@@ -67,7 +67,7 @@ public class SceneInstantiator {
      * <p><strong>What happens during instantiation:</strong>
      * <ol>
      *   <li>For each entity recipe, creates an EntityBuilder, applies the configurator,
-     *       then delegates to {@link EntitySystem#instantiate(String, List, List)}
+     *       then delegates to {@link EntityFactory#instantiate(String, List, List)}
      *       which resolves components, validates rules, and commits atomically</li>
      *   <li>GPU asset IDs are tracked for reference counting</li>
      *   <li>If the entity has a GltfModel component, it is loaded as child entities</li>
@@ -84,7 +84,7 @@ public class SceneInstantiator {
      * @return a {@link SceneInstance} containing all created entities, assets, and systems
      */
     public SceneInstance instantiate(Scene scene) {
-        EntitySystem entitySystem = engine.getEntitySystem();
+        EntityFactory entityFactory = engine.getEntityFactory();
         List<Integer> entityIds = new ArrayList<>();
         SceneAssets assets = new SceneAssets();
 
@@ -93,12 +93,12 @@ public class SceneInstantiator {
                 EntityBuilder builder = new EntityBuilder(recipe.name());
                 recipe.configurator().accept(builder);
 
-                int entityId = entitySystem.instantiate(
+                int entityId = entityFactory.instantiate(
                     builder.getName(), builder.getComponents(), builder.getTags());
 
                 if (entityId < 0) {
                     // Validation failed (e.g., missing required component dependency).
-                    // EntitySystem already logged the error. Skip this entity.
+                    // EntityFactory already logged the error. Skip this entity.
                     continue;
                 }
 
@@ -218,7 +218,7 @@ public class SceneInstantiator {
     /**
      * Tracks GPU asset IDs for an entity by querying its components after instantiation.
      *
-     * <p>Called after {@link EntitySystem#instantiate(String, List, List)} has committed all
+     * <p>Called after {@link EntityFactory#instantiate(String, List, List)} has committed all
      * components. Inspects the entity's Mesh and SpriteMaterial to record resource IDs
      * for later reference counting.
      *

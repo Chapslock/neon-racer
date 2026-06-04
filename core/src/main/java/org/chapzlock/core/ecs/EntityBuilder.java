@@ -23,9 +23,9 @@ import org.chapzlock.core.component.Transform;
  *     .build();
  * }</pre>
  *
- * <p>Usage for runtime spawning (requires EntitySystem):</p>
+ * <p>Usage for runtime spawning (requires EntityFactory):</p>
  * <pre>{@code
- * entitySystem.builder("bullet")
+ * entityFactory.builder("bullet")
  *     .transform(Transform.at(x, y, z))
  *     .component(new Velocity(dir))
  *     .instantiate();
@@ -37,8 +37,8 @@ public class EntityBuilder {
     private final List<Tag> tags = new ArrayList<>();
     private final List<Component> components = new ArrayList<>();
 
-    /** Package-private: set by EntitySystem to enable the instantiate() terminal. */
-    EntitySystem entitySystem;
+    /** Package-private: set by EntityFactory to enable the instantiate() terminal. */
+    EntityFactory entityFactory;
 
     /**
      * Creates a new builder for an entity with the given name.
@@ -112,37 +112,37 @@ public class EntityBuilder {
     }
 
     /**
-     * Spawns a live entity into the world using the linked {@link EntitySystem}.
+     * Spawns a live entity into the world using the linked {@link EntityFactory}.
      *
      * <p>This is the terminal operation for runtime entity creation. It passes the
-     * builder's components and tags through the EntitySystem's phased assembly pipeline
+     * builder's components and tags through the EntityFactory's phased assembly pipeline
      * (resolve, validate, commit).
      *
-     * <p>Requires that this builder was created via {@link EntitySystem#builder(String)}.
-     * Builders created directly (e.g., for scene declarations) do not have an EntitySystem
+     * <p>Requires that this builder was created via {@link EntityFactory#builder(String)}.
+     * Builders created directly (e.g., for scene declarations) do not have an EntityFactory
      * linked.
      *
      * @return the new entity ID, or -1 if validation failed
-     * @throws IllegalStateException if no EntitySystem is linked to this builder
+     * @throws IllegalStateException if no EntityFactory is linked to this builder
      */
     public int instantiate() {
-        if (entitySystem == null) {
+        if (entityFactory == null) {
             throw new IllegalStateException(
-                "Cannot call instantiate() without an EntitySystem. " +
-                "Use EntitySystem.builder() for runtime spawning.");
+                "Cannot call instantiate() without an EntityFactory. " +
+                "Use EntityFactory.builder() for runtime spawning.");
         }
-        return entitySystem.instantiate(name, components, tags);
+        return entityFactory.instantiate(name, components, tags);
     }
 
     /**
-     * Package-private setter for the EntitySystem reference.
+     * Package-private setter for the EntityFactory reference.
      *
-     * <p>Called by EntitySystem when creating builders, enabling the {@code instantiate()}
+     * <p>Called by EntityFactory when creating builders, enabling the {@code instantiate()}
      * terminal operation.
      *
-     * @param entitySystem the entity system that will handle instantiation
+     * @param entityFactory the entity factory that will handle instantiation
      */
-    void setEntitySystem(EntitySystem entitySystem) {
-        this.entitySystem = entitySystem;
+    void setEntityFactory(EntityFactory entityFactory) {
+        this.entityFactory = entityFactory;
     }
 }

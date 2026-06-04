@@ -4,7 +4,7 @@ import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
-import org.chapzlock.core.ecs.EntitySystem;
+import org.chapzlock.core.ecs.EntityFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -21,21 +21,21 @@ class PhysicsRegistrationTest {
 
     private Engine engine;
     private ComponentRegistry registry;
-    private EntitySystem entitySystem;
+    private EntityFactory entityFactory;
     private PhysicsSystem physicsSystem;
 
     @BeforeEach
     void setUp() {
         engine = Engine.testEngine();
         registry = engine.getRegistry();
-        entitySystem = engine.getEntitySystem();
+        entityFactory = engine.getEntityFactory();
         physicsSystem = new PhysicsSystem(PhysicsWorldConfig.defaults());
         physicsSystem.onInit(engine);
     }
 
     @Test
     void entityNotRegisteredBeforeOnUpdate() {
-        int entity = entitySystem.builder("ball")
+        int entity = entityFactory.builder("ball")
             .transform(Transform.at(0, 10, 0))
             .component(PhysicsBody.builder()
                 .mass(1f)
@@ -49,7 +49,7 @@ class PhysicsRegistrationTest {
 
     @Test
     void entityRegisteredAfterOnUpdate() {
-        int entity = entitySystem.builder("ball")
+        int entity = entityFactory.builder("ball")
             .transform(Transform.at(0, 10, 0))
             .component(PhysicsBody.builder()
                 .mass(1f)
@@ -65,7 +65,7 @@ class PhysicsRegistrationTest {
 
     @Test
     void multipleEntitiesRegisteredAfterOnUpdate() {
-        int e1 = entitySystem.builder("sphere")
+        int e1 = entityFactory.builder("sphere")
             .transform(Transform.at(0, 5, 0))
             .component(PhysicsBody.builder()
                 .mass(1f)
@@ -73,7 +73,7 @@ class PhysicsRegistrationTest {
                 .build())
             .instantiate();
 
-        int e2 = entitySystem.builder("floor")
+        int e2 = entityFactory.builder("floor")
             .transform(Transform.at(3, 0, 0))
             .component(PhysicsBody.builder()
                 .mass(0f)
@@ -90,7 +90,7 @@ class PhysicsRegistrationTest {
 
     @Test
     void entityDestroyedBeforeOnUpdate_skipsRegistration() {
-        int entity = entitySystem.builder("ball")
+        int entity = entityFactory.builder("ball")
             .transform(Transform.at(0, 5, 0))
             .component(PhysicsBody.builder()
                 .mass(1f)
@@ -107,7 +107,7 @@ class PhysicsRegistrationTest {
 
     @Test
     void physicsBodyRemovedBeforeOnUpdate_skipsRegistration() {
-        int entity = entitySystem.builder("ball")
+        int entity = entityFactory.builder("ball")
             .transform(Transform.at(0, 5, 0))
             .component(PhysicsBody.builder()
                 .mass(1f)
@@ -124,7 +124,7 @@ class PhysicsRegistrationTest {
 
     @Test
     void entityRemovedAfterRegistration_getsDeregistered() {
-        int entity = entitySystem.builder("ball")
+        int entity = entityFactory.builder("ball")
             .transform(Transform.at(0, 5, 0))
             .component(PhysicsBody.builder()
                 .mass(1f)
@@ -143,7 +143,7 @@ class PhysicsRegistrationTest {
 
     @Test
     void capsuleGeometry_registersCorrectly() {
-        int entity = entitySystem.builder("player")
+        int entity = entityFactory.builder("player")
             .transform(Transform.at(0, 10, 0))
             .component(PhysicsBody.builder()
                 .mass(1f)

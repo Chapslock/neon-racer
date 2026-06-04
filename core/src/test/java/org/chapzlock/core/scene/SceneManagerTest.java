@@ -229,9 +229,9 @@ class SceneManagerTest {
             new org.chapzlock.core.asset.gltf.GltfAssetRegistry(),
             java.util.List.of()
         );
-        org.chapzlock.core.ecs.EntitySystem entitySystem = new org.chapzlock.core.ecs.EntitySystem();
-        entitySystem.onInit(assetEngine);
-        assetEngine.setEntitySystem(entitySystem);
+        org.chapzlock.core.ecs.EntityFactory entityFactory = new org.chapzlock.core.ecs.EntityFactory();
+        entityFactory.init(assetEngine);
+        assetEngine.setEntityFactory(entityFactory);
         SceneManager sm = new SceneManager(assetEngine);
 
         Mesh fakeMesh = Mesh.builder().id(42).build();
