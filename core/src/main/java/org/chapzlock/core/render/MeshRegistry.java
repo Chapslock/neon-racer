@@ -37,8 +37,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
  * reference count drops to zero.
  *
  * <p><strong>Usage:</strong> Game code does not interact with this registry directly. The
- * {@link org.chapzlock.core.scene.GltfModelFactory} and
- * {@link org.chapzlock.core.ecs.EntityFactory} use it during scene instantiation.
+ * {@link org.chapzlock.core.ecs.EntityFactory} uses it during scene instantiation.
  *
  * @see Mesh
  * @see MeshUtil
