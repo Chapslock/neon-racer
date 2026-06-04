@@ -1,12 +1,10 @@
 package org.chapzlock.core.application;
 
-import java.util.List;
-
 import org.chapzlock.core.animation.AnimationSystem;
 import org.chapzlock.core.asset.gltf.GltfAssetRegistry;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.EntityFactory;
-import org.chapzlock.core.ecs.GameSystem;
+import org.chapzlock.core.ecs.SystemScheduler;
 import org.chapzlock.core.ecs.TransformSystem;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.logging.Log;
@@ -50,7 +48,12 @@ public class Engine implements Disposable {
     private final Time time;
     private final TweenRegistry tweenRegistry;
     private final GltfAssetRegistry gltfAssetRegistry;
-    private final List<GameSystem> engineSystems;
+    private final SystemScheduler scheduler;
+    private final TweenSystem tweenSystem;
+    private final AnimationSystem animationSystem;
+    private final TransformSystem transformSystem;
+    private final PhysicsSystem physicsSystem;
+    private final RenderSystem renderSystem;
     /**
      * Set after construction due to circular dependency: SceneManager needs
      * Engine in its constructor, but Engine holds SceneManager.
@@ -70,7 +73,12 @@ public class Engine implements Disposable {
            Time time,
            TweenRegistry tweenRegistry,
            GltfAssetRegistry gltfAssetRegistry,
-           List<GameSystem> engineSystems) {
+           SystemScheduler scheduler,
+           TweenSystem tweenSystem,
+           AnimationSystem animationSystem,
+           TransformSystem transformSystem,
+           PhysicsSystem physicsSystem,
+           RenderSystem renderSystem) {
         this.registry = registry;
         this.eventBus = eventBus;
         this.meshRegistry = meshRegistry;
@@ -80,37 +88,12 @@ public class Engine implements Disposable {
         this.time = time;
         this.tweenRegistry = tweenRegistry;
         this.gltfAssetRegistry = gltfAssetRegistry;
-        this.engineSystems = engineSystems;
-    }
-
-    Engine(ComponentRegistry registry,
-           EventBus eventBus,
-           MeshRegistry meshRegistry,
-           TextureRegistry textureRegistry,
-           ShaderRegistry shaderRegistry,
-           Window window,
-           Time time,
-           TweenRegistry tweenRegistry,
-           GltfAssetRegistry gltfAssetRegistry,
-           SceneManager sceneManager,
-           CameraProjection cameraProjection,
-           Physics physics,
-           EntityFactory entityFactory,
-           List<GameSystem> engineSystems) {
-        this.registry = registry;
-        this.eventBus = eventBus;
-        this.meshRegistry = meshRegistry;
-        this.textureRegistry = textureRegistry;
-        this.shaderRegistry = shaderRegistry;
-        this.window = window;
-        this.time = time;
-        this.tweenRegistry = tweenRegistry;
-        this.gltfAssetRegistry = gltfAssetRegistry;
-        this.sceneManager = sceneManager;
-        this.cameraProjection = cameraProjection;
-        this.physics = physics;
-        this.entityFactory = entityFactory;
-        this.engineSystems = engineSystems;
+        this.scheduler = scheduler;
+        this.tweenSystem = tweenSystem;
+        this.animationSystem = animationSystem;
+        this.transformSystem = transformSystem;
+        this.physicsSystem = physicsSystem;
+        this.renderSystem = renderSystem;
     }
 
     /**
@@ -148,32 +131,43 @@ public class Engine implements Disposable {
         physicsWorld.setMeshRegistry(meshRegistry);
         Physics physics = new Physics(physicsWorld);
 
-        // Create engine systems
-        List<GameSystem> engineSystems = List.of(
-            new TweenSystem(),
-            new AnimationSystem(),
-            new TransformSystem(),
-            new PhysicsSystem(physicsConfig, cameraProjection, physicsWorld),
-            new RenderSystem()
-        );
+        // Create scheduler and engine systems
+        SystemScheduler scheduler = new SystemScheduler();
+        TweenSystem tweenSystem = new TweenSystem();
+        AnimationSystem animationSystem = new AnimationSystem();
+        TransformSystem transformSystem = new TransformSystem();
+        PhysicsSystem physicsSystem = new PhysicsSystem(physicsConfig, cameraProjection, physicsWorld);
+        RenderSystem renderSystem = new RenderSystem();
 
         // Assemble engine
         Engine engine = new Engine(
             registry, eventBus, meshRegistry, textureRegistry, shaderRegistry,
             window, time, tweenRegistry, gltfAssetRegistry,
-            null, cameraProjection, physics, null, engineSystems);
+            scheduler, tweenSystem, animationSystem, transformSystem, physicsSystem, renderSystem);
+        engine.setCameraProjection(cameraProjection);
+        engine.setPhysics(physics);
 
         // Wire components that need the full Engine reference
         EntityFactory entityFactory = new EntityFactory();
         entityFactory.init(engine);
         engine.setEntityFactory(entityFactory);
 
-        SceneManager sceneManager = new SceneManager(engine);
+        SceneManager sceneManager = new SceneManager(engine, scheduler);
         engine.setSceneManager(sceneManager);
-        sceneManager.registerEngineSystems(engineSystems);
+
+        // Register permanent systems into scheduler
+        scheduler.addPermanent(tweenSystem);
+        scheduler.addPermanent(animationSystem);
+        scheduler.addPermanent(transformSystem);
+        scheduler.addPermanent(physicsSystem);
+        scheduler.addPermanent(renderSystem);
 
         // Initialize engine systems
-        engineSystems.forEach(s -> s.onInit(engine));
+        tweenSystem.onInit(engine);
+        animationSystem.onInit(engine);
+        transformSystem.onInit(engine);
+        physicsSystem.onInit(engine);
+        renderSystem.onInit(engine);
 
         log.info("Engine created: %s (%dx%d)",
             spec.getWindowSpec().getTitle(),
@@ -190,22 +184,21 @@ public class Engine implements Disposable {
      */
     public static Engine testEngine() {
         EventBus eventBus = new EventBus();
+        SystemScheduler scheduler = new SystemScheduler();
         Engine engine = new Engine(
             new ComponentRegistry(eventBus),
             eventBus,
-            null,
-            null,
-            null,
-            null,
+            null, null, null, null,
             new Time(),
             new TweenRegistry(),
             new GltfAssetRegistry(),
-            List.of()
+            scheduler,
+            null, null, null, null, null
         );
         EntityFactory entityFactory = new EntityFactory();
         entityFactory.init(engine);
         engine.setEntityFactory(entityFactory);
-        SceneManager sceneManager = new SceneManager(engine);
+        SceneManager sceneManager = new SceneManager(engine, scheduler);
         engine.setSceneManager(sceneManager);
         return engine;
     }
@@ -213,11 +206,11 @@ public class Engine implements Disposable {
     @Override
     public void dispose() {
         if (sceneManager != null) sceneManager.unloadAll();
-        if (engineSystems != null) {
-            for (GameSystem system : engineSystems) {
-                system.onDestroy();
-            }
-        }
+        if (renderSystem != null) renderSystem.onDestroy();
+        if (physicsSystem != null) physicsSystem.onDestroy();
+        if (transformSystem != null) transformSystem.onDestroy();
+        if (animationSystem != null) animationSystem.onDestroy();
+        if (tweenSystem != null) tweenSystem.onDestroy();
         if (shaderRegistry != null) shaderRegistry.dispose();
         if (textureRegistry != null) textureRegistry.dispose();
         if (meshRegistry != null) meshRegistry.dispose();

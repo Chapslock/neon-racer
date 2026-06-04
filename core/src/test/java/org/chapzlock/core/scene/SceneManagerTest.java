@@ -33,7 +33,7 @@ class SceneManagerTest {
     void setUp() {
         engine = Engine.testEngine();
         eventBus = engine.getEventBus();
-        sceneManager = new SceneManager(engine);
+        sceneManager = engine.getSceneManager();
         subscriptions = new ArrayList<>();
     }
 
@@ -183,16 +183,13 @@ class SceneManagerTest {
     }
 
     @Test
-    void getActiveSystemsIncludesEngineAndSceneSystems() {
-        GameSystem engineSys = new TrackingSystem();
+    void getActiveSystemsIncludesSceneSystems() {
         TrackingSystem sceneSys = new TrackingSystem();
 
-        sceneManager.registerEngineSystems(List.of(engineSys));
         Scene scene = new Scene("test", List.of(), List.of(sceneSys), null);
         sceneManager.loadImmediate(scene);
 
         List<GameSystem> active = sceneManager.getActiveSystems();
-        assertTrue(active.contains(engineSys));
         assertTrue(active.contains(sceneSys));
     }
 
@@ -217,22 +214,23 @@ class SceneManagerTest {
         MeshRegistry meshRegistry = new MeshRegistry();
         TextureRegistry textureRegistry = new TextureRegistry();
         EventBus eb = new EventBus();
+        org.chapzlock.core.ecs.SystemScheduler scheduler = new org.chapzlock.core.ecs.SystemScheduler();
         Engine assetEngine = new Engine(
             new ComponentRegistry(eb),
             eb,
             meshRegistry,
             textureRegistry,
-            null,
-            null,
+            null, null,
             new org.chapzlock.core.application.Time(),
             new org.chapzlock.core.tween.TweenRegistry(),
             new org.chapzlock.core.asset.gltf.GltfAssetRegistry(),
-            java.util.List.of()
+            scheduler,
+            null, null, null, null, null
         );
         org.chapzlock.core.ecs.EntityFactory entityFactory = new org.chapzlock.core.ecs.EntityFactory();
         entityFactory.init(assetEngine);
         assetEngine.setEntityFactory(entityFactory);
-        SceneManager sm = new SceneManager(assetEngine);
+        SceneManager sm = new SceneManager(assetEngine, scheduler);
 
         Mesh fakeMesh = Mesh.builder().id(42).build();
         Texture fakeTexture = Texture.builder().id(7).build();

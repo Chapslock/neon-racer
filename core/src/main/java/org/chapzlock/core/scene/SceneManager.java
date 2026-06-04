@@ -10,7 +10,7 @@ import java.util.Queue;
 
 import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.ecs.GameSystem;
-import org.chapzlock.core.ecs.SystemOrdering;
+import org.chapzlock.core.ecs.SystemScheduler;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.input.InputMap;
 import org.chapzlock.core.logging.Log;
@@ -55,6 +55,7 @@ public class SceneManager {
     private final Engine engine;
     private final EventBus eventBus;
     private final SceneInstantiator instantiator;
+    private final SystemScheduler scheduler;
 
     @Getter
     private Scene primaryScene;
@@ -62,11 +63,7 @@ public class SceneManager {
     private InputMap activeInputMap;
     private final List<Scene> additiveScenes = new ArrayList<>();
     private final Map<Scene, SceneInstance> loadedScenes = new HashMap<>();
-    private final List<GameSystem> engineSystems = new ArrayList<>();
     private final Queue<Runnable> pendingTransitions = new ArrayDeque<>();
-
-    private List<GameSystem> cachedActiveSystems;
-    private boolean activeSystemsDirty = true;
 
     /**
      * Creates a new scene manager bound to the given engine context.
@@ -75,24 +72,13 @@ public class SceneManager {
      * entity creation, asset tracking, and system initialization.
      *
      * @param engine the engine providing access to all subsystems
+     * @param scheduler the system scheduler for managing active systems
      */
-    public SceneManager(Engine engine) {
+    public SceneManager(Engine engine, SystemScheduler scheduler) {
         this.engine = engine;
         this.eventBus = engine.getEventBus();
         this.instantiator = new SceneInstantiator(engine);
-    }
-
-    /**
-     * Registers always-active engine systems (e.g., PhysicsSystem, RenderSystem).
-     *
-     * <p>Engine systems run regardless of which scene is loaded. They are included in
-     * {@link #getActiveSystems()} alongside scene-specific systems.
-     *
-     * @param systems the engine systems to register
-     */
-    public void registerEngineSystems(List<GameSystem> systems) {
-        engineSystems.addAll(systems);
-        activeSystemsDirty = true;
+        this.scheduler = scheduler;
     }
 
     /**
@@ -266,16 +252,13 @@ public class SceneManager {
     /**
      * Returns all active systems (engine + scene systems), sorted by phase.
      *
-     * <p>The result is cached and only rebuilt when scenes are loaded/unloaded.
+     * <p>The result is cached by the scheduler and only rebuilt when scenes are loaded/unloaded.
      * Engine systems always come before scene systems of the same phase.
      *
      * @return immutable list of active systems sorted by {@code SystemPhase} ordinal
      */
     public List<GameSystem> getActiveSystems() {
-        if (activeSystemsDirty || cachedActiveSystems == null) {
-            rebuildActiveSystemsList();
-        }
-        return cachedActiveSystems;
+        return scheduler.getActiveSystems();
     }
 
     /**
@@ -293,7 +276,6 @@ public class SceneManager {
             doTeardown(scene);
         }
         additiveScenes.clear();
-        activeSystemsDirty = true;
     }
 
     private void doLoad(Scene scene) {
@@ -312,7 +294,6 @@ public class SceneManager {
         log.info("Scene \"%s\" loaded in %dms (%d entities, %d systems)",
             scene.getName(), elapsed, entityCount, systemCount);
         eventBus.publish(new SceneLoadedEvent(scene.getName()));
-        activeSystemsDirty = true;
     }
 
     private void doLoadAdditive(Scene scene) {
@@ -327,7 +308,6 @@ public class SceneManager {
         additiveScenes.add(scene);
         doInstantiate(scene);
         eventBus.publish(new SceneLoadedEvent(scene.getName()));
-        activeSystemsDirty = true;
     }
 
     private void doUnload(Scene scene) {
@@ -335,13 +315,11 @@ public class SceneManager {
             doTeardown(scene);
             primaryScene = null;
             eventBus.publish(new SceneUnloadedEvent(scene.getName()));
-            activeSystemsDirty = true;
             return;
         }
         if (additiveScenes.remove(scene)) {
             doTeardown(scene);
             eventBus.publish(new SceneUnloadedEvent(scene.getName()));
-            activeSystemsDirty = true;
         } else {
             List<String> activeNames = getActiveScenes().stream().map(Scene::getName).toList();
             log.warn("Attempted to unload scene \"%s\" but it is not currently loaded. Currently active scenes: %s. Check your scene transition logic.",
@@ -358,6 +336,7 @@ public class SceneManager {
     private void doInstantiate(Scene scene) {
         SceneInstance instance = instantiator.instantiate(scene);
         loadedScenes.put(scene, instance);
+        scheduler.addSceneSystems(instance.systems());
 
         InputMap inputMap = scene.getInputMap();
         if (inputMap != null) {
@@ -384,26 +363,8 @@ public class SceneManager {
 
         SceneInstance instance = loadedScenes.remove(scene);
         if (instance != null) {
+            scheduler.removeSceneSystems(instance.systems());
             instantiator.teardown(instance);
         }
-    }
-
-    /**
-     * Rebuilds the cached active systems list from engine systems + all loaded scene systems.
-     *
-     * <p>Systems are sorted by their {@link org.chapzlock.core.ecs.SystemPhase} ordinal,
-     * ensuring INPUT systems run before LOGIC, which runs before PHYSICS, which runs before
-     * RENDER. Within each phase, systems are topologically sorted according to their
-     * {@link GameSystem#runBefore()} and {@link GameSystem#runAfter()} constraints.
-     *
-     * @throws IllegalStateException if a dependency cycle is detected within a phase
-     */
-    private void rebuildActiveSystemsList() {
-        List<GameSystem> all = new ArrayList<>(engineSystems);
-        for (SceneInstance instance : loadedScenes.values()) {
-            all.addAll(instance.systems());
-        }
-        cachedActiveSystems = SystemOrdering.sort(all);
-        activeSystemsDirty = false;
     }
 }
