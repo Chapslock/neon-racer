@@ -1,7 +1,7 @@
 package org.chapzlock.core.application;
 
 import org.chapzlock.core.animation.AnimationSystem;
-import org.chapzlock.core.asset.gltf.GltfAssetRegistry;
+import org.chapzlock.core.asset.gltf.GltfAssetManager;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.EntityFactory;
 import org.chapzlock.core.ecs.SystemScheduler;
@@ -47,7 +47,7 @@ public class Engine implements Disposable {
     private final Window window;
     private final Time time;
     private final TweenRegistry tweenRegistry;
-    private final GltfAssetRegistry gltfAssetRegistry;
+    private final GltfAssetManager gltfAssetManager;
     private final SystemScheduler scheduler;
     private final TweenSystem tweenSystem;
     private final AnimationSystem animationSystem;
@@ -71,7 +71,7 @@ public class Engine implements Disposable {
            Window window,
            Time time,
            TweenRegistry tweenRegistry,
-           GltfAssetRegistry gltfAssetRegistry,
+           GltfAssetManager gltfAssetManager,
            SystemScheduler scheduler,
            EntityFactory entityFactory,
            CameraProjection cameraProjection,
@@ -89,7 +89,7 @@ public class Engine implements Disposable {
         this.window = window;
         this.time = time;
         this.tweenRegistry = tweenRegistry;
-        this.gltfAssetRegistry = gltfAssetRegistry;
+        this.gltfAssetManager = gltfAssetManager;
         this.scheduler = scheduler;
         this.entityFactory = entityFactory;
         this.cameraProjection = cameraProjection;
@@ -126,7 +126,7 @@ public class Engine implements Disposable {
         MeshRegistry meshRegistry = new MeshRegistry();
         Time time = new Time();
         TweenRegistry tweenRegistry = new TweenRegistry();
-        GltfAssetRegistry gltfAssetRegistry = new GltfAssetRegistry();
+        GltfAssetManager gltfAssetManager = new GltfAssetManager(registry, meshRegistry, textureRegistry, shaderRegistry);
         CameraProjection cameraProjection = new CameraProjection(spec.getWindowSpec());
 
         // Create physics
@@ -150,7 +150,7 @@ public class Engine implements Disposable {
         // Assemble engine (immutable after this — except sceneManager)
         Engine engine = new Engine(
             registry, eventBus, meshRegistry, textureRegistry, shaderRegistry,
-            window, time, tweenRegistry, gltfAssetRegistry,
+            window, time, tweenRegistry, gltfAssetManager,
             scheduler, entityFactory, cameraProjection, physics,
             tweenSystem, animationSystem, transformSystem, physicsSystem, renderSystem);
 
@@ -189,12 +189,12 @@ public class Engine implements Disposable {
         EventBus eventBus = new EventBus();
         ComponentRegistry registry = new ComponentRegistry(eventBus);
         SystemScheduler scheduler = new SystemScheduler();
-        GltfAssetRegistry gltfAssetRegistry = new GltfAssetRegistry();
+        GltfAssetManager gltfAssetManager = new GltfAssetManager(registry, null, null, null);
         EntityFactory entityFactory = new EntityFactory(registry, null, null, null);
 
         Engine engine = new Engine(
             registry, eventBus, null, null, null, null,
-            new Time(), new TweenRegistry(), gltfAssetRegistry,
+            new Time(), new TweenRegistry(), gltfAssetManager,
             scheduler, entityFactory, null, null,
             null, null, null, null, null);
 
@@ -216,7 +216,7 @@ public class Engine implements Disposable {
         EventBus eventBus = new EventBus();
         ComponentRegistry registry = new ComponentRegistry(eventBus);
         SystemScheduler scheduler = new SystemScheduler();
-        GltfAssetRegistry gltfAssetRegistry = new GltfAssetRegistry();
+        GltfAssetManager gltfAssetManager = new GltfAssetManager(registry, null, null, null);
         EntityFactory entityFactory = new EntityFactory(registry, null, null, null);
 
         PhysicsWorldConfig physicsConfig = PhysicsWorldConfig.defaults();
@@ -226,7 +226,7 @@ public class Engine implements Disposable {
 
         Engine engine = new Engine(
             registry, eventBus, null, null, null, null,
-            new Time(), new TweenRegistry(), gltfAssetRegistry,
+            new Time(), new TweenRegistry(), gltfAssetManager,
             scheduler, entityFactory, null, physics,
             null, null, null, physicsSystem, null);
 

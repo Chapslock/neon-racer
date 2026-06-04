@@ -10,7 +10,7 @@ import java.util.Queue;
 
 import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.asset.gltf.GltfAsset;
-import org.chapzlock.core.asset.gltf.GltfAssetRegistry;
+import org.chapzlock.core.asset.gltf.GltfAssetManager;
 import org.chapzlock.core.component.GltfModel;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.SpriteMaterial;
@@ -68,7 +68,7 @@ public class SceneManager {
     private final SystemScheduler scheduler;
     private final ComponentRegistry registry;
     private final EntityFactory entityFactory;
-    private final GltfAssetRegistry gltfAssetRegistry;
+    private final GltfAssetManager gltfAssetManager;
     private final MeshRegistry meshRegistry;
     private final TextureRegistry textureRegistry;
     private final ShaderRegistry shaderRegistry;
@@ -93,7 +93,7 @@ public class SceneManager {
         this.scheduler = scheduler;
         this.registry = engine.getRegistry();
         this.entityFactory = engine.getEntityFactory();
-        this.gltfAssetRegistry = engine.getGltfAssetRegistry();
+        this.gltfAssetManager = engine.getGltfAssetManager();
         this.meshRegistry = engine.getMeshRegistry();
         this.textureRegistry = engine.getTextureRegistry();
         this.shaderRegistry = engine.getShaderRegistry();
@@ -209,7 +209,7 @@ public class SceneManager {
      */
     public GltfInstance loadGltf(String resourcePath) {
         log.debug("Loading glTF: %s", resourcePath);
-        GltfAsset asset = gltfAssetRegistry.getOrLoad(resourcePath);
+        GltfAsset asset = gltfAssetManager.getOrLoad(resourcePath);
         return entityFactory.instantiateGltf(asset);
     }
 
@@ -383,7 +383,7 @@ public class SceneManager {
 
                 GltfModel gltfModel = registry.getComponent(entityId, GltfModel.class);
                 if (gltfModel != null) {
-                    GltfAsset modelAsset = gltfAssetRegistry.getOrLoad(gltfModel.resourcePath());
+                    GltfAsset modelAsset = gltfAssetManager.getOrLoad(gltfModel.resourcePath());
                     GltfInstance modelInstance = entityFactory.instantiateGltfAsChild(modelAsset, entityId);
                     for (int childId : modelInstance.allEntities().values()) {
                         entityIds.add(childId);

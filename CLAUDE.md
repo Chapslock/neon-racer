@@ -32,7 +32,7 @@ Two Gradle modules (Kotlin DSL):
 - `event/` — EventBus, Event, lifecycle events
 - `input/` — InputMap, Keyboard/mouse event classes
 - `window/` — Window, WindowSpecification
-- `asset/` — FileUtils, RawMeshData, RawMeshDataFactory, gltf/ (GltfLoader, GltfAssetRegistry)
+- `asset/` — FileUtils, RawMeshData, RawMeshDataFactory, gltf/ (GltfLoader, GltfAssetManager, GltfUtil)
 - `logging/` — Log
 - `tween/` — TweenRegistry, TweenSystem, Ease
 
@@ -48,7 +48,7 @@ Entities are plain integer IDs (`Entity.create(registry)`). Components are marke
 
 `Engine` is a typed service container for all engine subsystems. Created via `Engine.create(ApplicationSpecification)` which builds all subsystems bottom-up. No singletons — all dependencies flow through Engine.
 
-**Registries:** ComponentRegistry, MeshRegistry, TextureRegistry, ShaderRegistry, GltfAssetRegistry.
+**Registries:** ComponentRegistry, MeshRegistry, TextureRegistry, ShaderRegistry, GltfAssetManager.
 
 **Systems (tick every frame):** TweenSystem, AnimationSystem, TransformSystem, PhysicsSystem, RenderSystem — registered as permanent systems in the SystemScheduler.
 

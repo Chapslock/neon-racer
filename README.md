@@ -20,7 +20,7 @@ graph TD
     EC --> CS[CameraSystem]
     EC --> SM[SceneManager]
     EC --> Win[Window]
-    EC --> GAR[GltfAssetRegistry]
+    EC --> GAM[GltfAssetManager]
 
     MR --> RC[RefCounted]
     TR --> RC

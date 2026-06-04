@@ -222,7 +222,7 @@ class SceneManagerTest {
             reg, eb, meshRegistry, textureRegistry, null, null,
             new org.chapzlock.core.application.Time(),
             new org.chapzlock.core.tween.TweenRegistry(),
-            new org.chapzlock.core.asset.gltf.GltfAssetRegistry(),
+            new org.chapzlock.core.asset.gltf.GltfAssetManager(reg, meshRegistry, textureRegistry, null),
             scheduler, entityFactory, null, null,
             null, null, null, null, null
         );
