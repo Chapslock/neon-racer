@@ -285,7 +285,7 @@ class TransformTest {
 
     /**
      * Extracts the forward direction by rotating +X by the transform's quaternion,
-     * matching CameraSystem's convention.
+     * matching CameraProjection's convention.
      */
     private Vector3f extractForward(Transform t) {
         Quaternionf q = new Quaternionf();

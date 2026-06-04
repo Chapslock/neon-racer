@@ -14,7 +14,7 @@ import org.chapzlock.core.physics.Physics;
 import org.chapzlock.core.physics.PhysicsSystem;
 import org.chapzlock.core.physics.PhysicsWorld;
 import org.chapzlock.core.physics.PhysicsWorldConfig;
-import org.chapzlock.core.render.CameraSystem;
+import org.chapzlock.core.render.CameraProjection;
 import org.chapzlock.core.render.MeshRegistry;
 import org.chapzlock.core.render.RenderSystem;
 import org.chapzlock.core.render.ShaderRegistry;
@@ -32,7 +32,7 @@ import lombok.Getter;
  * <p>Created via {@link #create(ApplicationSpecification)} at startup.
  * Contains: {@code ComponentRegistry}, {@code EventBus}, {@code Window}, GPU registries
  * ({@code MeshRegistry}, {@code TextureRegistry}, {@code ShaderRegistry}),
- * {@code Time}, {@code TweenRegistry}, {@code SceneManager}, {@code CameraSystem},
+ * {@code Time}, {@code TweenRegistry}, {@code SceneManager}, {@code CameraProjection},
  * {@code Physics}.
  *
  * <p>For unit tests, use {@link #testEngine()} to create a minimal context with no GPU subsystems.
@@ -59,7 +59,7 @@ public class Engine implements Disposable {
     private SceneManager sceneManager;
     private Physics physics;
     private EntitySystem entitySystem;
-    private CameraSystem cameraSystem;
+    private CameraProjection cameraProjection;
 
     public Engine(ComponentRegistry registry,
            EventBus eventBus,
@@ -93,7 +93,7 @@ public class Engine implements Disposable {
            TweenRegistry tweenRegistry,
            GltfAssetRegistry gltfAssetRegistry,
            SceneManager sceneManager,
-           CameraSystem cameraSystem,
+           CameraProjection cameraProjection,
            Physics physics,
            EntitySystem entitySystem,
            List<GameSystem> engineSystems) {
@@ -107,7 +107,7 @@ public class Engine implements Disposable {
         this.tweenRegistry = tweenRegistry;
         this.gltfAssetRegistry = gltfAssetRegistry;
         this.sceneManager = sceneManager;
-        this.cameraSystem = cameraSystem;
+        this.cameraProjection = cameraProjection;
         this.physics = physics;
         this.entitySystem = entitySystem;
         this.engineSystems = engineSystems;
@@ -139,7 +139,7 @@ public class Engine implements Disposable {
         Time time = new Time();
         TweenRegistry tweenRegistry = new TweenRegistry();
         GltfAssetRegistry gltfAssetRegistry = new GltfAssetRegistry();
-        CameraSystem cameraSystem = new CameraSystem(spec.getWindowSpec());
+        CameraProjection cameraProjection = new CameraProjection(spec.getWindowSpec());
 
         // Create physics
         PhysicsWorldConfig physicsConfig = spec.getPhysicsConfig() != null
@@ -153,7 +153,7 @@ public class Engine implements Disposable {
             new TweenSystem(),
             new AnimationSystem(),
             new TransformSystem(),
-            new PhysicsSystem(physicsConfig, cameraSystem, physicsWorld),
+            new PhysicsSystem(physicsConfig, cameraProjection, physicsWorld),
             new RenderSystem()
         );
 
@@ -161,7 +161,7 @@ public class Engine implements Disposable {
         Engine engine = new Engine(
             registry, eventBus, meshRegistry, textureRegistry, shaderRegistry,
             window, time, tweenRegistry, gltfAssetRegistry,
-            null, cameraSystem, physics, null, engineSystems);
+            null, cameraProjection, physics, null, engineSystems);
 
         // Wire components that need the full Engine reference
         EntitySystem entitySystem = new EntitySystem();
@@ -237,7 +237,7 @@ public class Engine implements Disposable {
         this.entitySystem = entitySystem;
     }
 
-    public void setCameraSystem(CameraSystem cameraSystem) {
-        this.cameraSystem = cameraSystem;
+    public void setCameraProjection(CameraProjection cameraProjection) {
+        this.cameraProjection = cameraProjection;
     }
 }

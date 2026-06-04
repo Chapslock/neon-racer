@@ -23,9 +23,9 @@ import org.joml.Vector3f;
  * @see Camera
  * @see Transform
  */
-public class CameraSystem {
+public class CameraProjection {
 
-    private static final Log log = Log.create(CameraSystem.class);
+    private static final Log log = Log.create(CameraProjection.class);
 
     private final WindowSpecification windowSpec;
     private final Matrix4f cameraViewMatrix = new Matrix4f();
@@ -41,7 +41,7 @@ public class CameraSystem {
     private final Vector3f tempCenter = new Vector3f();
     private final Quaternionf tempQuat = new Quaternionf();
 
-    public CameraSystem(WindowSpecification windowSpec) {
+    public CameraProjection(WindowSpecification windowSpec) {
         this.windowSpec = windowSpec;
     }
 

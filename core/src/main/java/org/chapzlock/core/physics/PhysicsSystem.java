@@ -11,7 +11,7 @@ import org.chapzlock.core.event.ComponentAddedEvent;
 import org.chapzlock.core.event.ComponentRemovedEvent;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.event.Subscription;
-import org.chapzlock.core.render.CameraSystem;
+import org.chapzlock.core.render.CameraProjection;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -55,7 +55,7 @@ public class PhysicsSystem implements GameSystem {
 
     private PhysicsWorld world;
     private ComponentRegistry registry;
-    private CameraSystem cameraSystem;
+    private CameraProjection cameraProjection;
 
     private Subscription componentAddedSub;
     private Subscription componentRemovedSub;
@@ -70,22 +70,22 @@ public class PhysicsSystem implements GameSystem {
         this.config = config;
     }
 
-    public PhysicsSystem(PhysicsWorldConfig config, CameraSystem cameraSystem) {
+    public PhysicsSystem(PhysicsWorldConfig config, CameraProjection cameraProjection) {
         this.config = config;
-        this.cameraSystem = cameraSystem;
+        this.cameraProjection = cameraProjection;
     }
 
-    public PhysicsSystem(PhysicsWorldConfig config, CameraSystem cameraSystem, PhysicsWorld world) {
+    public PhysicsSystem(PhysicsWorldConfig config, CameraProjection cameraProjection, PhysicsWorld world) {
         this.config = config;
-        this.cameraSystem = cameraSystem;
+        this.cameraProjection = cameraProjection;
         this.world = world;
     }
 
     @Override
     public void onInit(Engine engine) {
         this.registry = engine.getRegistry();
-        if (this.cameraSystem == null) {
-            this.cameraSystem = engine.getCameraSystem();
+        if (this.cameraProjection == null) {
+            this.cameraProjection = engine.getCameraProjection();
         }
         if (this.world == null) {
             // Fallback for cases where PhysicsSystem is used without Engine.create()
@@ -125,8 +125,8 @@ public class PhysicsSystem implements GameSystem {
             }
         });
         if (cam[0] != null) {
-            var projectionMatrix = cameraSystem.calculateProjectionMatrix(cam[0]);
-            var viewMatrix = cameraSystem.calculateViewMatrix(camTransform[0]);
+            var projectionMatrix = cameraProjection.calculateProjectionMatrix(cam[0]);
+            var viewMatrix = cameraProjection.calculateViewMatrix(camTransform[0]);
             world.getDebugDrawer().render(projectionMatrix, viewMatrix);
         }
     }

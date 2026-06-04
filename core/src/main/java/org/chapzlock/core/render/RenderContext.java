@@ -29,7 +29,7 @@ public class RenderContext {
     private final MeshRegistry meshRegistry;
     private final ShaderRegistry shaderRegistry;
     private final TextureRegistry textureRegistry;
-    private final CameraSystem cameraSystem;
+    private final CameraProjection cameraProjection;
     private final SceneManager sceneManager;
     private final Vector3f[] pointLightPositionPool = new Vector3f[PointLight.MAX_COUNT];
 
@@ -51,7 +51,7 @@ public class RenderContext {
         this.meshRegistry = engine.getMeshRegistry();
         this.shaderRegistry = engine.getShaderRegistry();
         this.textureRegistry = engine.getTextureRegistry();
-        this.cameraSystem = engine.getCameraSystem();
+        this.cameraProjection = engine.getCameraProjection();
         this.sceneManager = engine.getSceneManager();
         for (int i = 0; i < pointLightPositionPool.length; i++) {
             pointLightPositionPool[i] = new Vector3f();
@@ -83,9 +83,9 @@ public class RenderContext {
         cameraTransform.getPosition(pos);
         this.cameraPosition = pos;
 
-        if (cameraSystem != null) {
-            this.projectionMatrix = cameraSystem.calculateProjectionMatrix(camera);
-            this.viewMatrix = cameraSystem.calculateViewMatrix(cameraTransform);
+        if (cameraProjection != null) {
+            this.projectionMatrix = cameraProjection.calculateProjectionMatrix(camera);
+            this.viewMatrix = cameraProjection.calculateViewMatrix(cameraTransform);
         }
 
         this.sky = registry.getSingleton(Sky.class).orElse(null);
