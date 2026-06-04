@@ -1,10 +1,8 @@
-package org.chapzlock.core.render;
+package org.chapzlock.core.ecs;
 
 import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.component.Hierarchy;
 import org.chapzlock.core.component.Transform;
-import org.chapzlock.core.ecs.ComponentRegistry;
-import org.chapzlock.core.ecs.Entity;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.junit.jupiter.api.BeforeEach;

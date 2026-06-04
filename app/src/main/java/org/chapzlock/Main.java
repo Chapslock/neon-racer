@@ -10,7 +10,7 @@ import org.chapzlock.core.logging.Log;
 import org.chapzlock.core.physics.PhysicsSystem;
 import org.chapzlock.core.physics.PhysicsWorldConfig;
 import org.chapzlock.core.render.RenderSystem;
-import org.chapzlock.core.render.TransformSystem;
+import org.chapzlock.core.ecs.TransformSystem;
 import org.chapzlock.core.tween.TweenSystem;
 import org.chapzlock.core.window.WindowSpecification;
 

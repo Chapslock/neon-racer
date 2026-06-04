@@ -9,7 +9,7 @@ import org.joml.Vector3f;
  * Position, rotation, and scale of an entity in local space, plus its computed world matrix.
  *
  * <p>Local-space data (position, rotation, scale) is set by game code. The world matrix
- * is computed by {@link org.chapzlock.core.render.TransformSystem} each frame for entities
+ * is computed by {@link org.chapzlock.core.ecs.TransformSystem} each frame for entities
  * in a hierarchy. For standalone entities (no hierarchy), {@link #getWorldMatrix()} returns
  * the local matrix directly with zero overhead.
  *

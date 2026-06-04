@@ -1,4 +1,4 @@
-package org.chapzlock.core.render;
+package org.chapzlock.core.ecs;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -6,9 +6,6 @@ import java.util.Set;
 import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.component.Hierarchy;
 import org.chapzlock.core.component.Transform;
-import org.chapzlock.core.ecs.ComponentRegistry;
-import org.chapzlock.core.ecs.GameSystem;
-import org.chapzlock.core.ecs.SystemPhase;
 import org.chapzlock.core.logging.Log;
 import org.joml.Matrix4f;
 
