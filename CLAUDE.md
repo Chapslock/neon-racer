@@ -25,7 +25,7 @@ Two Gradle modules (Kotlin DSL):
 
 - `ecs/` — GameSystem, SystemPhase, SystemScheduler, Component, Tag, Entity, ComponentRegistry, ComponentStore, ComponentRule, EntityFactory, TransformSystem
 - `application/` — Application, Engine, ApplicationSpecification, Disposable, ApplicationUtil
-- `scene/` — Scene, SceneManager, SceneInstantiator, SceneInstance, SceneBuilder, EntityRecipe, GltfModelFactory, SceneLoadedEvent, SceneUnloadedEvent
+- `scene/` — Scene, SceneManager, SceneInstance, SceneBuilder, EntityRecipe, SceneLoadedEvent, SceneUnloadedEvent
 - `render/` — RenderSystem, RenderPass, RenderContext, OpaquePass, SpritePass, PbrMaterialRenderer, SpriteRenderer, CameraProjection, MeshRegistry, TextureRegistry, ShaderRegistry, RefCounted, ShaderProps, GL utilities
 - `component/` — All data components (Camera, Transform, Mesh, PbrMaterial, SpriteMaterial, PointLight, DirectionalLight, PhysicsBody, Skeleton, etc.)
 - `physics/` — PhysicsSystem and all physics utilities
@@ -75,13 +75,13 @@ Scene.builder("name")
     .build();
 ```
 
-`SceneManager` manages scene lifecycle: one primary scene plus zero or more additive scenes. It delegates instantiation to `SceneInstantiator` which validates component rules and returns a `SceneInstance`.
+`SceneManager` manages scene lifecycle: one primary scene plus zero or more additive scenes. It handles instantiation directly (entity creation via EntityFactory, GPU asset tracking, system initialization) and returns a `SceneInstance`.
 
 **Transitions:** `loadImmediate(scene)` for initial load (synchronous). `load(scene)` queues a deferred transition (old scene unloaded, new scene instantiated at end-of-frame via `processPendingTransitions()`). `loadAdditive(scene)` adds a persistent overlay scene. `unload(scene)` removes an additive scene.
 
-**Asset ownership:** GPU registries (MeshRegistry, TextureRegistry, ShaderRegistry) use `RefCounted` for reference counting (`retain()`/`release()`). SceneInstantiator retains assets when instantiating a scene and releases them on teardown. Shared assets (same path across scenes) survive until all referencing scenes are unloaded.
+**Asset ownership:** GPU registries (MeshRegistry, TextureRegistry, ShaderRegistry) use `RefCounted` for reference counting (`retain()`/`release()`). SceneManager retains assets when instantiating a scene and releases them on teardown. Shared assets (same path across scenes) survive until all referencing scenes are unloaded.
 
-**Component validation:** `SceneInstantiator` checks `ComponentRule` dependencies (e.g., Mesh requires Transform, PointLight requires Transform). Invalid entities are skipped with a clear error message.
+**Component validation:** `EntityFactory` checks `ComponentRule` dependencies (e.g., Mesh requires Transform, PointLight requires Transform). Invalid entities are skipped with a clear error message.
 
 ### Application Lifecycle
 
