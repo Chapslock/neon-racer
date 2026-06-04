@@ -228,7 +228,7 @@ class SceneManagerTest {
             null, null, null, null, null
         );
         org.chapzlock.core.ecs.EntityFactory entityFactory = new org.chapzlock.core.ecs.EntityFactory(
-            assetEngine.getRegistry(), meshRegistry, textureRegistry);
+            assetEngine.getRegistry(), meshRegistry, textureRegistry, null);
         assetEngine.setEntityFactory(entityFactory);
         SceneManager sm = new SceneManager(assetEngine, scheduler);
 

@@ -1,4 +1,4 @@
-package org.chapzlock.core.scene;
+package org.chapzlock.core.ecs;
 
 import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.asset.gltf.GltfAnimationData;
@@ -7,8 +7,6 @@ import org.chapzlock.core.asset.gltf.GltfNodeData;
 import org.chapzlock.core.component.AnimationClipSet;
 import org.chapzlock.core.component.Hierarchy;
 import org.chapzlock.core.component.Transform;
-import org.chapzlock.core.ecs.ComponentRegistry;
-import org.chapzlock.core.ecs.Entity;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,23 +18,23 @@ import java.util.stream.IntStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for {@link GltfModelFactory#instantiateAsChild(GltfAsset, int)}.
+ * Tests for {@link EntityFactory#instantiateGltfAsChild(org.chapzlock.core.asset.gltf.GltfAsset, int)}.
  *
  * <p>Verifies that glTF models instantiated as children of an existing entity are
  * correctly parented in the hierarchy, and that animation components are attached
  * to the parent entity rather than the glTF root node.
  */
-class GltfModelBlueprintTest {
+class EntityFactoryGltfChildTest {
 
     private Engine engine;
     private ComponentRegistry registry;
-    private GltfModelFactory instantiator;
+    private EntityFactory entityFactory;
 
     @BeforeEach
     void setUp() {
         engine = Engine.testEngine();
         registry = engine.getRegistry();
-        instantiator = new GltfModelFactory(engine);
+        entityFactory = engine.getEntityFactory();
     }
 
     @Test
@@ -65,7 +63,7 @@ class GltfModelBlueprintTest {
             List.of()
         );
 
-        GltfInstance instance = instantiator.instantiateAsChild(asset, parent);
+        GltfInstance instance = entityFactory.instantiateGltfAsChild(asset, parent);
 
         // The child's hierarchy should point to the parent entity
         int childEntity = instance.entity("Child");
@@ -111,7 +109,7 @@ class GltfModelBlueprintTest {
             List.of(anim)
         );
 
-        instantiator.instantiateAsChild(asset, parent);
+        entityFactory.instantiateGltfAsChild(asset, parent);
 
         // AnimationClipSet should be on the parent entity (not on the glTF root node)
         AnimationClipSet clips = registry.getComponent(parent, AnimationClipSet.class);
@@ -143,7 +141,7 @@ class GltfModelBlueprintTest {
             List.of()
         );
 
-        instantiator.instantiateAsChild(asset, parent);
+        entityFactory.instantiateGltfAsChild(asset, parent);
 
         // Should have created a Hierarchy component for the parent automatically
         Hierarchy parentHierarchy = registry.getComponent(parent, Hierarchy.class);
@@ -184,7 +182,7 @@ class GltfModelBlueprintTest {
             List.of()
         );
 
-        GltfInstance instance = instantiator.instantiateAsChild(asset, parent);
+        GltfInstance instance = entityFactory.instantiateGltfAsChild(asset, parent);
 
         // Both root nodes should be children of the parent
         Hierarchy parentHierarchy = registry.getComponent(parent, Hierarchy.class);
@@ -221,7 +219,7 @@ class GltfModelBlueprintTest {
             List.of()
         );
 
-        GltfInstance instance = instantiator.instantiateAsChild(asset, parent);
+        GltfInstance instance = entityFactory.instantiateGltfAsChild(asset, parent);
 
         int childEntity = instance.entity("Positioned");
         Transform childTransform = registry.getComponent(childEntity, Transform.class);
@@ -229,6 +227,5 @@ class GltfModelBlueprintTest {
         assertEquals(expectedPos.x, childTransform.getX(), 0.001f);
         assertEquals(expectedPos.y, childTransform.getY(), 0.001f);
         assertEquals(expectedPos.z, childTransform.getZ(), 0.001f);
-
     }
 }

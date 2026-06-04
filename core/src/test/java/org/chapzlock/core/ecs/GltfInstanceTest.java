@@ -1,4 +1,4 @@
-package org.chapzlock.core.scene;
+package org.chapzlock.core.ecs;
 
 import org.junit.jupiter.api.Test;
 

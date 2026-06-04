@@ -148,7 +148,7 @@ public class Engine implements Disposable {
         engine.setPhysics(physics);
 
         // Wire components that need the full Engine reference
-        EntityFactory entityFactory = new EntityFactory(registry, meshRegistry, textureRegistry);
+        EntityFactory entityFactory = new EntityFactory(registry, meshRegistry, textureRegistry, shaderRegistry);
         engine.setEntityFactory(entityFactory);
 
         SceneManager sceneManager = new SceneManager(engine, scheduler);
@@ -194,7 +194,7 @@ public class Engine implements Disposable {
             scheduler,
             null, null, null, null, null
         );
-        EntityFactory entityFactory = new EntityFactory(engine.getRegistry(), null, null);
+        EntityFactory entityFactory = new EntityFactory(engine.getRegistry(), null, null, null);
         engine.setEntityFactory(entityFactory);
         SceneManager sceneManager = new SceneManager(engine, scheduler);
         engine.setSceneManager(sceneManager);

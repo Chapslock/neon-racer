@@ -1,4 +1,4 @@
-package org.chapzlock.core.scene;
+package org.chapzlock.core.ecs;
 
 import org.chapzlock.core.animation.Animation;
 import org.chapzlock.core.animation.TargetPath;
@@ -6,7 +6,6 @@ import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.asset.gltf.*;
 import org.chapzlock.core.component.AnimationClipSet;
 import org.chapzlock.core.component.AnimationState;
-import org.chapzlock.core.ecs.ComponentRegistry;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,17 +15,17 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class GltfModelFactoryAnimationTest {
+class EntityFactoryGltfAnimationTest {
 
     private Engine engine;
     private ComponentRegistry registry;
-    private GltfModelFactory instantiator;
+    private EntityFactory entityFactory;
 
     @BeforeEach
     void setUp() {
         engine = Engine.testEngine();
         registry = engine.getRegistry();
-        instantiator = new GltfModelFactory(engine);
+        entityFactory = engine.getEntityFactory();
     }
 
     @Test
@@ -50,7 +49,7 @@ class GltfModelFactoryAnimationTest {
             List.of(animData)
         );
 
-        GltfInstance instance = instantiator.instantiate(asset);
+        GltfInstance instance = entityFactory.instantiateGltf(asset);
         int rootEntity = instance.rootEntity();
 
         AnimationClipSet clipSet = registry.getComponent(rootEntity, AnimationClipSet.class);
@@ -87,7 +86,7 @@ class GltfModelFactoryAnimationTest {
             List.of(animData)
         );
 
-        GltfInstance instance = instantiator.instantiate(asset);
+        GltfInstance instance = entityFactory.instantiateGltf(asset);
         int rootEntity = instance.rootEntity();
 
         AnimationState state = registry.getComponent(rootEntity, AnimationState.class);
@@ -108,7 +107,7 @@ class GltfModelFactoryAnimationTest {
             List.of()
         );
 
-        GltfInstance instance = instantiator.instantiate(asset);
+        GltfInstance instance = entityFactory.instantiateGltf(asset);
         int rootEntity = instance.rootEntity();
 
         assertNull(registry.getComponent(rootEntity, AnimationClipSet.class));

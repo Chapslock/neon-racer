@@ -1,4 +1,4 @@
-package org.chapzlock.core.scene;
+package org.chapzlock.core.ecs;
 
 import java.util.List;
 
@@ -7,7 +7,6 @@ import org.chapzlock.core.asset.gltf.GltfAsset;
 import org.chapzlock.core.asset.gltf.GltfNodeData;
 import org.chapzlock.core.component.Hierarchy;
 import org.chapzlock.core.component.Transform;
-import org.chapzlock.core.ecs.ComponentRegistry;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit tests for {@link GltfModelFactory}.
+ * Unit tests for glTF instantiation via {@link EntityFactory}.
  *
  * <p>These tests verify the non-GPU code paths: entity creation, hierarchy setup,
  * transform propagation, and name mapping. GPU-dependent paths (mesh upload, texture
@@ -26,15 +25,17 @@ import static org.junit.jupiter.api.Assertions.*;
  * <p>All test nodes use {@code meshIndex = -1} so the instantiator never attempts
  * GPU operations.
  */
-class GltfModelFactoryTest {
+class EntityFactoryGltfTest {
 
     private Engine engine;
     private ComponentRegistry registry;
+    private EntityFactory entityFactory;
 
     @BeforeEach
     void setUp() {
         engine = Engine.testEngine();
         registry = engine.getRegistry();
+        entityFactory = engine.getEntityFactory();
     }
 
     @Test
@@ -51,8 +52,7 @@ class GltfModelFactoryTest {
             List.of(root, child), List.of(0), List.of(), List.of(), List.of(), List.of());
 
         // Instantiate without GPU systems (no meshes to upload)
-        GltfModelFactory instantiator = new GltfModelFactory(engine);
-        GltfInstance instance = instantiator.instantiate(asset);
+        GltfInstance instance = entityFactory.instantiateGltf(asset);
 
         // Verify name mapping
         assertTrue(instance.hasEntity("Root"));
@@ -88,8 +88,7 @@ class GltfModelFactoryTest {
         GltfAsset asset = new GltfAsset(
             List.of(node), List.of(0), List.of(), List.of(), List.of(), List.of());
 
-        GltfModelFactory instantiator = new GltfModelFactory(engine);
-        GltfInstance instance = instantiator.instantiate(asset);
+        GltfInstance instance = entityFactory.instantiateGltf(asset);
 
         assertEquals(instance.entity("OnlyNode"), instance.rootEntity());
     }
@@ -107,8 +106,7 @@ class GltfModelFactoryTest {
         GltfAsset asset = new GltfAsset(
             List.of(rootA, rootB), List.of(0, 1), List.of(), List.of(), List.of(), List.of());
 
-        GltfModelFactory instantiator = new GltfModelFactory(engine);
-        GltfInstance instance = instantiator.instantiate(asset);
+        GltfInstance instance = entityFactory.instantiateGltf(asset);
 
         // Both should be root nodes
         int rootAId = instance.entity("RootA");
@@ -122,7 +120,7 @@ class GltfModelFactoryTest {
         assertEquals(rootAId, instance.rootEntity());
     }
 
-@Test
+    @Test
     void rotationIsAppliedFromQuaternion() {
         // 90 degrees around Y axis as a quaternion
         Quaternionf rotation = new Quaternionf().rotateY((float) Math.toRadians(90));
@@ -134,8 +132,7 @@ class GltfModelFactoryTest {
         GltfAsset asset = new GltfAsset(
             List.of(node), List.of(0), List.of(), List.of(), List.of(), List.of());
 
-        GltfModelFactory instantiator = new GltfModelFactory(engine);
-        GltfInstance instance = instantiator.instantiate(asset);
+        GltfInstance instance = entityFactory.instantiateGltf(asset);
 
         int nodeId = instance.entity("Rotated");
         Transform transform = registry.getComponent(nodeId, Transform.class);
@@ -158,8 +155,7 @@ class GltfModelFactoryTest {
         GltfAsset asset = new GltfAsset(
             List.of(node), List.of(0), List.of(), List.of(), List.of(), List.of());
 
-        GltfModelFactory instantiator = new GltfModelFactory(engine);
-        GltfInstance instance = instantiator.instantiate(asset);
+        GltfInstance instance = entityFactory.instantiateGltf(asset);
 
         int nodeId = instance.entity("Scaled");
         Transform transform = registry.getComponent(nodeId, Transform.class);
@@ -186,8 +182,7 @@ class GltfModelFactoryTest {
         GltfAsset asset = new GltfAsset(
             List.of(grandparent, parent, child), List.of(0), List.of(), List.of(), List.of(), List.of());
 
-        GltfModelFactory instantiator = new GltfModelFactory(engine);
-        GltfInstance instance = instantiator.instantiate(asset);
+        GltfInstance instance = entityFactory.instantiateGltf(asset);
 
         int gpId = instance.entity("Grandparent");
         int pId = instance.entity("Parent");
@@ -224,8 +219,7 @@ class GltfModelFactoryTest {
         GltfAsset asset = new GltfAsset(
             List.of(unnamed, named), List.of(0, 1), List.of(), List.of(), List.of(), List.of());
 
-        GltfModelFactory instantiator = new GltfModelFactory(engine);
-        GltfInstance instance = instantiator.instantiate(asset);
+        GltfInstance instance = entityFactory.instantiateGltf(asset);
 
         assertFalse(instance.hasEntity(null != null ? null : "__null__"));
         assertTrue(instance.hasEntity("Named"));
@@ -243,8 +237,7 @@ class GltfModelFactoryTest {
         GltfAsset asset = new GltfAsset(
             List.of(emptyName), List.of(0), List.of(), List.of(), List.of(), List.of());
 
-        GltfModelFactory instantiator = new GltfModelFactory(engine);
-        GltfInstance instance = instantiator.instantiate(asset);
+        GltfInstance instance = entityFactory.instantiateGltf(asset);
 
         assertFalse(instance.hasEntity(""));
         assertEquals(0, instance.allEntities().size());

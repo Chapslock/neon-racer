@@ -1,9 +1,8 @@
-package org.chapzlock.core.scene;
+package org.chapzlock.core.ecs;
 
 import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.asset.gltf.*;
 import org.chapzlock.core.component.Skeleton;
-import org.chapzlock.core.ecs.ComponentRegistry;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -14,17 +13,17 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class GltfModelFactorySkeletonTest {
+class EntityFactoryGltfSkeletonTest {
 
     private Engine engine;
     private ComponentRegistry registry;
-    private GltfModelFactory instantiator;
+    private EntityFactory entityFactory;
 
     @BeforeEach
     void setUp() {
         engine = Engine.testEngine();
         registry = engine.getRegistry();
-        instantiator = new GltfModelFactory(engine);
+        entityFactory = engine.getEntityFactory();
     }
 
     @Test
@@ -47,7 +46,7 @@ class GltfModelFactorySkeletonTest {
             List.of()
         );
 
-        GltfInstance instance = instantiator.instantiate(asset);
+        GltfInstance instance = entityFactory.instantiateGltf(asset);
 
         int meshEntityId = instance.entity("Mesh");
         Skeleton skeleton = registry.getComponent(meshEntityId, Skeleton.class);
@@ -73,7 +72,7 @@ class GltfModelFactorySkeletonTest {
             List.of()
         );
 
-        GltfInstance instance = instantiator.instantiate(asset);
+        GltfInstance instance = entityFactory.instantiateGltf(asset);
         int entityId = instance.entity("Box");
         assertNull(registry.getComponent(entityId, Skeleton.class));
     }

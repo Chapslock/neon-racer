@@ -10,6 +10,7 @@ import java.util.Queue;
 
 import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.ecs.GameSystem;
+import org.chapzlock.core.ecs.GltfInstance;
 import org.chapzlock.core.ecs.SystemScheduler;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.input.InputMap;

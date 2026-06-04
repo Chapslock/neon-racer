@@ -1,4 +1,4 @@
-package org.chapzlock.core.scene;
+package org.chapzlock.core.ecs;
 
 import java.util.Map;
 
@@ -37,7 +37,7 @@ import java.util.Map;
  * This class is immutable once constructed. The internal name-to-entity map is
  * defensively copied, so modifications to the original map will not affect this instance.
  *
- * @see SceneManager
+ * @see EntityFactory
  */
 public class GltfInstance {
 

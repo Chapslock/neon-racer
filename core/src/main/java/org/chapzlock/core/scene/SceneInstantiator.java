@@ -12,6 +12,7 @@ import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.EntityBuilder;
 import org.chapzlock.core.ecs.EntityFactory;
 import org.chapzlock.core.ecs.GameSystem;
+import org.chapzlock.core.ecs.GltfInstance;
 import org.chapzlock.core.logging.Log;
 
 /**
@@ -88,7 +89,7 @@ public class SceneInstantiator {
         List<Integer> entityIds = new ArrayList<>();
         SceneAssets assets = new SceneAssets();
 
-        for (EntityRecipe recipe : scene.getEntities()) {
+        for (EntityRecipe recipe : scene.getEntityRecipes()) {
             try {
                 EntityBuilder builder = new EntityBuilder(recipe.name());
                 recipe.configurator().accept(builder);
@@ -111,8 +112,7 @@ public class SceneInstantiator {
                 GltfModel gltfModel = registry.getComponent(entityId, GltfModel.class);
                 if (gltfModel != null) {
                     GltfAsset modelAsset = engine.getGltfAssetRegistry().getOrLoad(gltfModel.resourcePath());
-                    GltfModelFactory modelFactory = new GltfModelFactory(engine);
-                    GltfInstance modelInstance = modelFactory.instantiateAsChild(modelAsset, entityId);
+                    GltfInstance modelInstance = engine.getEntityFactory().instantiateGltfAsChild(modelAsset, entityId);
                     for (int childId : modelInstance.allEntities().values()) {
                         entityIds.add(childId);
                     }
@@ -141,14 +141,14 @@ public class SceneInstantiator {
 
         List<GameSystem> systems = initSystems(scene);
 
-        if (scene.getEntities().isEmpty()) {
+        if (scene.getEntityRecipes().isEmpty()) {
             log.warn("Scene \"%s\" has no entities — did you forget .entity() calls in the builder?",
                 scene.getName());
         }
 
-        if (!scene.getEntities().isEmpty() && scene.getSystems().isEmpty()) {
+        if (!scene.getEntityRecipes().isEmpty() && scene.getSystems().isEmpty()) {
             log.warn("Scene \"%s\" has %d entities but no systems — nothing will update them",
-                scene.getName(), scene.getEntities().size());
+                scene.getName(), scene.getEntityRecipes().size());
         }
 
         return new SceneInstance(scene, entityIds, assets, systems);
@@ -211,8 +211,7 @@ public class SceneInstantiator {
     public GltfInstance loadGltf(String resourcePath) {
         log.debug("Loading glTF: %s", resourcePath);
         GltfAsset asset = engine.getGltfAssetRegistry().getOrLoad(resourcePath);
-        GltfModelFactory modelFactory = new GltfModelFactory(engine);
-        return modelFactory.instantiate(asset);
+        return engine.getEntityFactory().instantiateGltf(asset);
     }
 
     /**
