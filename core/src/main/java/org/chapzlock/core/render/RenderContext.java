@@ -44,6 +44,7 @@ public class RenderContext {
     private Fog fog;
     private AmbientLight ambientLight;
     private boolean warnedNoCamera = false;
+    private boolean warnedMeshWithoutMaterial = false;
 
     public RenderContext(EngineContext ctx) {
         this.registry = ctx.getRegistry();
@@ -112,6 +113,18 @@ public class RenderContext {
 
         this.fog = registry.getSingleton(Fog.class).orElse(null);
         this.ambientLight = registry.getSingleton(AmbientLight.class).orElse(null);
+
+        if (!warnedMeshWithoutMaterial) {
+            registry.forEach(Mesh.class, Transform.class, (entityId, mesh, transform) -> {
+                if (registry.getComponent(entityId, PbrMaterial.class) == null &&
+                    registry.getComponent(entityId, SpriteMaterial.class) == null) {
+                    Name nameComp = registry.getComponent(entityId, Name.class);
+                    String entityName = nameComp != null ? nameComp.getValue() : "entity " + entityId;
+                    log.warn("Entity \"%s\" has Mesh but no material — will not render", entityName);
+                    warnedMeshWithoutMaterial = true;
+                }
+            });
+        }
 
         return true;
     }

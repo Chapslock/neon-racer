@@ -142,8 +142,13 @@ public class SceneInstantiator {
         List<GameSystem> systems = initSystems(scene);
 
         if (scene.getEntities().isEmpty()) {
-            log.warn("Scene \"%s\" has no entities. Did you forget to add .entity() calls to the builder?",
+            log.warn("Scene \"%s\" has no entities — did you forget .entity() calls in the builder?",
                 scene.getName());
+        }
+
+        if (!scene.getEntities().isEmpty() && scene.getSystems().isEmpty()) {
+            log.warn("Scene \"%s\" has %d entities but no systems — nothing will update them",
+                scene.getName(), scene.getEntities().size());
         }
 
         return new SceneInstance(scene, entityIds, assets, systems);
