@@ -2,7 +2,7 @@ package org.chapzlock.core.ecs;
 
 import java.util.List;
 
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 
 /**
  * A system that participates in the engine's update loop.
@@ -19,8 +19,8 @@ import org.chapzlock.core.application.EngineContext;
  *     private ComponentRegistry registry;
  *
  *     @Override
- *     public void onInit(EngineContext ctx) {
- *         this.registry = ctx.getRegistry();
+ *     public void onInit(Engine engine) {
+ *         this.registry = engine.getRegistry();
  *     }
  *
  *     @Override
@@ -62,11 +62,11 @@ public interface GameSystem {
     default List<Class<? extends GameSystem>> runBefore() { return List.of(); }
 
     /**
-     * Called once when the system is registered. Use to store references from context.
+     * Called once when the system is registered. Use to store references from engine.
      *
-     * @param ctx the engine context containing all subsystems
+     * @param engine the engine containing all subsystems
      */
-    default void onInit(EngineContext ctx) {}
+    default void onInit(Engine engine) {}
 
     /**
      * Called every frame for game logic updates.

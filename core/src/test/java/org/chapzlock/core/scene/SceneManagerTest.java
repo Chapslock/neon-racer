@@ -3,7 +3,7 @@ package org.chapzlock.core.scene;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.SpriteMaterial;
 import org.chapzlock.core.component.SpriteLayer;
@@ -24,16 +24,16 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SceneManagerTest {
 
-    private EngineContext ctx;
+    private Engine engine;
     private SceneManager sceneManager;
     private EventBus eventBus;
     private List<Subscription> subscriptions;
 
     @BeforeEach
     void setUp() {
-        ctx = EngineContext.testContext();
-        eventBus = ctx.getEventBus();
-        sceneManager = new SceneManager(ctx);
+        engine = Engine.testEngine();
+        eventBus = engine.getEventBus();
+        sceneManager = new SceneManager(engine);
         subscriptions = new ArrayList<>();
     }
 
@@ -61,7 +61,7 @@ class SceneManagerTest {
         Scene scene = simpleScene("test");
         sceneManager.loadImmediate(scene);
 
-        ComponentRegistry registry = ctx.getRegistry();
+        ComponentRegistry registry = engine.getRegistry();
         assertEquals(1, registry.count(Transform.class));
     }
 
@@ -85,7 +85,7 @@ class SceneManagerTest {
         sceneManager.loadImmediate(simpleScene("second"));
 
         assertEquals("second", sceneManager.getPrimaryScene().getName());
-        ComponentRegistry registry = ctx.getRegistry();
+        ComponentRegistry registry = engine.getRegistry();
         assertEquals(1, registry.count(Transform.class));
     }
 
@@ -128,7 +128,7 @@ class SceneManagerTest {
         sceneManager.loadImmediate(primary);
         sceneManager.loadAdditiveImmediate(additive);
 
-        ComponentRegistry registry = ctx.getRegistry();
+        ComponentRegistry registry = engine.getRegistry();
         assertEquals(2, registry.count(Transform.class));
 
         sceneManager.unloadImmediate(additive);
@@ -161,7 +161,7 @@ class SceneManagerTest {
         boolean destroyed = false;
 
         @Override
-        public void onInit(EngineContext ctx) { initialized = true; }
+        public void onInit(Engine engine) { initialized = true; }
 
         @Override
         public void onDestroy() { destroyed = true; }
@@ -217,18 +217,22 @@ class SceneManagerTest {
         MeshRegistry meshRegistry = new MeshRegistry();
         TextureRegistry textureRegistry = new TextureRegistry();
         EventBus eb = new EventBus();
-        EngineContext assetCtx = EngineContext.builder()
-            .registry(new ComponentRegistry(eb))
-            .eventBus(eb)
-            .meshRegistry(meshRegistry)
-            .textureRegistry(textureRegistry)
-            .time(new org.chapzlock.core.application.Time())
-            .tweenManager(new org.chapzlock.core.tween.TweenManager())
-            .build();
+        Engine assetEngine = new Engine(
+            new ComponentRegistry(eb),
+            eb,
+            meshRegistry,
+            textureRegistry,
+            null,
+            null,
+            new org.chapzlock.core.application.Time(),
+            new org.chapzlock.core.tween.TweenManager(),
+            new org.chapzlock.core.asset.gltf.GltfAssetRegistry(),
+            java.util.List.of()
+        );
         org.chapzlock.core.ecs.EntitySystem entitySystem = new org.chapzlock.core.ecs.EntitySystem();
-        entitySystem.onInit(assetCtx);
-        assetCtx.setEntitySystem(entitySystem);
-        SceneManager sm = new SceneManager(assetCtx);
+        entitySystem.onInit(assetEngine);
+        assetEngine.setEntitySystem(entitySystem);
+        SceneManager sm = new SceneManager(assetEngine);
 
         Mesh fakeMesh = Mesh.builder().id(42).build();
         Texture fakeTexture = Texture.builder().id(7).build();
@@ -258,7 +262,7 @@ class SceneManagerTest {
 
         sceneManager.loadImmediate(scene);
 
-        ComponentRegistry registry = ctx.getRegistry();
+        ComponentRegistry registry = engine.getRegistry();
         int playerId = registry.getEntityByName("player");
         assertNotEquals(-1, playerId);
     }
@@ -275,7 +279,7 @@ class SceneManagerTest {
 
         sceneManager.loadImmediate(scene);
 
-        ComponentRegistry registry = ctx.getRegistry();
+        ComponentRegistry registry = engine.getRegistry();
         assertEquals(1, registry.count(Transform.class), "Only the good entity should exist");
 
         // The key test: when we unload the scene, it should only try to destroy

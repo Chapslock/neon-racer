@@ -3,7 +3,7 @@ package org.chapzlock.core.render;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.*;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.logging.Log;
@@ -46,13 +46,13 @@ public class RenderContext {
     private boolean warnedNoCamera = false;
     private boolean warnedMeshWithoutMaterial = false;
 
-    public RenderContext(EngineContext ctx) {
-        this.registry = ctx.getRegistry();
-        this.meshRegistry = ctx.getMeshRegistry();
-        this.shaderRegistry = ctx.getShaderRegistry();
-        this.textureRegistry = ctx.getTextureRegistry();
-        this.cameraSystem = ctx.getCameraSystem();
-        this.sceneManager = ctx.getSceneManager();
+    public RenderContext(Engine engine) {
+        this.registry = engine.getRegistry();
+        this.meshRegistry = engine.getMeshRegistry();
+        this.shaderRegistry = engine.getShaderRegistry();
+        this.textureRegistry = engine.getTextureRegistry();
+        this.cameraSystem = engine.getCameraSystem();
+        this.sceneManager = engine.getSceneManager();
         for (int i = 0; i < pointLightPositionPool.length; i++) {
             pointLightPositionPool[i] = new Vector3f();
         }

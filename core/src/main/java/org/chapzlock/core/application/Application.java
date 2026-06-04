@@ -49,7 +49,7 @@ public class Application {
 
     @Getter
     private final ApplicationSpecification appSpec;
-    private EngineContext context;
+    private Engine engine;
     private Window window;
     private SceneManager sceneManager;
     private boolean isRunning = false;
@@ -66,28 +66,8 @@ public class Application {
         log.info("Engine starting: %s (%dx%d)", appSpec.getWindowSpec().getTitle(),
             appSpec.getWindowSpec().getWidth(), appSpec.getWindowSpec().getHeight());
 
-        createSubsystems();
+        // Engine context init begin
 
-        List<GameSystem> engineSystems = createEngineSystems();
-        sceneManager.registerEngineSystems(engineSystems);
-        engineSystems.forEach(system -> system.onInit(context));
-
-        if (appSpec.getInitialScene() != null) {
-            sceneManager.loadImmediate(appSpec.getInitialScene());
-        }
-
-        logActiveSystems(sceneManager.getActiveSystems());
-        mainLoop();
-
-        log.info("--- Shutdown ---");
-        sceneManager.unloadAll();
-        engineSystems.forEach(GameSystem::onDestroy);
-        context.dispose();
-        window.destroy();
-        ApplicationUtil.terminate();
-    }
-
-    private void createSubsystems() {
         EventBus eventBus = new EventBus();
         ComponentRegistry registry = new ComponentRegistry(eventBus);
 
@@ -103,47 +83,62 @@ public class Application {
             TweenManager tweenManager = new TweenManager();
             GltfAssetRegistry gltfAssetRegistry = new GltfAssetRegistry();
 
-            context = EngineContext.builder()
-                .registry(registry)
-                .eventBus(eventBus)
-                .meshRegistry(meshRegistry)
-                .textureRegistry(textureRegistry)
-                .shaderRegistry(shaderRegistry)
-                .window(window)
-                .time(time)
-                .tweenManager(tweenManager)
-                .gltfAssetRegistry(gltfAssetRegistry)
-                .build();
+            engine = new Engine(
+                registry,
+                eventBus,
+                meshRegistry,
+                textureRegistry,
+                shaderRegistry,
+                window,
+                time,
+                tweenManager,
+                gltfAssetRegistry,
+                java.util.List.of()
+            );
 
-            log.info("Subsystems initialized: MeshRegistry, TextureRegistry, ShaderRegistry");
-
-            sceneManager = new SceneManager(context);
-            context.setSceneManager(sceneManager);
+            sceneManager = new SceneManager(engine);
+            engine.setSceneManager(sceneManager);
 
             EntitySystem entitySystem = new EntitySystem();
-            entitySystem.onInit(context);
-            context.setEntitySystem(entitySystem);
+            entitySystem.onInit(engine);
+            engine.setEntitySystem(entitySystem);
         } catch (Exception e) {
-            if (context != null) {
-                context.dispose();
+            if (engine != null) {
+                engine.dispose();
             }
             if (window != null) {
                 window.destroy();
             }
             throw new RuntimeException("Failed to initialize engine subsystems", e);
         }
-    }
 
-    private List<GameSystem> createEngineSystems() {
         CameraSystem cameraSystem = new CameraSystem(appSpec.getWindowSpec());
-        context.setCameraSystem(cameraSystem);
-        return List.of(
+        engine.setCameraSystem(cameraSystem);
+        List<GameSystem> engineSystems = List.of(
             new TweenSystem(),
             new AnimationSystem(),
             new TransformSystem(),
             new PhysicsSystem(appSpec.getPhysicsConfig(), cameraSystem),
             new RenderSystem()
         );
+        sceneManager.registerEngineSystems(engineSystems);
+        engineSystems.forEach(system -> system.onInit(engine));
+
+        if (appSpec.getInitialScene() != null) {
+            sceneManager.loadImmediate(appSpec.getInitialScene());
+        } else {
+            log.warn("No active scene set!");
+        }
+
+        logActiveSystems(sceneManager.getActiveSystems());
+        mainLoop();
+
+        log.info("--- Shutdown ---");
+        sceneManager.unloadAll();
+        engineSystems.forEach(GameSystem::onDestroy);
+        engine.dispose();
+        window.destroy();
+        ApplicationUtil.terminate();
     }
 
     private void mainLoop() {
@@ -163,8 +158,8 @@ public class Application {
                 break;
             }
 
-            context.getTime().update(rawDelta);
-            float delta = context.getTime().getDelta();
+            engine.getTime().update(rawDelta);
+            float delta = engine.getTime().getDelta();
 
             ApplicationUtil.clearAndPrepareWindowState();
 
@@ -179,7 +174,7 @@ public class Application {
                 system.onDebugRender(delta);
             }
 
-            InputMap activeInputMap = context.getActiveInputMap();
+            InputMap activeInputMap = engine.getActiveInputMap();
             if (activeInputMap != null) {
                 activeInputMap.frameReset();
             }

@@ -1,6 +1,6 @@
 package org.chapzlock.core.physics;
 
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.asset.RawMeshData;
 import org.chapzlock.core.component.Hierarchy;
 import org.chapzlock.core.component.Mesh;
@@ -16,14 +16,14 @@ import static org.mockito.Mockito.*;
 
 class CollisionShapeResolverHierarchyTest {
 
-    private EngineContext ctx;
+    private Engine engine;
     private ComponentRegistry registry;
     private MeshRegistry meshRegistry;
 
     @BeforeEach
     void setUp() {
-        ctx = EngineContext.testContext();
-        registry = ctx.getRegistry();
+        engine = Engine.testEngine();
+        registry = engine.getRegistry();
         meshRegistry = mock(MeshRegistry.class);
     }
 

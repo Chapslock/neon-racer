@@ -1,6 +1,6 @@
 package org.chapzlock.core.render;
 
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.*;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.Entity;
@@ -17,7 +17,7 @@ class RenderContextTest {
 
     @BeforeEach
     void setUp() {
-        EngineContext engineCtx = EngineContext.testContext();
+        Engine engineCtx = Engine.testEngine();
         registry = engineCtx.getRegistry();
         ctx = new RenderContext(engineCtx);
     }

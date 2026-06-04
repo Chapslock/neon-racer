@@ -12,7 +12,7 @@ import org.chapzlock.core.animation.Animation;
 import org.chapzlock.core.animation.Channel;
 import org.chapzlock.core.animation.Interpolation;
 import org.chapzlock.core.animation.TargetPath;
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.AnimationClipSet;
 import org.chapzlock.core.component.AnimationState;
 import org.chapzlock.core.ecs.ComponentRegistry;
@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 
 class CharacterAnimationSystemTest {
 
-    private EngineContext ctx;
+    private Engine engine;
     private ComponentRegistry registry;
     private CharacterAnimationSystem system;
 
@@ -32,10 +32,10 @@ class CharacterAnimationSystemTest {
 
     @BeforeEach
     void setUp() {
-        ctx = EngineContext.testContext();
-        registry = ctx.getRegistry();
+        engine = Engine.testEngine();
+        registry = engine.getRegistry();
         system = new CharacterAnimationSystem();
-        system.onInit(ctx);
+        system.onInit(engine);
 
         Channel dummyChannel = new Channel(0, TargetPath.TRANSLATION, Interpolation.LINEAR,
             new float[]{0f, 1f}, new float[]{0, 0, 0, 0, 0, 0});

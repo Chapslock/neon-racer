@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.SpriteMaterial;
 import org.chapzlock.core.component.SpriteLayer;
@@ -36,9 +36,9 @@ public class SpritePass implements RenderPass {
     }
 
     @Override
-    public void init(EngineContext ctx) {
+    public void init(Engine engine) {
         spriteRenderer = new SpriteRenderer(
-            ctx.getShaderRegistry(), ctx.getTextureRegistry(), ctx.getWindow().getSpecification());
+            engine.getShaderRegistry(), engine.getTextureRegistry(), engine.getWindow().getSpecification());
         spriteRenderer.init();
     }
 

@@ -1,6 +1,6 @@
 package org.chapzlock.core.animation;
 
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.AnimationState;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
@@ -14,16 +14,16 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class AnimationSystemBlendTest {
 
-    private EngineContext ctx;
+    private Engine engine;
     private ComponentRegistry registry;
     private AnimationSystem system;
 
     @BeforeEach
     void setUp() {
-        ctx = EngineContext.testContext();
-        registry = ctx.getRegistry();
+        engine = Engine.testEngine();
+        registry = engine.getRegistry();
         system = new AnimationSystem();
-        system.onInit(ctx);
+        system.onInit(engine);
     }
 
     @Test

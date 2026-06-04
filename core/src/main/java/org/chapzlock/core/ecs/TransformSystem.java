@@ -3,7 +3,7 @@ package org.chapzlock.core.ecs;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.Hierarchy;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.logging.Log;
@@ -40,8 +40,8 @@ public class TransformSystem implements GameSystem {
     }
 
     @Override
-    public void onInit(EngineContext ctx) {
-        this.registry = ctx.getRegistry();
+    public void onInit(Engine engine) {
+        this.registry = engine.getRegistry();
     }
 
     @Override

@@ -9,7 +9,7 @@ import org.chapzlock.core.animation.Animation;
 import org.chapzlock.core.animation.Channel;
 import org.chapzlock.core.animation.Interpolation;
 import org.chapzlock.core.animation.TargetPath;
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.asset.gltf.GltfAnimationData;
 import org.chapzlock.core.asset.gltf.GltfAsset;
 import org.chapzlock.core.asset.gltf.GltfMaterialData;
@@ -87,13 +87,13 @@ public class GltfModelFactory {
      * mesh data and compiling shaders. In unit tests, the GPU systems may be null —
      * the instantiator will skip mesh/material creation for nodes without meshes.
      *
-     * @param ctx the engine context providing access to all subsystems
+     * @param engine the engine providing access to all subsystems
      */
-    public GltfModelFactory(EngineContext ctx) {
-        this.registry = ctx.getRegistry();
-        this.meshRegistry = ctx.getMeshRegistry();
-        this.textureRegistry = ctx.getTextureRegistry();
-        this.shaderRegistry = ctx.getShaderRegistry();
+    public GltfModelFactory(Engine engine) {
+        this.registry = engine.getRegistry();
+        this.meshRegistry = engine.getMeshRegistry();
+        this.textureRegistry = engine.getTextureRegistry();
+        this.shaderRegistry = engine.getShaderRegistry();
     }
 
     /**

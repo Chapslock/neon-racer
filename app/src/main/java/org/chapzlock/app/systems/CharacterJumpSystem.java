@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.chapzlock.app.component.CharacterState;
 import org.chapzlock.app.tags.PlayerTag;
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.ecs.SystemPhase;
@@ -29,7 +29,7 @@ public class CharacterJumpSystem implements GameSystem {
 
     private ComponentRegistry registry;
     private Physics physics;
-    private EngineContext context;
+    private Engine engine;
 
     @Override
     public SystemPhase phase() {
@@ -42,15 +42,15 @@ public class CharacterJumpSystem implements GameSystem {
     }
 
     @Override
-    public void onInit(EngineContext ctx) {
-        this.context = ctx;
-        this.registry = ctx.getRegistry();
-        this.physics = ctx.getPhysics();
+    public void onInit(Engine engine) {
+        this.engine = engine;
+        this.registry = engine.getRegistry();
+        this.physics = engine.getPhysics();
     }
 
     @Override
     public void onUpdate(float deltaTime) {
-        InputMap input = context.getActiveInputMap();
+        InputMap input = engine.getActiveInputMap();
         if (input == null) return;
 
         if (!input.wasJustPressed("jump")) return;

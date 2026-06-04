@@ -1,6 +1,6 @@
 package org.chapzlock.core.render;
 
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 
 /**
  * A single stage in the rendering pipeline.
@@ -15,7 +15,7 @@ public interface RenderPass {
     int order();
 
     /** Called once after RenderSystem initialization. */
-    void init(EngineContext ctx);
+    void init(Engine engine);
 
     /** Populate internal render queue from the registry. */
     void collectVisibles(RenderContext ctx);

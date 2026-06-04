@@ -14,7 +14,7 @@ import com.bulletphysics.linearmath.Transform;
 /**
  * Public API for physics operations — the only class game code needs to interact with.
  *
- * <p>Obtain from {@code EngineContext.getPhysics()}. All methods accept entity IDs
+ * <p>Obtain from {@code Engine.getPhysics()}. All methods accept entity IDs
  * (the same integers used throughout the ECS) and are safe to call on unregistered
  * entities (they become no-ops with a debug warning).</p>
  *

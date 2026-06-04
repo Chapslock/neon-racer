@@ -3,7 +3,7 @@ package org.chapzlock.app.systems;
 import org.chapzlock.app.component.CharacterState;
 import org.chapzlock.app.component.PlayerInputComponent;
 import org.chapzlock.app.tags.PlayerTag;
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class CharacterMovementSystemTest {
 
-    private EngineContext ctx;
+    private Engine engine;
     private ComponentRegistry registry;
     private Physics physics;
     private PhysicsSystem physicsSystem;
@@ -29,18 +29,18 @@ class CharacterMovementSystemTest {
 
     @BeforeEach
     void setUp() {
-        ctx = EngineContext.testContext();
-        registry = ctx.getRegistry();
+        engine = Engine.testEngine();
+        registry = engine.getRegistry();
 
         physicsSystem = new PhysicsSystem();
-        physicsSystem.onInit(ctx);
-        physics = ctx.getPhysics();
+        physicsSystem.onInit(engine);
+        physics = engine.getPhysics();
 
         player = createPlayer();
         physicsSystem.onUpdate(0.016f);
 
         system = new CharacterMovementSystem();
-        system.onInit(ctx);
+        system.onInit(engine);
     }
 
     @Test

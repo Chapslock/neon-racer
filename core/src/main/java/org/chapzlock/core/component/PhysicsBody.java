@@ -32,7 +32,7 @@ import lombok.Getter;
  *
  * <h3>This component is data-only</h3>
  * <p>It holds no physics engine internals. To apply forces or query velocity, use the
- * {@link org.chapzlock.core.physics.Physics} facade from {@code EngineContext.getPhysics()}.</p>
+ * {@link org.chapzlock.core.physics.Physics} facade from {@code Engine.getPhysics()}.</p>
  *
  * @see CollisionGeometry
  * @see org.chapzlock.core.physics.Physics

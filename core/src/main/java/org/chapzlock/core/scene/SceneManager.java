@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.ecs.SystemOrdering;
 import org.chapzlock.core.event.EventBus;
@@ -52,7 +52,7 @@ public class SceneManager {
 
     private static final Log log = Log.create(SceneManager.class);
 
-    private final EngineContext context;
+    private final Engine engine;
     private final EventBus eventBus;
     private final SceneInstantiator instantiator;
 
@@ -72,12 +72,12 @@ public class SceneManager {
      * <p>Internally creates a {@link SceneInstantiator} that handles the mechanics of
      * entity creation, asset tracking, and system initialization.
      *
-     * @param context the engine context providing access to all subsystems
+     * @param engine the engine providing access to all subsystems
      */
-    public SceneManager(EngineContext context) {
-        this.context = context;
-        this.eventBus = context.getEventBus();
-        this.instantiator = new SceneInstantiator(context);
+    public SceneManager(Engine engine) {
+        this.engine = engine;
+        this.eventBus = engine.getEventBus();
+        this.instantiator = new SceneInstantiator(engine);
     }
 
     /**
@@ -351,7 +351,7 @@ public class SceneManager {
         InputMap inputMap = scene.getInputMap();
         if (inputMap != null) {
             inputMap.activate(eventBus);
-            context.setActiveInputMap(inputMap);
+            engine.setActiveInputMap(inputMap);
         }
     }
 
@@ -366,8 +366,8 @@ public class SceneManager {
         InputMap inputMap = scene.getInputMap();
         if (inputMap != null) {
             inputMap.deactivate();
-            if (context.getActiveInputMap() == inputMap) {
-                context.setActiveInputMap(null);
+            if (engine.getActiveInputMap() == inputMap) {
+                engine.setActiveInputMap(null);
             }
         }
 

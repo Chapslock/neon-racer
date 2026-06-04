@@ -1,6 +1,6 @@
 package org.chapzlock.core.ecs;
 
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.event.ComponentAddedEvent;
@@ -17,18 +17,18 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class EntitySystemTest {
 
-    private EngineContext ctx;
+    private Engine engine;
     private ComponentRegistry registry;
     private EventBus eventBus;
     private EntitySystem entitySystem;
 
     @BeforeEach
     void setUp() {
-        ctx = EngineContext.testContext();
-        registry = ctx.getRegistry();
-        eventBus = ctx.getEventBus();
+        engine = Engine.testEngine();
+        registry = engine.getRegistry();
+        eventBus = engine.getEventBus();
         entitySystem = new EntitySystem();
-        entitySystem.onInit(ctx);
+        entitySystem.onInit(engine);
     }
 
     @Test

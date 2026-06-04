@@ -15,7 +15,7 @@ import java.util.Map;
  * separately by MeshRegistry and TextureRegistry with their own reference counting. This registry
  * only caches the intermediate parse result ({@link GltfAsset}).
  *
- * <p><strong>Lifecycle:</strong> Owned by {@link org.chapzlock.core.application.EngineContext}.
+ * <p><strong>Lifecycle:</strong> Owned by {@link org.chapzlock.core.application.Engine}.
  * Call {@link #clear()} to free memory if assets are no longer needed.
  *
  * @see GltfAsset

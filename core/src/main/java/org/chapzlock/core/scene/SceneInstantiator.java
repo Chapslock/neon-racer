@@ -3,7 +3,7 @@ package org.chapzlock.core.scene;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.asset.gltf.GltfAsset;
 import org.chapzlock.core.component.GltfModel;
 import org.chapzlock.core.component.Mesh;
@@ -44,7 +44,7 @@ public class SceneInstantiator {
 
     private static final Log log = Log.create(SceneInstantiator.class);
 
-    private final EngineContext context;
+    private final Engine engine;
     private final ComponentRegistry registry;
 
     /**
@@ -54,11 +54,11 @@ public class SceneInstantiator {
      * GPU systems (for asset reference counting), and the glTF asset registry
      * (for loading 3D models).
      *
-     * @param context the engine context providing access to all subsystems
+     * @param engine the engine providing access to all subsystems
      */
-    public SceneInstantiator(EngineContext context) {
-        this.context = context;
-        this.registry = context.getRegistry();
+    public SceneInstantiator(Engine engine) {
+        this.engine = engine;
+        this.registry = engine.getRegistry();
     }
 
     /**
@@ -84,7 +84,7 @@ public class SceneInstantiator {
      * @return a {@link SceneInstance} containing all created entities, assets, and systems
      */
     public SceneInstance instantiate(Scene scene) {
-        EntitySystem entitySystem = context.getEntitySystem();
+        EntitySystem entitySystem = engine.getEntitySystem();
         List<Integer> entityIds = new ArrayList<>();
         SceneAssets assets = new SceneAssets();
 
@@ -110,8 +110,8 @@ public class SceneInstantiator {
                 // the model. Animation clips are attached to this entity for easy access.
                 GltfModel gltfModel = registry.getComponent(entityId, GltfModel.class);
                 if (gltfModel != null) {
-                    GltfAsset modelAsset = context.getGltfAssetRegistry().getOrLoad(gltfModel.resourcePath());
-                    GltfModelFactory modelFactory = new GltfModelFactory(context);
+                    GltfAsset modelAsset = engine.getGltfAssetRegistry().getOrLoad(gltfModel.resourcePath());
+                    GltfModelFactory modelFactory = new GltfModelFactory(engine);
                     GltfInstance modelInstance = modelFactory.instantiateAsChild(modelAsset, entityId);
                     for (int childId : modelInstance.allEntities().values()) {
                         entityIds.add(childId);
@@ -210,8 +210,8 @@ public class SceneInstantiator {
      */
     public GltfInstance loadGltf(String resourcePath) {
         log.debug("Loading glTF: %s", resourcePath);
-        GltfAsset asset = context.getGltfAssetRegistry().getOrLoad(resourcePath);
-        GltfModelFactory modelFactory = new GltfModelFactory(context);
+        GltfAsset asset = engine.getGltfAssetRegistry().getOrLoad(resourcePath);
+        GltfModelFactory modelFactory = new GltfModelFactory(engine);
         return modelFactory.instantiate(asset);
     }
 
@@ -246,15 +246,15 @@ public class SceneInstantiator {
      * @param assets the scene's tracked asset IDs
      */
     private void retainAll(SceneAssets assets) {
-        if (context.getMeshRegistry() == null) return;
+        if (engine.getMeshRegistry() == null) return;
         for (int id : assets.meshIds) {
-            context.getMeshRegistry().retain(id);
+            engine.getMeshRegistry().retain(id);
         }
         for (int id : assets.textureIds) {
-            context.getTextureRegistry().retain(id);
+            engine.getTextureRegistry().retain(id);
         }
         for (int id : assets.shaderProgramIds) {
-            context.getShaderRegistry().retain(id);
+            engine.getShaderRegistry().retain(id);
         }
     }
 
@@ -267,15 +267,15 @@ public class SceneInstantiator {
      * @param assets the scene's tracked asset IDs
      */
     private void releaseAll(SceneAssets assets) {
-        if (context.getMeshRegistry() == null) return;
+        if (engine.getMeshRegistry() == null) return;
         for (int id : assets.meshIds) {
-            context.getMeshRegistry().release(id);
+            engine.getMeshRegistry().release(id);
         }
         for (int id : assets.textureIds) {
-            context.getTextureRegistry().release(id);
+            engine.getTextureRegistry().release(id);
         }
         for (int id : assets.shaderProgramIds) {
-            context.getShaderRegistry().release(id);
+            engine.getShaderRegistry().release(id);
         }
     }
 
@@ -294,7 +294,7 @@ public class SceneInstantiator {
         List<GameSystem> failedSystems = new ArrayList<>();
         for (GameSystem system : systems) {
             try {
-                system.onInit(context);
+                system.onInit(engine);
             } catch (Exception e) {
                 log.error("Scene \"%s\": %s.onInit() threw exception. This system will be disabled. Fix the error in onInit() and reload the scene. Error: %s",
                     scene.getName(), system.getClass().getSimpleName(), e.getMessage());

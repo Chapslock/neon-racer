@@ -1,6 +1,6 @@
 package org.chapzlock.core.ecs;
 
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.Hierarchy;
 import org.chapzlock.core.component.Transform;
 import org.joml.Matrix4f;
@@ -12,16 +12,16 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class TransformSystemTest {
 
-    private EngineContext ctx;
+    private Engine engine;
     private ComponentRegistry registry;
     private TransformSystem system;
 
     @BeforeEach
     void setUp() {
-        ctx = EngineContext.testContext();
-        registry = ctx.getRegistry();
+        engine = Engine.testEngine();
+        registry = engine.getRegistry();
         system = new TransformSystem();
-        system.onInit(ctx);
+        system.onInit(engine);
     }
 
     @Test

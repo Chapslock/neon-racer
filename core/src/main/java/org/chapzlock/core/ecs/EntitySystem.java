@@ -3,7 +3,7 @@ package org.chapzlock.core.ecs;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.asset.RawMeshDataFactory;
 import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.Mesh;
@@ -58,12 +58,12 @@ public class EntitySystem implements GameSystem {
     private static final Log log = Log.create(EntitySystem.class);
 
     private ComponentRegistry registry;
-    private EngineContext ctx;
+    private Engine engine;
 
     @Override
-    public void onInit(EngineContext ctx) {
-        this.ctx = ctx;
-        this.registry = ctx.getRegistry();
+    public void onInit(Engine engine) {
+        this.engine = engine;
+        this.registry = engine.getRegistry();
         registerDefaultRules();
     }
 
@@ -145,7 +145,7 @@ public class EntitySystem implements GameSystem {
 
         for (Component c : components) {
             if (c instanceof SpriteMaterial sm && sm.needsResolution()) {
-                TextureRegistry textureRegistry = ctx.getTextureRegistry();
+                TextureRegistry textureRegistry = engine.getTextureRegistry();
                 Texture loaded = textureRegistry.load(sm.texturePath());
                 result.add(sm.withTexture(loaded));
             } else {
@@ -157,7 +157,7 @@ public class EntitySystem implements GameSystem {
 
         // Auto-create UI quad mesh if SpriteLayer is present without Mesh
         if (hasSpriteLayer && !hasMesh) {
-            MeshRegistry meshRegistry = ctx.getMeshRegistry();
+            MeshRegistry meshRegistry = engine.getMeshRegistry();
             Mesh mesh = meshRegistry.load(RawMeshDataFactory.createUi());
             result.add(mesh);
         }

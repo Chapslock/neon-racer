@@ -1,6 +1,6 @@
 package org.chapzlock.core.physics;
 
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.Transform;
@@ -76,19 +76,19 @@ public class PhysicsSystem implements GameSystem {
     }
 
     @Override
-    public void onInit(EngineContext ctx) {
-        this.registry = ctx.getRegistry();
+    public void onInit(Engine engine) {
+        this.registry = engine.getRegistry();
         if (this.cameraSystem == null) {
-            this.cameraSystem = ctx.getCameraSystem();
+            this.cameraSystem = engine.getCameraSystem();
         }
 
         this.world = new PhysicsWorld(config);
-        this.world.setMeshRegistry(ctx.getMeshRegistry());
+        this.world.setMeshRegistry(engine.getMeshRegistry());
 
         Physics physics = new Physics(world);
-        ctx.setPhysics(physics);
+        engine.setPhysics(physics);
 
-        subscribeToLifecycleEvents(ctx.getEventBus());
+        subscribeToLifecycleEvents(engine.getEventBus());
     }
 
     @Override

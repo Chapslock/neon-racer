@@ -2,7 +2,7 @@ package org.chapzlock.core.scene;
 
 import org.chapzlock.core.animation.Animation;
 import org.chapzlock.core.animation.TargetPath;
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.asset.gltf.*;
 import org.chapzlock.core.component.AnimationClipSet;
 import org.chapzlock.core.component.AnimationState;
@@ -18,15 +18,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class GltfModelFactoryAnimationTest {
 
-    private EngineContext ctx;
+    private Engine engine;
     private ComponentRegistry registry;
     private GltfModelFactory instantiator;
 
     @BeforeEach
     void setUp() {
-        ctx = EngineContext.testContext();
-        registry = ctx.getRegistry();
-        instantiator = new GltfModelFactory(ctx);
+        engine = Engine.testEngine();
+        registry = engine.getRegistry();
+        instantiator = new GltfModelFactory(engine);
     }
 
     @Test

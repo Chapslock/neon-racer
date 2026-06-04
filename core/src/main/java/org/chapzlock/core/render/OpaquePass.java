@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.OpaqueLayer;
 import org.chapzlock.core.component.PbrMaterial;
@@ -41,8 +41,8 @@ public class OpaquePass implements RenderPass {
     }
 
     @Override
-    public void init(EngineContext ctx) {
-        pbrRenderer = new PbrMaterialRenderer(ctx.getShaderRegistry(), ctx.getTextureRegistry());
+    public void init(Engine engine) {
+        pbrRenderer = new PbrMaterialRenderer(engine.getShaderRegistry(), engine.getTextureRegistry());
     }
 
     @Override

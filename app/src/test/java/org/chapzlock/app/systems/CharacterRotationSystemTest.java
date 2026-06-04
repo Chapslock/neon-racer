@@ -3,7 +3,7 @@ package org.chapzlock.app.systems;
 import org.chapzlock.app.component.CharacterState;
 import org.chapzlock.app.component.ThirdPersonCamera;
 import org.chapzlock.app.tags.PlayerTag;
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.Entity;
@@ -23,7 +23,7 @@ class CharacterRotationSystemTest {
 
     private static final float DELTA_TIME = 0.016f;
 
-    private EngineContext ctx;
+    private Engine engine;
     private ComponentRegistry registry;
     private EventBus eventBus;
     private CharacterRotationSystem system;
@@ -31,21 +31,21 @@ class CharacterRotationSystemTest {
 
     @BeforeEach
     void setUp() {
-        ctx = EngineContext.testContext();
-        registry = ctx.getRegistry();
-        eventBus = ctx.getEventBus();
+        engine = Engine.testEngine();
+        registry = engine.getRegistry();
+        eventBus = engine.getEventBus();
 
         inputMap = InputMap.builder()
             .axis("turnRight", Key.A, Key.D)
             .build();
         inputMap.activate(eventBus);
-        ctx.setActiveInputMap(inputMap);
+        engine.setActiveInputMap(inputMap);
 
         int camera = Entity.create(registry);
         registry.addComponent(camera, new ThirdPersonCamera());
 
         system = new CharacterRotationSystem();
-        system.onInit(ctx);
+        system.onInit(engine);
     }
 
     @Test

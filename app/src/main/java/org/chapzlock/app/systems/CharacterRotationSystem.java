@@ -5,7 +5,7 @@ import java.util.List;
 import org.chapzlock.app.component.CharacterState;
 import org.chapzlock.app.component.ThirdPersonCamera;
 import org.chapzlock.app.tags.PlayerTag;
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.GameSystem;
@@ -34,7 +34,7 @@ public class CharacterRotationSystem implements GameSystem {
     private static final float TURN_SPEED = 180f;
 
     private ComponentRegistry registry;
-    private EngineContext context;
+    private Engine engine;
     private boolean wasOrbitingRight;
 
     @Override
@@ -51,14 +51,14 @@ public class CharacterRotationSystem implements GameSystem {
     }
 
     @Override
-    public void onInit(EngineContext ctx) {
-        this.context = ctx;
-        this.registry = ctx.getRegistry();
+    public void onInit(Engine engine) {
+        this.engine = engine;
+        this.registry = engine.getRegistry();
     }
 
     @Override
     public void onUpdate(float deltaTime) {
-        InputMap input = context.getActiveInputMap();
+        InputMap input = engine.getActiveInputMap();
         if (input == null) return;
 
         var camOpt = registry.getSingleton(ThirdPersonCamera.class);

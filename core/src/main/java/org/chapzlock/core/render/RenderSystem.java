@@ -11,7 +11,7 @@ import static org.lwjgl.opengl.GL11.glEnable;
 
 import java.util.List;
 
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.ecs.SystemPhase;
 
@@ -28,10 +28,10 @@ public class RenderSystem implements GameSystem {
     private RenderContext renderContext;
 
     @Override
-    public void onInit(EngineContext ctx) {
-        renderContext = new RenderContext(ctx);
+    public void onInit(Engine engine) {
+        renderContext = new RenderContext(engine);
         passes = List.of(new OpaquePass(), new SpritePass());
-        passes.forEach(p -> p.init(ctx));
+        passes.forEach(p -> p.init(engine));
 
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);

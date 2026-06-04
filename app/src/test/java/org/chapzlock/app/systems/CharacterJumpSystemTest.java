@@ -2,7 +2,7 @@ package org.chapzlock.app.systems;
 
 import org.chapzlock.app.component.CharacterState;
 import org.chapzlock.app.tags.PlayerTag;
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
@@ -26,7 +26,7 @@ class CharacterJumpSystemTest {
     private static final float JUMP_IMPULSE = 5f;
     private static final float EPSILON = 0.001f;
 
-    private EngineContext ctx;
+    private Engine engine;
     private ComponentRegistry registry;
     private EventBus eventBus;
     private PhysicsSystem physicsSystem;
@@ -36,23 +36,23 @@ class CharacterJumpSystemTest {
 
     @BeforeEach
     void setUp() {
-        ctx = EngineContext.testContext();
-        registry = ctx.getRegistry();
-        eventBus = ctx.getEventBus();
+        engine = Engine.testEngine();
+        registry = engine.getRegistry();
+        eventBus = engine.getEventBus();
 
         physicsSystem = new PhysicsSystem();
-        physicsSystem.onInit(ctx);
-        physics = ctx.getPhysics();
+        physicsSystem.onInit(engine);
+        physics = engine.getPhysics();
 
         // Build and activate InputMap with "jump" action bound to SPACE
         inputMap = InputMap.builder()
             .action("jump", Key.SPACE)
             .build();
         inputMap.activate(eventBus);
-        ctx.setActiveInputMap(inputMap);
+        engine.setActiveInputMap(inputMap);
 
         system = new CharacterJumpSystem();
-        system.onInit(ctx);
+        system.onInit(engine);
     }
 
     @Test
@@ -159,7 +159,7 @@ class CharacterJumpSystemTest {
         physics.setLinearVelocity(player, new Vector3f(0, 0, 0));
 
         // Remove active input map
-        ctx.setActiveInputMap(null);
+        engine.setActiveInputMap(null);
 
         system.onUpdate(0.016f);
 

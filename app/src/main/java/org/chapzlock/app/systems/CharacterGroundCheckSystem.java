@@ -5,7 +5,7 @@ import java.util.Optional;
 
 import org.chapzlock.app.component.CharacterState;
 import org.chapzlock.app.tags.PlayerTag;
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.GameSystem;
@@ -51,9 +51,9 @@ public class CharacterGroundCheckSystem implements GameSystem {
     }
 
     @Override
-    public void onInit(EngineContext ctx) {
-        this.registry = ctx.getRegistry();
-        this.physics = ctx.getPhysics();
+    public void onInit(Engine engine) {
+        this.registry = engine.getRegistry();
+        this.physics = engine.getPhysics();
     }
 
     @Override

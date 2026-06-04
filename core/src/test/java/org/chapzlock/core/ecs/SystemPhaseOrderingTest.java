@@ -3,7 +3,6 @@ package org.chapzlock.core.ecs;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.chapzlock.core.application.EngineContext;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

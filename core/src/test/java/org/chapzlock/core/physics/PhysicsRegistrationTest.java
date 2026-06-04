@@ -1,6 +1,6 @@
 package org.chapzlock.core.physics;
 
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
@@ -19,18 +19,18 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class PhysicsRegistrationTest {
 
-    private EngineContext ctx;
+    private Engine engine;
     private ComponentRegistry registry;
     private EntitySystem entitySystem;
     private PhysicsSystem physicsSystem;
 
     @BeforeEach
     void setUp() {
-        ctx = EngineContext.testContext();
-        registry = ctx.getRegistry();
-        entitySystem = ctx.getEntitySystem();
+        engine = Engine.testEngine();
+        registry = engine.getRegistry();
+        entitySystem = engine.getEntitySystem();
         physicsSystem = new PhysicsSystem(PhysicsWorldConfig.defaults());
-        physicsSystem.onInit(ctx);
+        physicsSystem.onInit(engine);
     }
 
     @Test
@@ -43,7 +43,7 @@ class PhysicsRegistrationTest {
                 .build())
             .instantiate();
 
-        assertFalse(ctx.getPhysics().isRegistered(entity),
+        assertFalse(engine.getPhysics().isRegistered(entity),
             "Body should NOT be registered before onUpdate() drains the queue");
     }
 
@@ -59,7 +59,7 @@ class PhysicsRegistrationTest {
 
         physicsSystem.onUpdate(1f / 60f);
 
-        assertTrue(ctx.getPhysics().isRegistered(entity),
+        assertTrue(engine.getPhysics().isRegistered(entity),
             "Body should be registered after onUpdate() drains the queue");
     }
 
@@ -83,7 +83,7 @@ class PhysicsRegistrationTest {
 
         physicsSystem.onUpdate(1f / 60f);
 
-        Physics physics = ctx.getPhysics();
+        Physics physics = engine.getPhysics();
         assertTrue(physics.isRegistered(e1));
         assertTrue(physics.isRegistered(e2));
     }
@@ -101,7 +101,7 @@ class PhysicsRegistrationTest {
         registry.destroyEntity(entity);
         physicsSystem.onUpdate(1f / 60f);
 
-        assertFalse(ctx.getPhysics().isRegistered(entity),
+        assertFalse(engine.getPhysics().isRegistered(entity),
             "Destroyed entity should be skipped during queue drain");
     }
 
@@ -118,7 +118,7 @@ class PhysicsRegistrationTest {
         registry.removeComponent(entity, PhysicsBody.class);
         physicsSystem.onUpdate(1f / 60f);
 
-        assertFalse(ctx.getPhysics().isRegistered(entity),
+        assertFalse(engine.getPhysics().isRegistered(entity),
             "Entity whose PhysicsBody was removed should be skipped");
     }
 
@@ -133,12 +133,12 @@ class PhysicsRegistrationTest {
             .instantiate();
 
         physicsSystem.onUpdate(1f / 60f);
-        assertTrue(ctx.getPhysics().isRegistered(entity));
+        assertTrue(engine.getPhysics().isRegistered(entity));
 
         registry.destroyEntity(entity);
         physicsSystem.onUpdate(1f / 60f);
 
-        assertFalse(ctx.getPhysics().isRegistered(entity));
+        assertFalse(engine.getPhysics().isRegistered(entity));
     }
 
     @Test
@@ -153,6 +153,6 @@ class PhysicsRegistrationTest {
 
         physicsSystem.onUpdate(1f / 60f);
 
-        assertTrue(ctx.getPhysics().isRegistered(entity));
+        assertTrue(engine.getPhysics().isRegistered(entity));
     }
 }

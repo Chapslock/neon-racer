@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.chapzlock.app.component.CharacterState;
 import org.chapzlock.app.component.ThirdPersonCamera;
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.GameSystem;
@@ -41,7 +41,7 @@ import org.joml.Vector3f;
 public class ThirdPersonCameraSystem implements GameSystem {
 
     private ComponentRegistry registry;
-    private EngineContext context;
+    private Engine engine;
     private Window window;
     private float pendingScrollDelta;
     private Subscription scrollSubscription;
@@ -55,12 +55,12 @@ public class ThirdPersonCameraSystem implements GameSystem {
     }
 
     @Override
-    public void onInit(EngineContext ctx) {
-        this.context = ctx;
-        this.registry = ctx.getRegistry();
-        this.window = ctx.getWindow();
+    public void onInit(Engine engine) {
+        this.engine = engine;
+        this.registry = engine.getRegistry();
+        this.window = engine.getWindow();
 
-        EventBus eventBus = ctx.getEventBus();
+        EventBus eventBus = engine.getEventBus();
         scrollSubscription = eventBus.subscribe(MouseScrolledEvent.class, event -> {
             pendingScrollDelta += (float) event.yOffset();
             return false;
@@ -90,7 +90,7 @@ public class ThirdPersonCameraSystem implements GameSystem {
         Vector3f playerPos = getPlayerPosition();
         if (playerPos == null) return;
 
-        InputMap input = context.getActiveInputMap();
+        InputMap input = engine.getActiveInputMap();
 
         // Handle orbit mode transitions
         boolean rightHeld = input != null && input.isPressed("cameraOrbit");

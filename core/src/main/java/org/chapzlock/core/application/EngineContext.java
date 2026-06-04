@@ -62,19 +62,19 @@ public class EngineContext implements Disposable {
      *
      * @return a test context with {@code ComponentRegistry}, {@code EventBus}, {@code Time}, and {@code TweenManager}
      */
+    /**
+     * @deprecated Use {@link Engine#testEngine()} instead.
+     */
+    @Deprecated
     public static EngineContext testContext() {
         EventBus eventBus = new EventBus();
-        EngineContext ctx = EngineContext.builder()
+        return EngineContext.builder()
             .registry(new ComponentRegistry(eventBus))
             .eventBus(eventBus)
             .time(new Time())
             .tweenManager(new TweenManager())
             .gltfAssetRegistry(new GltfAssetRegistry())
             .build();
-        EntitySystem entitySystem = new EntitySystem();
-        entitySystem.onInit(ctx);
-        ctx.setEntitySystem(entitySystem);
-        return ctx;
     }
 
     @Override

@@ -1,6 +1,6 @@
 package org.chapzlock.core.physics;
 
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
@@ -23,19 +23,19 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class TriangleMeshPhysicsIntegrationTest {
 
-    private EngineContext ctx;
+    private Engine engine;
     private ComponentRegistry registry;
     private PhysicsSystem physicsSystem;
     private EntitySystem entitySystem;
 
     @BeforeEach
     void setUp() {
-        ctx = EngineContext.testContext();
-        registry = ctx.getRegistry();
-        entitySystem = ctx.getEntitySystem();
+        engine = Engine.testEngine();
+        registry = engine.getRegistry();
+        entitySystem = engine.getEntitySystem();
 
         physicsSystem = new PhysicsSystem(PhysicsWorldConfig.defaults());
-        physicsSystem.onInit(ctx);
+        physicsSystem.onInit(engine);
     }
 
     @Test
@@ -47,12 +47,12 @@ class TriangleMeshPhysicsIntegrationTest {
 
         assertTrue(entity >= 0, "Entity should be created successfully");
 
-        assertFalse(ctx.getPhysics().isRegistered(entity),
+        assertFalse(engine.getPhysics().isRegistered(entity),
             "Body should NOT be registered before onUpdate()");
 
         physicsSystem.onUpdate(1f / 60f);
 
-        assertTrue(ctx.getPhysics().isRegistered(entity),
+        assertTrue(engine.getPhysics().isRegistered(entity),
             "Body should be registered after onUpdate() drains the queue");
     }
 
@@ -75,7 +75,7 @@ class TriangleMeshPhysicsIntegrationTest {
 
         physicsSystem.onUpdate(1f / 60f);
 
-        Physics physics = ctx.getPhysics();
+        Physics physics = engine.getPhysics();
         assertTrue(physics.isRegistered(box), "Box body should be registered");
         assertTrue(physics.isRegistered(capsule), "Capsule body should be registered");
         assertTrue(physics.isRegistered(sphere), "Sphere body should be registered");
@@ -104,7 +104,7 @@ class TriangleMeshPhysicsIntegrationTest {
 
         physicsSystem.onUpdate(1f / 60f);
 
-        assertTrue(ctx.getPhysics().isRegistered(entity), "Body should be registered");
+        assertTrue(engine.getPhysics().isRegistered(entity), "Body should be registered");
 
         var physicsBody = registry.getComponent(entity, PhysicsBody.class);
         assertNotNull(physicsBody, "PhysicsBody component should exist");
@@ -132,7 +132,7 @@ class TriangleMeshPhysicsIntegrationTest {
 
         physicsSystem.onUpdate(1f / 60f);
 
-        Physics physics = ctx.getPhysics();
+        Physics physics = engine.getPhysics();
         assertTrue(physics.isRegistered(floor), "Floor should be registered");
         assertTrue(physics.isRegistered(player), "Player should be registered");
         assertTrue(physics.isRegistered(crate), "Crate should be registered");

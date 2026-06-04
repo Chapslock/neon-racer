@@ -1,6 +1,6 @@
 package org.chapzlock.core.physics;
 
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
@@ -15,12 +15,12 @@ class PhysicsWorldTest {
 
     private PhysicsWorld world;
     private ComponentRegistry registry;
-    private EngineContext ctx;
+    private Engine engine;
 
     @BeforeEach
     void setUp() {
-        ctx = EngineContext.testContext();
-        registry = ctx.getRegistry();
+        engine = Engine.testEngine();
+        registry = engine.getRegistry();
         world = new PhysicsWorld(PhysicsWorldConfig.defaults());
     }
 

@@ -1,6 +1,6 @@
 package org.chapzlock.core.scene;
 
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.asset.gltf.GltfAnimationData;
 import org.chapzlock.core.asset.gltf.GltfAsset;
 import org.chapzlock.core.asset.gltf.GltfNodeData;
@@ -28,15 +28,15 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class GltfModelBlueprintTest {
 
-    private EngineContext ctx;
+    private Engine engine;
     private ComponentRegistry registry;
     private GltfModelFactory instantiator;
 
     @BeforeEach
     void setUp() {
-        ctx = EngineContext.testContext();
-        registry = ctx.getRegistry();
-        instantiator = new GltfModelFactory(ctx);
+        engine = Engine.testEngine();
+        registry = engine.getRegistry();
+        instantiator = new GltfModelFactory(engine);
     }
 
     @Test

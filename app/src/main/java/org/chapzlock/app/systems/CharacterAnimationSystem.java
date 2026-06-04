@@ -3,7 +3,7 @@ package org.chapzlock.app.systems;
 import org.chapzlock.app.component.PlayerInputComponent;
 import org.chapzlock.app.tags.PlayerTag;
 import org.chapzlock.core.animation.Animation;
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.AnimationClipSet;
 import org.chapzlock.core.component.AnimationState;
 import org.chapzlock.core.ecs.ComponentRegistry;
@@ -29,8 +29,8 @@ public class CharacterAnimationSystem implements GameSystem {
     private ComponentRegistry registry;
 
     @Override
-    public void onInit(EngineContext ctx) {
-        this.registry = ctx.getRegistry();
+    public void onInit(Engine engine) {
+        this.registry = engine.getRegistry();
     }
 
     @Override

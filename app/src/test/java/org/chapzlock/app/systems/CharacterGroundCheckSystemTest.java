@@ -2,7 +2,7 @@ package org.chapzlock.app.systems;
 
 import org.chapzlock.app.component.CharacterState;
 import org.chapzlock.app.tags.PlayerTag;
-import org.chapzlock.core.application.EngineContext;
+import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
@@ -16,22 +16,22 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class CharacterGroundCheckSystemTest {
 
-    private EngineContext ctx;
+    private Engine engine;
     private ComponentRegistry registry;
     private PhysicsSystem physicsSystem;
     private CharacterGroundCheckSystem system;
 
     @BeforeEach
     void setUp() {
-        ctx = EngineContext.testContext();
-        registry = ctx.getRegistry();
+        engine = Engine.testEngine();
+        registry = engine.getRegistry();
 
-        // PhysicsSystem creates PhysicsWorld + Physics internally, sets ctx.physics
+        // PhysicsSystem creates PhysicsWorld + Physics internally, sets engine.physics
         physicsSystem = new PhysicsSystem();
-        physicsSystem.onInit(ctx);
+        physicsSystem.onInit(engine);
 
         system = new CharacterGroundCheckSystem();
-        system.onInit(ctx);
+        system.onInit(engine);
     }
 
     @Test
