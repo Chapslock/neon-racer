@@ -3,7 +3,6 @@ package org.chapzlock.core.ecs;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.asset.RawMeshDataFactory;
 import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.Mesh;
@@ -57,12 +56,14 @@ public class EntityFactory {
 
     private static final Log log = Log.create(EntityFactory.class);
 
-    private ComponentRegistry registry;
-    private Engine engine;
+    private final ComponentRegistry registry;
+    private final MeshRegistry meshRegistry;
+    private final TextureRegistry textureRegistry;
 
-    public void init(Engine engine) {
-        this.engine = engine;
-        this.registry = engine.getRegistry();
+    public EntityFactory(ComponentRegistry registry, MeshRegistry meshRegistry, TextureRegistry textureRegistry) {
+        this.registry = registry;
+        this.meshRegistry = meshRegistry;
+        this.textureRegistry = textureRegistry;
         registerDefaultRules();
     }
 
@@ -144,8 +145,7 @@ public class EntityFactory {
 
         for (Component c : components) {
             if (c instanceof SpriteMaterial sm && sm.needsResolution()) {
-                TextureRegistry textureRegistry = engine.getTextureRegistry();
-                Texture loaded = textureRegistry.load(sm.texturePath());
+                Texture loaded = this.textureRegistry.load(sm.texturePath());
                 result.add(sm.withTexture(loaded));
             } else {
                 result.add(c);
@@ -156,8 +156,7 @@ public class EntityFactory {
 
         // Auto-create UI quad mesh if SpriteLayer is present without Mesh
         if (hasSpriteLayer && !hasMesh) {
-            MeshRegistry meshRegistry = engine.getMeshRegistry();
-            Mesh mesh = meshRegistry.load(RawMeshDataFactory.createUi());
+            Mesh mesh = this.meshRegistry.load(RawMeshDataFactory.createUi());
             result.add(mesh);
         }
 

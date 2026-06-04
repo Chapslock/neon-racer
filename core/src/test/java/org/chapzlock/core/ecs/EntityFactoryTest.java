@@ -27,8 +27,7 @@ class EntityFactoryTest {
         engine = Engine.testEngine();
         registry = engine.getRegistry();
         eventBus = engine.getEventBus();
-        entityFactory = new EntityFactory();
-        entityFactory.init(engine);
+        entityFactory = engine.getEntityFactory();
     }
 
     @Test

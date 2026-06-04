@@ -131,7 +131,7 @@ public class Engine implements Disposable {
         physicsWorld.setMeshRegistry(meshRegistry);
         Physics physics = new Physics(physicsWorld);
 
-        // Create scheduler and engine systems
+        // Create scheduler and permanent systems
         SystemScheduler scheduler = new SystemScheduler();
         TweenSystem tweenSystem = new TweenSystem();
         AnimationSystem animationSystem = new AnimationSystem();
@@ -148,8 +148,7 @@ public class Engine implements Disposable {
         engine.setPhysics(physics);
 
         // Wire components that need the full Engine reference
-        EntityFactory entityFactory = new EntityFactory();
-        entityFactory.init(engine);
+        EntityFactory entityFactory = new EntityFactory(registry, meshRegistry, textureRegistry);
         engine.setEntityFactory(entityFactory);
 
         SceneManager sceneManager = new SceneManager(engine, scheduler);
@@ -162,7 +161,7 @@ public class Engine implements Disposable {
         scheduler.addPermanent(physicsSystem);
         scheduler.addPermanent(renderSystem);
 
-        // Initialize engine systems
+        // Initialize permanent systems
         tweenSystem.onInit(engine);
         animationSystem.onInit(engine);
         transformSystem.onInit(engine);
@@ -195,8 +194,7 @@ public class Engine implements Disposable {
             scheduler,
             null, null, null, null, null
         );
-        EntityFactory entityFactory = new EntityFactory();
-        entityFactory.init(engine);
+        EntityFactory entityFactory = new EntityFactory(engine.getRegistry(), null, null);
         engine.setEntityFactory(entityFactory);
         SceneManager sceneManager = new SceneManager(engine, scheduler);
         engine.setSceneManager(sceneManager);
