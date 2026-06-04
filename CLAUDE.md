@@ -23,10 +23,10 @@ Two Gradle modules (Kotlin DSL):
 
 ### Core Packages
 
-- `ecs/` — GameSystem, SystemPhase, Component, Tag, Entity, ComponentRegistry, ComponentStore, ComponentRule, EntitySystem, TransformSystem
-- `application/` — Application, EngineContext, ApplicationSpecification, Disposable, ApplicationUtil
+- `ecs/` — GameSystem, SystemPhase, SystemScheduler, Component, Tag, Entity, ComponentRegistry, ComponentStore, ComponentRule, EntityFactory, TransformSystem
+- `application/` — Application, Engine, ApplicationSpecification, Disposable, ApplicationUtil
 - `scene/` — Scene, SceneManager, SceneInstantiator, SceneInstance, SceneBuilder, EntityRecipe, GltfModelFactory, SceneLoadedEvent, SceneUnloadedEvent
-- `render/` — RenderSystem, RenderPass, RenderContext, OpaquePass, SpritePass, PbrMaterialRenderer, SpriteRenderer, CameraSystem, MeshRegistry, TextureRegistry, ShaderRegistry, RefCounted, ShaderProps, GL utilities
+- `render/` — RenderSystem, RenderPass, RenderContext, OpaquePass, SpritePass, PbrMaterialRenderer, SpriteRenderer, CameraProjection, MeshRegistry, TextureRegistry, ShaderRegistry, RefCounted, ShaderProps, GL utilities
 - `component/` — All data components (Camera, Transform, Mesh, PbrMaterial, SpriteMaterial, PointLight, DirectionalLight, PhysicsBody, Skeleton, etc.)
 - `physics/` — PhysicsSystem and all physics utilities
 - `event/` — EventBus, Event, lifecycle events
@@ -34,25 +34,31 @@ Two Gradle modules (Kotlin DSL):
 - `window/` — Window, WindowSpecification
 - `asset/` — FileUtils, RawMeshData, RawMeshDataFactory, gltf/ (GltfLoader, GltfAssetRegistry)
 - `logging/` — Log
-- `tween/` — TweenManager, Ease
+- `tween/` — TweenRegistry, TweenSystem, Ease
 
 ## Architecture
 
 ### ECS (Entity-Component-System)
 
-Entities are plain integer IDs (`Entity.create(registry)`). Components are marker-interface data holders (`implements Component`). Tags are empty components used for querying (`implements Tag`). Systems implement `GameSystem` and receive dependencies via `onInit(EngineContext ctx)`. They operate on entities via typed `forEach` overloads: `registry.forEach(A.class, B.class, (entityId, a, b) -> { ... })`.
+Entities are plain integer IDs (`Entity.create(registry)`). Components are marker-interface data holders (`implements Component`). Tags are empty components used for querying (`implements Tag`). Systems implement `GameSystem` and receive dependencies via `onInit(Engine engine)`. They operate on entities via typed `forEach` overloads: `registry.forEach(A.class, B.class, (entityId, a, b) -> { ... })`.
 
 `ComponentRegistry` stores components in typed `ComponentStore` maps, indexed by entity ID. It uses bitset masks for fast archetype queries. Query results are cached internally and invalidated on component mutations — queries are O(1) on stable frames. Other query methods: `getSingleton(T.class)` for singleton components, `getEntityByName("name")` for named entity lookup, `count(T.class)` for entity counting, `entityExists(id)` for existence checks.
 
 ### Engine
 
-`Engine` is an immutable container for all engine subsystems and engine systems. Created via `Engine.create(ApplicationSpecification)` which builds all subsystems bottom-up, then initializes engine systems. No singletons — all dependencies flow through Engine.
+`Engine` is a typed service container for all engine subsystems. Created via `Engine.create(ApplicationSpecification)` which builds all subsystems bottom-up. No singletons — all dependencies flow through Engine.
 
-**Contents:** ComponentRegistry, EventBus, MeshRegistry, TextureRegistry, ShaderRegistry, CameraSystem, Window, Time, TweenManager, GltfAssetRegistry, EntitySystem, Physics, SceneManager, List\<GameSystem\> engineSystems.
+**Registries:** ComponentRegistry, MeshRegistry, TextureRegistry, ShaderRegistry, GltfAssetRegistry.
 
-**Lifecycle:** `Engine.create(spec)` constructs everything and initializes engine systems. `Engine.dispose()` unloads scenes, destroys engine systems, frees GPU resources, and closes the window. Application is a trivial shell: `Engine.create()` → load scene → main loop → `dispose()`.
+**Systems (tick every frame):** TweenSystem, AnimationSystem, TransformSystem, PhysicsSystem, RenderSystem — registered as permanent systems in the SystemScheduler.
 
-**Testing:** `Engine.testEngine()` creates a minimal engine with fresh ComponentRegistry + EventBus + Time + TweenManager + EntitySystem + SceneManager (GPU systems null) for unit tests.
+**Utils (no tick):** CameraProjection, EntityFactory.
+
+**Infrastructure:** EventBus, Window, Time, TweenRegistry, Physics, SceneManager, SystemScheduler.
+
+**Lifecycle:** `Engine.create(spec)` constructs everything, registers permanent systems into the scheduler, and initializes them. `Engine.dispose()` unloads scenes, destroys systems in reverse order, frees GPU resources, and closes the window.
+
+**Testing:** `Engine.testEngine()` creates a minimal engine with fresh ComponentRegistry + EventBus + Time + TweenRegistry + EntityFactory + SceneManager + SystemScheduler (GPU systems null) for unit tests.
 
 ### Scene System
 
@@ -104,11 +110,23 @@ JBullet (Bullet physics Java port). `PhysicsSystem` owns a `DiscreteDynamicsWorl
 
 ### Event System
 
-`EventBus` with typed publish/subscribe. Listeners return `true` to stop propagation. Input events (key/mouse) flow through this bus. Subscribe returns a `Subscription` handle for cleanup. Each EngineContext owns its own EventBus instance.
+`EventBus` with typed publish/subscribe. Listeners return `true` to stop propagation. Input events (key/mouse) flow through this bus. Subscribe returns a `Subscription` handle for cleanup. Each Engine owns its own EventBus instance.
 
 ### Resource Cleanup
 
-GPU registries (MeshRegistry, TextureRegistry, ShaderRegistry) implement `Disposable`. They track all allocated OpenGL resources and free them in `dispose()`. `EngineContext.dispose()` cascades to all disposable subsystems on shutdown. Each registry uses a `RefCounted` instance for reference counting (`retain()`/`release()`) with a type-specific cleanup callback. `dispose()` frees everything unconditionally at shutdown regardless of ref counts.
+GPU registries (MeshRegistry, TextureRegistry, ShaderRegistry) implement `Disposable`. They track all allocated OpenGL resources and free them in `dispose()`. `Engine.dispose()` cascades to all disposable subsystems on shutdown. Each registry uses a `RefCounted` instance for reference counting (`retain()`/`release()`) with a type-specific cleanup callback. `dispose()` frees everything unconditionally at shutdown regardless of ref counts.
+
+## Naming Convention
+
+| Suffix | Definition | Ticks? | Example |
+|--------|-----------|--------|---------|
+| `System` | Runs logic every frame. Implements `GameSystem`, registered in scheduler. | Yes | `PhysicsSystem`, `RenderSystem` |
+| `Registry` | Owns and indexes a collection of resources by key/ID. | No | `ComponentRegistry`, `MeshRegistry` |
+| `Manager` | Orchestrates lifecycle of complex objects (create, transition, destroy). | No | `SceneManager` |
+| `Util` | Stateless logic. All methods could be `static` or class holds only config. | No | `TransformUtil`, `ShaderUtil` |
+| No suffix | Pure data, value objects, components. | No | `Transform`, `Camera`, `Fog` |
+
+Rule: if naming something `FooSystem`, it must implement `GameSystem` with meaningful `onUpdate`/`onRender` logic. If not, pick a different suffix.
 
 ## Tech Stack
 
