@@ -44,15 +44,15 @@ Entities are plain integer IDs (`Entity.create(registry)`). Components are marke
 
 `ComponentRegistry` stores components in typed `ComponentStore` maps, indexed by entity ID. It uses bitset masks for fast archetype queries. Query results are cached internally and invalidated on component mutations — queries are O(1) on stable frames. Other query methods: `getSingleton(T.class)` for singleton components, `getEntityByName("name")` for named entity lookup, `count(T.class)` for entity counting, `entityExists(id)` for existence checks.
 
-### EngineContext
+### Engine
 
-`EngineContext` is a plain object created by `Application` that holds all engine subsystems. No singletons exist — all dependencies flow through the context.
+`Engine` is an immutable container for all engine subsystems and engine systems. Created via `Engine.create(ApplicationSpecification)` which builds all subsystems bottom-up, then initializes engine systems. No singletons — all dependencies flow through Engine.
 
-**Contents:** ComponentRegistry, EventBus, MeshRegistry, TextureRegistry, ShaderRegistry, CameraSystem, Window, Time, TweenManager, GltfAssetRegistry, SceneManager.
+**Contents:** ComponentRegistry, EventBus, MeshRegistry, TextureRegistry, ShaderRegistry, CameraSystem, Window, Time, TweenManager, GltfAssetRegistry, EntitySystem, Physics, SceneManager, List\<GameSystem\> engineSystems.
 
-**Lifecycle:** Application creates the context at startup, passes it to systems and SceneManager. Application calls `ctx.dispose()` on shutdown.
+**Lifecycle:** `Engine.create(spec)` constructs everything and initializes engine systems. `Engine.dispose()` unloads scenes, destroys engine systems, frees GPU resources, and closes the window. Application is a trivial shell: `Engine.create()` → load scene → main loop → `dispose()`.
 
-**Testing:** `EngineContext.testContext()` creates a minimal context with fresh ComponentRegistry + EventBus + Time + TweenManager (GPU systems null) for unit tests.
+**Testing:** `Engine.testEngine()` creates a minimal engine with fresh ComponentRegistry + EventBus + Time + TweenManager + EntitySystem + SceneManager (GPU systems null) for unit tests.
 
 ### Scene System
 
@@ -79,7 +79,7 @@ Scene.builder("name")
 
 ### Application Lifecycle
 
-`Application.create(spec)` builds the application. `ApplicationSpecification` declares `windowSpec`, optional `physicsConfig`, and `initialScene`. All engine systems are created internally — users configure behavior via typed config objects, not by constructing systems. `run()` creates `EngineContext`, creates engine systems, inits them, then loads the initial scene.
+`Application.run(spec)` is the entry point. `ApplicationSpecification` declares `windowSpec`, optional `physicsConfig`, and `initialScene`. Internally it calls `Engine.create(spec)` which builds all subsystems and engine systems in one shot, then loads the initial scene and enters the main loop.
 
 **Main loop order per frame:** `onUpdate(delta)` → `onRender(delta)` → `onDebugRender(delta)` on all active systems (sorted by SystemPhase), then `sceneManager.processPendingTransitions()`.
 
