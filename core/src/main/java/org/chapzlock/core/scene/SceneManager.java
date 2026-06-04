@@ -9,22 +9,33 @@ import java.util.Objects;
 import java.util.Queue;
 
 import org.chapzlock.core.application.Engine;
+import org.chapzlock.core.asset.gltf.GltfAsset;
+import org.chapzlock.core.asset.gltf.GltfAssetRegistry;
+import org.chapzlock.core.component.GltfModel;
+import org.chapzlock.core.component.Mesh;
+import org.chapzlock.core.component.SpriteMaterial;
+import org.chapzlock.core.ecs.ComponentRegistry;
+import org.chapzlock.core.ecs.EntityBuilder;
+import org.chapzlock.core.ecs.EntityFactory;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.ecs.GltfInstance;
 import org.chapzlock.core.ecs.SystemScheduler;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.input.InputMap;
 import org.chapzlock.core.logging.Log;
+import org.chapzlock.core.render.MeshRegistry;
+import org.chapzlock.core.render.ShaderRegistry;
+import org.chapzlock.core.render.TextureRegistry;
 
 import lombok.Getter;
 
 /**
- * Manages scene lifecycle: loading, unloading, and transitions.
+ * Manages scene lifecycle: loading, unloading, transitions, and instantiation.
  *
  * <p><strong>What this does:</strong> Orchestrates when scenes load and unload, manages
- * the transition queue, maintains the active systems cache, and handles input map
- * activation/deactivation. The actual work of creating entities, tracking GPU assets,
- * and initializing systems is delegated to {@link SceneInstantiator}.
+ * the transition queue, maintains the active systems cache, handles input map
+ * activation/deactivation, and performs the mechanics of entity creation, GPU asset
+ * tracking, and system initialization directly.
  *
  * <p><strong>Scene types:</strong>
  * <ul>
@@ -42,10 +53,9 @@ import lombok.Getter;
  * </ul>
  *
  * <p><strong>GPU asset lifecycle:</strong> GPU assets (meshes, textures, shaders) use
- * reference counting managed by {@link SceneInstantiator}. Shared assets survive until
- * all referencing scenes are unloaded.
+ * reference counting managed internally. Shared assets survive until all referencing
+ * scenes are unloaded.
  *
- * @see SceneInstantiator
  * @see SceneInstance
  * @see Scene
  */
@@ -55,8 +65,13 @@ public class SceneManager {
 
     private final Engine engine;
     private final EventBus eventBus;
-    private final SceneInstantiator instantiator;
     private final SystemScheduler scheduler;
+    private final ComponentRegistry registry;
+    private final EntityFactory entityFactory;
+    private final GltfAssetRegistry gltfAssetRegistry;
+    private final MeshRegistry meshRegistry;
+    private final TextureRegistry textureRegistry;
+    private final ShaderRegistry shaderRegistry;
 
     @Getter
     private Scene primaryScene;
@@ -69,17 +84,19 @@ public class SceneManager {
     /**
      * Creates a new scene manager bound to the given engine context.
      *
-     * <p>Internally creates a {@link SceneInstantiator} that handles the mechanics of
-     * entity creation, asset tracking, and system initialization.
-     *
      * @param engine the engine providing access to all subsystems
      * @param scheduler the system scheduler for managing active systems
      */
     public SceneManager(Engine engine, SystemScheduler scheduler) {
         this.engine = engine;
         this.eventBus = engine.getEventBus();
-        this.instantiator = new SceneInstantiator(engine);
         this.scheduler = scheduler;
+        this.registry = engine.getRegistry();
+        this.entityFactory = engine.getEntityFactory();
+        this.gltfAssetRegistry = engine.getGltfAssetRegistry();
+        this.meshRegistry = engine.getMeshRegistry();
+        this.textureRegistry = engine.getTextureRegistry();
+        this.shaderRegistry = engine.getShaderRegistry();
     }
 
     /**
@@ -191,7 +208,9 @@ public class SceneManager {
      * @throws org.chapzlock.core.asset.gltf.GltfLoadException if the file cannot be loaded or parsed
      */
     public GltfInstance loadGltf(String resourcePath) {
-        return instantiator.loadGltf(resourcePath);
+        log.debug("Loading glTF: %s", resourcePath);
+        GltfAsset asset = gltfAssetRegistry.getOrLoad(resourcePath);
+        return entityFactory.instantiateGltf(asset);
     }
 
     /**
@@ -329,13 +348,82 @@ public class SceneManager {
     }
 
     /**
-     * Delegates to the instantiator and handles input map activation.
+     * Instantiates a scene blueprint into live ECS state and activates its input map.
      *
-     * <p>Input map activation is a lifecycle concern (it ties the scene's input bindings
-     * to the event bus), so it stays here in SceneManager rather than in SceneInstantiator.
+     * <p><strong>What happens during instantiation:</strong>
+     * <ol>
+     *   <li>For each entity recipe, creates an EntityBuilder, applies the configurator,
+     *       then delegates to {@link EntityFactory#instantiate(String, List, List)}
+     *       which resolves components, validates rules, and commits atomically</li>
+     *   <li>GPU asset IDs are tracked for reference counting</li>
+     *   <li>If the entity has a GltfModel component, it is loaded as child entities</li>
+     *   <li>All tracked GPU assets are retained (refcount incremented)</li>
+     *   <li>Scene systems are initialized via {@code onInit()}</li>
+     *   <li>The scene's input map is activated on the event bus</li>
+     * </ol>
      */
     private void doInstantiate(Scene scene) {
-        SceneInstance instance = instantiator.instantiate(scene);
+        List<Integer> entityIds = new ArrayList<>();
+        SceneAssets assets = new SceneAssets();
+
+        for (EntityRecipe recipe : scene.getEntityRecipes()) {
+            try {
+                EntityBuilder builder = new EntityBuilder(recipe.name());
+                recipe.configurator().accept(builder);
+
+                int entityId = entityFactory.instantiate(
+                    builder.getName(), builder.getComponents(), builder.getTags());
+
+                if (entityId < 0) {
+                    continue;
+                }
+
+                entityIds.add(entityId);
+                trackAssetsForEntity(entityId, assets);
+
+                GltfModel gltfModel = registry.getComponent(entityId, GltfModel.class);
+                if (gltfModel != null) {
+                    GltfAsset modelAsset = gltfAssetRegistry.getOrLoad(gltfModel.resourcePath());
+                    GltfInstance modelInstance = entityFactory.instantiateGltfAsChild(modelAsset, entityId);
+                    for (int childId : modelInstance.allEntities().values()) {
+                        entityIds.add(childId);
+                    }
+                    if (!entityIds.contains(modelInstance.rootEntity())) {
+                        entityIds.add(modelInstance.rootEntity());
+                    }
+                }
+
+                String name = recipe.name();
+                log.debug("  Entity \"%s\" created (id=%d)", name != null ? name : "<anonymous>", entityId);
+            } catch (org.chapzlock.core.asset.gltf.GltfLoadException e) {
+                String name = recipe.name();
+                log.error("Scene \"%s\", entity \"%s\": glTF load failed for model asset. %s",
+                    scene.getName(), name != null ? name : "<anonymous>", e.getMessage());
+            } catch (IllegalStateException e) {
+                String name = recipe.name();
+                log.error("Scene \"%s\", entity \"%s\": Component validation error. %s",
+                    scene.getName(), name != null ? name : "<anonymous>", e.getMessage());
+            } catch (Exception e) {
+                String name = recipe.name();
+                log.error("Scene \"%s\", entity \"%s\": Unexpected error during instantiation. %s: %s",
+                    scene.getName(), name != null ? name : "<anonymous>", e.getClass().getSimpleName(), e.getMessage());
+            }
+        }
+        retainAll(assets);
+
+        List<GameSystem> systems = initSystems(scene);
+
+        if (scene.getEntityRecipes().isEmpty()) {
+            log.warn("Scene \"%s\" has no entities — did you forget .entity() calls in the builder?",
+                scene.getName());
+        }
+
+        if (!scene.getEntityRecipes().isEmpty() && scene.getSystems().isEmpty()) {
+            log.warn("Scene \"%s\" has %d entities but no systems — nothing will update them",
+                scene.getName(), scene.getEntityRecipes().size());
+        }
+
+        SceneInstance instance = new SceneInstance(scene, entityIds, assets, systems);
         loadedScenes.put(scene, instance);
         scheduler.addSceneSystems(instance.systems());
 
@@ -347,10 +435,16 @@ public class SceneManager {
     }
 
     /**
-     * Handles input map deactivation and delegates teardown to the instantiator.
+     * Tears down a scene instance: deactivates input map, destroys systems, entities,
+     * and releases GPU assets.
      *
-     * <p>Input map deactivation must happen before entity destruction, since input
-     * handlers may reference entities that are about to be destroyed.
+     * <p><strong>Order of teardown:</strong>
+     * <ol>
+     *   <li>Input map is deactivated (before entity destruction, since handlers may reference entities)</li>
+     *   <li>Systems are removed from the scheduler and destroyed</li>
+     *   <li>Entities are destroyed (removed from the ECS)</li>
+     *   <li>GPU assets are released (decrements reference counts)</li>
+     * </ol>
      */
     private void doTeardown(Scene scene) {
         log.info("--- Unloading scene \"%s\" ---", scene.getName());
@@ -365,7 +459,91 @@ public class SceneManager {
         SceneInstance instance = loadedScenes.remove(scene);
         if (instance != null) {
             scheduler.removeSceneSystems(instance.systems());
-            instantiator.teardown(instance);
+
+            List<GameSystem> systems = instance.systems();
+            if (systems != null) {
+                systems.forEach(GameSystem::onDestroy);
+            }
+
+            List<Integer> entityIds = instance.entityIds();
+            if (entityIds != null) {
+                for (int entityId : entityIds) {
+                    registry.destroyEntity(entityId);
+                }
+            }
+
+            SceneAssets assets = instance.assets();
+            if (assets != null) {
+                releaseAll(assets);
+            }
         }
+    }
+
+    /**
+     * Tracks GPU asset IDs for an entity by querying its components after instantiation.
+     */
+    private void trackAssetsForEntity(int entityId, SceneAssets assets) {
+        Mesh mesh = registry.getComponent(entityId, Mesh.class);
+        if (mesh != null) {
+            assets.meshIds.add(mesh.getId());
+        }
+        SpriteMaterial sprite = registry.getComponent(entityId, SpriteMaterial.class);
+        if (sprite != null && sprite.texture() != null) {
+            assets.textureIds.add(sprite.texture().getId());
+        }
+    }
+
+    /**
+     * Retains (increments reference count) all GPU assets tracked by a scene.
+     */
+    private void retainAll(SceneAssets assets) {
+        if (meshRegistry == null) return;
+        for (int id : assets.meshIds) {
+            meshRegistry.retain(id);
+        }
+        for (int id : assets.textureIds) {
+            textureRegistry.retain(id);
+        }
+        for (int id : assets.shaderProgramIds) {
+            shaderRegistry.retain(id);
+        }
+    }
+
+    /**
+     * Releases (decrements reference count) all GPU assets tracked by a scene.
+     */
+    private void releaseAll(SceneAssets assets) {
+        if (meshRegistry == null) return;
+        for (int id : assets.meshIds) {
+            meshRegistry.release(id);
+        }
+        for (int id : assets.textureIds) {
+            textureRegistry.release(id);
+        }
+        for (int id : assets.shaderProgramIds) {
+            shaderRegistry.release(id);
+        }
+    }
+
+    /**
+     * Initializes scene systems and returns the list of successfully initialized ones.
+     *
+     * <p>Systems that throw during {@code onInit()} are logged and excluded from the
+     * returned list (disabled for this scene load).
+     */
+    private List<GameSystem> initSystems(Scene scene) {
+        List<GameSystem> systems = new ArrayList<>(scene.getSystems());
+        List<GameSystem> failedSystems = new ArrayList<>();
+        for (GameSystem system : systems) {
+            try {
+                system.onInit(engine);
+            } catch (Exception e) {
+                log.error("Scene \"%s\": %s.onInit() threw exception. This system will be disabled. Fix the error in onInit() and reload the scene. Error: %s",
+                    scene.getName(), system.getClass().getSimpleName(), e.getMessage());
+                failedSystems.add(system);
+            }
+        }
+        systems.removeAll(failedSystems);
+        return systems;
     }
 }

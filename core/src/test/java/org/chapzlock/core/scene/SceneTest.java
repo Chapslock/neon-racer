@@ -22,8 +22,8 @@ class SceneTest {
             .build();
 
         assertEquals("test-scene", scene.getName());
-        assertEquals(1, scene.getEntities().size());
-        assertEquals("player", scene.getEntities().get(0).name());
+        assertEquals(1, scene.getEntityRecipes().size());
+        assertEquals("player", scene.getEntityRecipes().get(0).name());
         assertEquals(1, scene.getSystems().size());
         assertSame(system, scene.getSystems().get(0));
     }
@@ -33,7 +33,7 @@ class SceneTest {
         Scene scene = Scene.builder("empty").build();
 
         assertThrows(UnsupportedOperationException.class, () ->
-            scene.getEntities().add(new EntityRecipe("x", e -> {})));
+            scene.getEntityRecipes().add(new EntityRecipe("x", e -> {})));
         assertThrows(UnsupportedOperationException.class, () ->
             scene.getSystems().add(new DummySystem()));
     }

@@ -20,14 +20,14 @@ import java.util.List;
  *
  * <p><strong>Lifecycle:</strong>
  * <ol>
- *   <li>Created by {@link SceneInstantiator} during scene instantiation</li>
+ *   <li>Created by {@link SceneManager} during scene instantiation</li>
  *   <li>Populated as entities are resolved (each Mesh, Texture, Shader gets tracked)</li>
  *   <li>All tracked IDs are retained via GPU system {@code retain()} calls</li>
  *   <li>Stored inside a {@link SceneInstance} for the scene's lifetime</li>
  *   <li>All tracked IDs are released via GPU system {@code release()} calls on unload</li>
  * </ol>
  *
- * @see SceneInstantiator
+ * @see SceneManager
  * @see SceneInstance
  */
 class SceneAssets {

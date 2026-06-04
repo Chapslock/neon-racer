@@ -21,7 +21,7 @@ import lombok.Getter;
 @Getter
 public class Scene {
     private final String name;
-    private final List<EntityRecipe> entities;
+    private final List<EntityRecipe> entityRecipes;
     private final List<GameSystem> systems;
     private final InputMap inputMap;
 
@@ -32,17 +32,17 @@ public class Scene {
      * by game code. Use the builder for a cleaner API.
      *
      * @param name     unique name identifying this scene (used in logs and events)
-     * @param entities list of entity recipes to instantiate when the scene loads
+     * @param entityRecipes list of entity recipes to instantiate when the scene loads
      * @param systems  list of game systems active while this scene is loaded
      * @param inputMap optional input bindings (null if scene has no input handling)
      */
-    public Scene(String name, List<EntityRecipe> entities, List<GameSystem> systems, InputMap inputMap) {
+    public Scene(String name, List<EntityRecipe> entityRecipes, List<GameSystem> systems, InputMap inputMap) {
         if (name == null) {
             throw new IllegalArgumentException(
                 "Scene name cannot be null. Pass a name to identify the scene in logs and error messages.");
         }
         this.name = name;
-        this.entities = List.copyOf(entities);
+        this.entityRecipes = List.copyOf(entityRecipes);
         this.systems = List.copyOf(systems);
         this.inputMap = inputMap;
     }

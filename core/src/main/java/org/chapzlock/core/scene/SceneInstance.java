@@ -14,9 +14,9 @@ import org.chapzlock.core.ecs.GameSystem;
  *
  * <p><strong>Lifecycle:</strong>
  * <ol>
- *   <li>Created by {@link SceneInstantiator#instantiate(Scene)} when a scene is loaded</li>
+ *   <li>Created by {@link SceneManager} when a scene is loaded</li>
  *   <li>Stored by {@link SceneManager} for the scene's lifetime</li>
- *   <li>Passed to {@link SceneInstantiator#teardown(SceneInstance)} when the scene is unloaded</li>
+ *   <li>Destroyed by {@link SceneManager} when the scene is unloaded</li>
  * </ol>
  *
  * <p><strong>Why a record?</strong> Scene instances are immutable once created — their contents
