@@ -13,7 +13,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 /**
  * Loads, caches, and manages GPU texture resources.
  *
- * <p><strong>What this system does:</strong>
+ * <p><strong>What this registry does:</strong>
  * <ul>
  *   <li><em>Load from file:</em> Reads an image file (PNG/JPEG) from the classpath, decodes
  *       it into RGBA pixels, and uploads to the GPU via {@link TextureUtil}.</li>
@@ -40,7 +40,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
  * @see Texture
  * @see TextureUtil
  */
-public class TextureSystem implements Disposable {
+public class TextureRegistry implements Disposable {
 
     /** All loaded textures, indexed by their engine-assigned ID. */
     private final Map<Integer, Texture> texturePool = new Int2ObjectOpenHashMap<>();
@@ -59,7 +59,7 @@ public class TextureSystem implements Disposable {
      */
     private final RefCounted refCounted = new RefCounted(this::deleteTexture);
 
-    public TextureSystem() {
+    public TextureRegistry() {
     }
 
     /**

@@ -42,7 +42,7 @@ public class OpaquePass implements RenderPass {
 
     @Override
     public void init(EngineContext ctx) {
-        pbrRenderer = new PbrMaterialRenderer(ctx.getShaderSystem(), ctx.getTextureSystem());
+        pbrRenderer = new PbrMaterialRenderer(ctx.getShaderSystem(), ctx.getTextureRegistry());
     }
 
     @Override

@@ -36,7 +36,7 @@ import org.lwjgl.opengl.GL11;
 public class SpriteRenderer {
 
     private final ShaderSystem shaderSystem;
-    private final TextureSystem textureSystem;
+    private final TextureRegistry textureRegistry;
     private final Matrix4f projection;
     private Shader shader;
 
@@ -44,13 +44,13 @@ public class SpriteRenderer {
      * Creates a sprite renderer for the given window dimensions.
      *
      * @param shaderSystem the shader system for compiling and setting uniforms
-     * @param textureSystem the texture system for binding textures to units
+     * @param textureRegistry the texture registry for binding textures to units
      * @param windowSpec window dimensions used to set up orthographic projection
      */
-    public SpriteRenderer(ShaderSystem shaderSystem, TextureSystem textureSystem,
+    public SpriteRenderer(ShaderSystem shaderSystem, TextureRegistry textureRegistry,
                           WindowSpecification windowSpec) {
         this.shaderSystem = shaderSystem;
-        this.textureSystem = textureSystem;
+        this.textureRegistry = textureRegistry;
         this.projection = new Matrix4f().identity()
             .ortho2D(0f, windowSpec.getWidth(), windowSpec.getHeight(), 0f);
     }
@@ -78,7 +78,7 @@ public class SpriteRenderer {
         GL11.glDisable(GL11.GL_CULL_FACE);
 
         shaderSystem.setUniform(shader, SpriteShaderProps.UNIFORM_PROJECTION_MATRIX, projection);
-        textureSystem.bind(material.texture(), 0);
+        textureRegistry.bind(material.texture(), 0);
         shaderSystem.setUniform(shader, SpriteShaderProps.UNIFORM_TEXTURE_SAMPLER, 0);
         shaderSystem.setUniform(shader, SpriteShaderProps.UNIFORM_TINT_COLOR, material.tint());
     }

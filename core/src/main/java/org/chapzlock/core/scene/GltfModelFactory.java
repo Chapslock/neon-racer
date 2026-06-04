@@ -33,7 +33,7 @@ import org.chapzlock.core.ecs.Entity;
 import org.chapzlock.core.render.MeshRegistry;
 import org.chapzlock.core.render.PbrShaderProps;
 import org.chapzlock.core.render.ShaderSystem;
-import org.chapzlock.core.render.TextureSystem;
+import org.chapzlock.core.render.TextureRegistry;
 
 /**
  * Converts a parsed glTF asset into live ECS entities.
@@ -77,7 +77,7 @@ public class GltfModelFactory {
 
     private final ComponentRegistry registry;
     private final MeshRegistry meshRegistry;
-    private final TextureSystem textureSystem;
+    private final TextureRegistry textureRegistry;
     private final ShaderSystem shaderSystem;
 
     /**
@@ -92,7 +92,7 @@ public class GltfModelFactory {
     public GltfModelFactory(EngineContext ctx) {
         this.registry = ctx.getRegistry();
         this.meshRegistry = ctx.getMeshRegistry();
-        this.textureSystem = ctx.getTextureSystem();
+        this.textureRegistry = ctx.getTextureRegistry();
         this.shaderSystem = ctx.getShaderSystem();
     }
 
@@ -398,7 +398,7 @@ public class GltfModelFactory {
      * Converts glTF material data into a PbrMaterial component.
      *
      * <p>Maps all glTF PBR properties (factors, textures, alpha mode) to the engine's
-     * PbrMaterial builder. Textures are loaded via TextureSystem, dispatching on whether
+     * PbrMaterial builder. Textures are loaded via TextureRegistry, dispatching on whether
      * the texture is file-based (external URI) or memory-based (embedded in GLB).
      * If a texture reference is null, that texture slot is left empty and the shader will use
      * the scalar/vector factor uniformly.
@@ -423,7 +423,7 @@ public class GltfModelFactory {
             default -> AlphaMode.OPAQUE;
         });
 
-        if (textureSystem != null) {
+        if (textureRegistry != null) {
             loadTextureRef(data.baseColorTexture(), builder::baseColorMap, true);
             loadTextureRef(data.metallicRoughnessTexture(), builder::metallicRoughnessMap, false);
             loadTextureRef(data.normalTexture(), builder::normalMap, false);
@@ -438,8 +438,8 @@ public class GltfModelFactory {
                                 java.util.function.Consumer<Texture> setter, boolean srgb) {
         if (ref == null) return;
         Texture tex = ref.isEmbedded()
-            ? textureSystem.loadFromMemory(ref.imageBytes(), ref.cacheKey(), srgb, false)
-            : textureSystem.load(ref.filePath(), srgb, false);
+            ? textureRegistry.loadFromMemory(ref.imageBytes(), ref.cacheKey(), srgb, false)
+            : textureRegistry.load(ref.filePath(), srgb, false);
         setter.accept(tex);
     }
 

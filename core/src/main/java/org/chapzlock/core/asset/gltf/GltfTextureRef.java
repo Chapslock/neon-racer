@@ -12,13 +12,13 @@ import java.nio.ByteBuffer;
  *   <li><em>Embedded:</em> The texture bytes are packed inside the GLB binary chunk (no URI)</li>
  * </ul>
  *
- * <p>The engine's TextureSystem needs different loading paths for each case:
+ * <p>The engine's TextureRegistry needs different loading paths for each case:
  * external textures are loaded from the filesystem via STB, while embedded textures
  * are decoded from an in-memory buffer.
  *
  * @param filePath   file path for external textures, null for embedded
  * @param imageBytes raw image bytes (PNG/JPEG) for embedded textures, null for external
- * @param cacheKey   unique key for TextureSystem caching (file path for external,
+ * @param cacheKey   unique key for TextureRegistry caching (file path for external,
  *                   synthetic key like "embedded:model.glb:tex0" for embedded)
  */
 public record GltfTextureRef(

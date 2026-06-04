@@ -19,7 +19,7 @@ import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.event.ComponentAddedEvent;
 import org.chapzlock.core.logging.Log;
 import org.chapzlock.core.render.MeshRegistry;
-import org.chapzlock.core.render.TextureSystem;
+import org.chapzlock.core.render.TextureRegistry;
 
 /**
  * Manages runtime entity creation through a phased assembly pipeline.
@@ -131,7 +131,7 @@ public class EntitySystem implements GameSystem {
      *
      * <p>Handles:
      * <ul>
-     *   <li>SpriteMaterial with needsResolution() — loads texture via TextureSystem</li>
+     *   <li>SpriteMaterial with needsResolution() — loads texture via TextureRegistry</li>
      *   <li>SpriteLayer present without Mesh — auto-creates UI quad mesh</li>
      *   <li>Tags — added to the result list as components</li>
      * </ul>
@@ -143,8 +143,8 @@ public class EntitySystem implements GameSystem {
 
         for (Component c : components) {
             if (c instanceof SpriteMaterial sm && sm.needsResolution()) {
-                TextureSystem textureSystem = ctx.getTextureSystem();
-                Texture loaded = textureSystem.load(sm.texturePath());
+                TextureRegistry textureRegistry = ctx.getTextureRegistry();
+                Texture loaded = textureRegistry.load(sm.texturePath());
                 result.add(sm.withTexture(loaded));
             } else {
                 result.add(c);

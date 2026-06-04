@@ -26,7 +26,7 @@ public class RenderContext {
     private final ComponentRegistry registry;
     private final MeshRegistry meshRegistry;
     private final ShaderSystem shaderSystem;
-    private final TextureSystem textureSystem;
+    private final TextureRegistry textureRegistry;
     private final CameraSystem cameraSystem;
     private final SceneManager sceneManager;
     private final Vector3f[] pointLightPositionPool = new Vector3f[PointLight.MAX_COUNT];
@@ -47,7 +47,7 @@ public class RenderContext {
         this.registry = ctx.getRegistry();
         this.meshRegistry = ctx.getMeshRegistry();
         this.shaderSystem = ctx.getShaderSystem();
-        this.textureSystem = ctx.getTextureSystem();
+        this.textureRegistry = ctx.getTextureRegistry();
         this.cameraSystem = ctx.getCameraSystem();
         this.sceneManager = ctx.getSceneManager();
         for (int i = 0; i < pointLightPositionPool.length; i++) {

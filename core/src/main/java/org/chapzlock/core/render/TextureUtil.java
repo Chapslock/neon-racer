@@ -62,7 +62,7 @@ import lombok.experimental.UtilityClass;
  * Non-color textures (normal maps, roughness) should NOT use sRGB — they contain raw data,
  * not perceptual colors.
  *
- * @see TextureSystem
+ * @see TextureRegistry
  */
 @UtilityClass
 public class TextureUtil {

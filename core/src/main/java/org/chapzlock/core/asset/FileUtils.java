@@ -37,7 +37,7 @@ import lombok.experimental.UtilityClass;
  * ({@code stbi_set_flip_vertically_on_load}). All image loading MUST happen on the main
  * thread. Do not load images from background threads — the global state will corrupt.
  *
- * @see org.chapzlock.core.render.TextureSystem
+ * @see org.chapzlock.core.render.TextureRegistry
  * @see org.chapzlock.core.render.RawImageData
  */
 @UtilityClass

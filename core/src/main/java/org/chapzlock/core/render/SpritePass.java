@@ -38,7 +38,7 @@ public class SpritePass implements RenderPass {
     @Override
     public void init(EngineContext ctx) {
         spriteRenderer = new SpriteRenderer(
-            ctx.getShaderSystem(), ctx.getTextureSystem(), ctx.getWindow().getSpecification());
+            ctx.getShaderSystem(), ctx.getTextureRegistry(), ctx.getWindow().getSpecification());
         spriteRenderer.init();
     }
 

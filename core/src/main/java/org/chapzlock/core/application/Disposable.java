@@ -3,7 +3,7 @@ package org.chapzlock.core.application;
 /**
  * Interface for objects that require cleanup.
  *
- * <p>GPU systems (MeshRegistry, TextureSystem, ShaderSystem) implement this to free OpenGL resources.
+ * <p>GPU systems (MeshRegistry, TextureRegistry, ShaderSystem) implement this to free OpenGL resources.
  * {@link EngineContext#dispose()} cascades to all disposable subsystems on shutdown.
  */
 public interface Disposable {

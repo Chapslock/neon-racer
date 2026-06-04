@@ -18,12 +18,12 @@ import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
  * (still in use by B). Only when scene B also unloads does the count hit 0, triggering deletion
  * from GPU memory.
  *
- * <p><strong>Usage:</strong> Each GPU resource system ({@link MeshRegistry}, {@link TextureSystem},
+ * <p><strong>Usage:</strong> Each GPU resource system ({@link MeshRegistry}, {@link TextureRegistry},
  * {@link ShaderSystem}) owns a RefCounted instance with a cleanup callback that frees the
  * specific resource type.
  *
  * @see MeshRegistry
- * @see TextureSystem
+ * @see TextureRegistry
  * @see ShaderSystem
  */
 public class RefCounted {

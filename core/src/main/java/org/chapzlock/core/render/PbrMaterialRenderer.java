@@ -40,7 +40,7 @@ import org.joml.Vector3f;
 public class PbrMaterialRenderer {
 
     private final ShaderSystem shaderSystem;
-    private final TextureSystem textureSystem;
+    private final TextureRegistry textureRegistry;
 
     /**
      * Reusable temporary matrix for computing joint skin matrices each frame.
@@ -83,9 +83,9 @@ public class PbrMaterialRenderer {
      */
     private float[] blendedNormalDeltas;
 
-    public PbrMaterialRenderer(ShaderSystem shaderSystem, TextureSystem textureSystem) {
+    public PbrMaterialRenderer(ShaderSystem shaderSystem, TextureRegistry textureRegistry) {
         this.shaderSystem = shaderSystem;
-        this.textureSystem = textureSystem;
+        this.textureRegistry = textureRegistry;
     }
 
     /**
@@ -371,7 +371,7 @@ public class PbrMaterialRenderer {
     private void bindTextureIfPresent(Shader shader, Texture texture, int unit,
                                       String samplerUniform, String flagUniform) {
         if (texture != null) {
-            textureSystem.bind(texture, unit);
+            textureRegistry.bind(texture, unit);
             shaderSystem.setUniform(shader, samplerUniform, unit);
             shaderSystem.setUniform(shader, flagUniform, true);
         } else {
