@@ -218,7 +218,7 @@ class SceneManagerTest {
         org.chapzlock.core.ecs.SystemScheduler scheduler = new org.chapzlock.core.ecs.SystemScheduler();
         org.chapzlock.core.asset.gltf.GltfAssetManager gltfAssetManager = new org.chapzlock.core.asset.gltf.GltfAssetManager(reg, meshRegistry, textureRegistry, null);
         org.chapzlock.core.ecs.EntityFactory entityFactory = new org.chapzlock.core.ecs.EntityFactory(
-            reg, meshRegistry, textureRegistry, null, gltfAssetManager);
+            reg, meshRegistry, textureRegistry, gltfAssetManager);
         Engine assetEngine = new Engine(
             reg, eb, meshRegistry, textureRegistry, null, null,
             new org.chapzlock.core.application.Time(),

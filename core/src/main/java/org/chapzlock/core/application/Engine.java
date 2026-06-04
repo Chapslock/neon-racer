@@ -145,7 +145,7 @@ public class Engine implements Disposable {
         RenderSystem renderSystem = new RenderSystem();
 
         // EntityFactory
-        EntityFactory entityFactory = new EntityFactory(registry, meshRegistry, textureRegistry, shaderRegistry, gltfAssetManager);
+        EntityFactory entityFactory = new EntityFactory(registry, meshRegistry, textureRegistry, gltfAssetManager);
 
         // Assemble engine (immutable after this — except sceneManager)
         Engine engine = new Engine(
@@ -190,7 +190,7 @@ public class Engine implements Disposable {
         ComponentRegistry registry = new ComponentRegistry(eventBus);
         SystemScheduler scheduler = new SystemScheduler();
         GltfAssetManager gltfAssetManager = new GltfAssetManager(registry, null, null, null);
-        EntityFactory entityFactory = new EntityFactory(registry, null, null, null, gltfAssetManager);
+        EntityFactory entityFactory = new EntityFactory(registry, null, null, gltfAssetManager);
 
         Engine engine = new Engine(
             registry, eventBus, null, null, null, null,
@@ -217,7 +217,7 @@ public class Engine implements Disposable {
         ComponentRegistry registry = new ComponentRegistry(eventBus);
         SystemScheduler scheduler = new SystemScheduler();
         GltfAssetManager gltfAssetManager = new GltfAssetManager(registry, null, null, null);
-        EntityFactory entityFactory = new EntityFactory(registry, null, null, null, gltfAssetManager);
+        EntityFactory entityFactory = new EntityFactory(registry, null, null, gltfAssetManager);
 
         PhysicsWorldConfig physicsConfig = PhysicsWorldConfig.defaults();
         PhysicsWorld physicsWorld = new PhysicsWorld(physicsConfig);

@@ -20,7 +20,6 @@ import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.event.ComponentAddedEvent;
 import org.chapzlock.core.logging.Log;
 import org.chapzlock.core.render.MeshRegistry;
-import org.chapzlock.core.render.ShaderRegistry;
 import org.chapzlock.core.render.TextureRegistry;
 
 /**
@@ -66,18 +65,15 @@ public class EntityFactory {
     private final ComponentRegistry registry;
     private final MeshRegistry meshRegistry;
     private final TextureRegistry textureRegistry;
-    private final ShaderRegistry shaderRegistry;
     private final GltfAssetManager gltfAssetManager;
 
     public EntityFactory(ComponentRegistry registry,
                          MeshRegistry meshRegistry,
                          TextureRegistry textureRegistry,
-                         ShaderRegistry shaderRegistry,
                          GltfAssetManager gltfAssetManager) {
         this.registry = registry;
         this.meshRegistry = meshRegistry;
         this.textureRegistry = textureRegistry;
-        this.shaderRegistry = shaderRegistry;
         this.gltfAssetManager = gltfAssetManager;
         registerDefaultRules();
     }
