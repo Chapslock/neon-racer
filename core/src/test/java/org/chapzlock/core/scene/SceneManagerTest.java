@@ -225,7 +225,7 @@ class SceneManagerTest {
             null,
             null,
             new org.chapzlock.core.application.Time(),
-            new org.chapzlock.core.tween.TweenManager(),
+            new org.chapzlock.core.tween.TweenRegistry(),
             new org.chapzlock.core.asset.gltf.GltfAssetRegistry(),
             java.util.List.of()
         );

@@ -20,7 +20,7 @@ import org.chapzlock.core.render.RenderSystem;
 import org.chapzlock.core.render.ShaderRegistry;
 import org.chapzlock.core.render.TextureRegistry;
 import org.chapzlock.core.scene.SceneManager;
-import org.chapzlock.core.tween.TweenManager;
+import org.chapzlock.core.tween.TweenRegistry;
 import org.chapzlock.core.tween.TweenSystem;
 import org.chapzlock.core.window.Window;
 
@@ -32,7 +32,7 @@ import lombok.Getter;
  * <p>Created via {@link #create(ApplicationSpecification)} at startup.
  * Contains: {@code ComponentRegistry}, {@code EventBus}, {@code Window}, GPU registries
  * ({@code MeshRegistry}, {@code TextureRegistry}, {@code ShaderRegistry}),
- * {@code Time}, {@code TweenManager}, {@code SceneManager}, {@code CameraSystem},
+ * {@code Time}, {@code TweenRegistry}, {@code SceneManager}, {@code CameraSystem},
  * {@code Physics}.
  *
  * <p>For unit tests, use {@link #testEngine()} to create a minimal context with no GPU subsystems.
@@ -48,7 +48,7 @@ public class Engine implements Disposable {
     private final ShaderRegistry shaderRegistry;
     private final Window window;
     private final Time time;
-    private final TweenManager tweenManager;
+    private final TweenRegistry tweenRegistry;
     private final GltfAssetRegistry gltfAssetRegistry;
     private final List<GameSystem> engineSystems;
     /**
@@ -68,7 +68,7 @@ public class Engine implements Disposable {
            ShaderRegistry shaderRegistry,
            Window window,
            Time time,
-           TweenManager tweenManager,
+           TweenRegistry tweenRegistry,
            GltfAssetRegistry gltfAssetRegistry,
            List<GameSystem> engineSystems) {
         this.registry = registry;
@@ -78,7 +78,7 @@ public class Engine implements Disposable {
         this.shaderRegistry = shaderRegistry;
         this.window = window;
         this.time = time;
-        this.tweenManager = tweenManager;
+        this.tweenRegistry = tweenRegistry;
         this.gltfAssetRegistry = gltfAssetRegistry;
         this.engineSystems = engineSystems;
     }
@@ -90,7 +90,7 @@ public class Engine implements Disposable {
            ShaderRegistry shaderRegistry,
            Window window,
            Time time,
-           TweenManager tweenManager,
+           TweenRegistry tweenRegistry,
            GltfAssetRegistry gltfAssetRegistry,
            SceneManager sceneManager,
            CameraSystem cameraSystem,
@@ -104,7 +104,7 @@ public class Engine implements Disposable {
         this.shaderRegistry = shaderRegistry;
         this.window = window;
         this.time = time;
-        this.tweenManager = tweenManager;
+        this.tweenRegistry = tweenRegistry;
         this.gltfAssetRegistry = gltfAssetRegistry;
         this.sceneManager = sceneManager;
         this.cameraSystem = cameraSystem;
@@ -137,7 +137,7 @@ public class Engine implements Disposable {
         TextureRegistry textureRegistry = new TextureRegistry();
         MeshRegistry meshRegistry = new MeshRegistry();
         Time time = new Time();
-        TweenManager tweenManager = new TweenManager();
+        TweenRegistry tweenRegistry = new TweenRegistry();
         GltfAssetRegistry gltfAssetRegistry = new GltfAssetRegistry();
         CameraSystem cameraSystem = new CameraSystem(spec.getWindowSpec());
 
@@ -160,7 +160,7 @@ public class Engine implements Disposable {
         // Assemble engine
         Engine engine = new Engine(
             registry, eventBus, meshRegistry, textureRegistry, shaderRegistry,
-            window, time, tweenManager, gltfAssetRegistry,
+            window, time, tweenRegistry, gltfAssetRegistry,
             null, cameraSystem, physics, null, engineSystems);
 
         // Wire components that need the full Engine reference
@@ -186,7 +186,7 @@ public class Engine implements Disposable {
     /**
      * Creates a minimal engine for unit tests (no GPU systems).
      *
-     * @return a test engine with {@code ComponentRegistry}, {@code EventBus}, {@code Time}, and {@code TweenManager}
+     * @return a test engine with {@code ComponentRegistry}, {@code EventBus}, {@code Time}, and {@code TweenRegistry}
      */
     public static Engine testEngine() {
         EventBus eventBus = new EventBus();
@@ -198,7 +198,7 @@ public class Engine implements Disposable {
             null,
             null,
             new Time(),
-            new TweenManager(),
+            new TweenRegistry(),
             new GltfAssetRegistry(),
             List.of()
         );

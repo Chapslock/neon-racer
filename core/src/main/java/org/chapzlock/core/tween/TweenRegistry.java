@@ -6,12 +6,12 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * Manages active tweens (animations).
+ * Stores and updates active tweens (animations).
  *
  * <p>Create via {@link #create(float, Ease, Consumer)}, update via {@link #update(float)}.
  * Automatically removes completed or cancelled tweens.
  */
-public class TweenManager {
+public class TweenRegistry {
     private final List<Tween> activeTweens = new ArrayList<>();
 
     /**

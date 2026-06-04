@@ -4,20 +4,20 @@ import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.ecs.GameSystem;
 
 /**
- * GameSystem wrapper for {@link TweenManager}.
+ * GameSystem wrapper for {@link TweenRegistry}.
  *
  * <p>Updates all active tweens each frame. Add to engine systems if using tweens.
  */
 public class TweenSystem implements GameSystem {
-    private TweenManager tweenManager;
+    private TweenRegistry tweenRegistry;
 
     @Override
     public void onInit(Engine engine) {
-        this.tweenManager = engine.getTweenManager();
+        this.tweenRegistry = engine.getTweenRegistry();
     }
 
     @Override
     public void onUpdate(float deltaTime) {
-        tweenManager.update(deltaTime);
+        tweenRegistry.update(deltaTime);
     }
 }

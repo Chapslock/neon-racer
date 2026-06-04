@@ -5,7 +5,7 @@ import java.util.function.Consumer;
 /**
  * A single animation (tween) with easing.
  *
- * <p>Created by {@link TweenManager#create(float, Ease, Consumer)}.
+ * <p>Created by {@link TweenRegistry#create(float, Ease, Consumer)}.
  * Use {@link #onComplete(Runnable)} to register a completion callback.
  */
 public class Tween {
