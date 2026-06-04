@@ -9,16 +9,15 @@ import java.util.Objects;
 import java.util.Queue;
 
 import org.chapzlock.core.application.Engine;
-import org.chapzlock.core.asset.gltf.GltfAsset;
 import org.chapzlock.core.asset.gltf.GltfAssetManager;
-import org.chapzlock.core.component.GltfModel;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.SpriteMaterial;
+import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
+import org.chapzlock.core.ecs.Entity;
 import org.chapzlock.core.ecs.EntityBuilder;
 import org.chapzlock.core.ecs.EntityFactory;
 import org.chapzlock.core.ecs.GameSystem;
-import org.chapzlock.core.ecs.GltfInstance;
 import org.chapzlock.core.ecs.SystemScheduler;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.input.InputMap;
@@ -182,11 +181,8 @@ public class SceneManager {
     }
 
     /**
-     * Loads an entire glTF file as entities in the current scene context.
-     *
-     * <p>This creates entities for every node in the glTF file, uploads meshes to the GPU,
-     * creates PBR materials, and sets up the parent-child hierarchy. Returns a handle for
-     * looking up entities by their glTF node names (as set in Blender or other DCC tools).
+     * Loads a glTF file at runtime, creating an anchor entity and expanding the model
+     * hierarchy as children via GltfAssetManager.
      *
      * <p><strong>When to use:</strong> Call this when you want to spawn a 3D model at runtime
      * without making it part of a scene's blueprint. For example, spawning a car prefab when
@@ -194,9 +190,9 @@ public class SceneManager {
      *
      * <p><strong>Usage example:</strong>
      * <pre>{@code
-     * GltfInstance track = sceneManager.loadGltf("models/track.glb");
-     * int player = track.entity("Player");      // Look up by Blender node name
-     * int camera = track.entity("MainCamera");  // Another named node
+     * int carEntity = sceneManager.loadGltf("models/car.glb");
+     * Transform t = registry.getComponent(carEntity, Transform.class);
+     * t.setPosition(spawnPoint);
      * }</pre>
      *
      * <p><strong>Asset lifecycle:</strong> Meshes, textures, and shaders loaded by this method
@@ -204,41 +200,28 @@ public class SceneManager {
      * entities are destroyed (typically when the scene is unloaded).
      *
      * @param resourcePath path relative to the resources root (e.g., "models/track.glb")
-     * @return a {@link GltfInstance} handle for name-based entity lookup
+     * @return the root entity ID of the instantiated glTF scene
      * @throws org.chapzlock.core.asset.gltf.GltfLoadException if the file cannot be loaded or parsed
      */
-    public GltfInstance loadGltf(String resourcePath) {
+    public int loadGltf(String resourcePath) {
         log.debug("Loading glTF: %s", resourcePath);
-        GltfAsset asset = gltfAssetManager.getOrLoad(resourcePath);
-        return entityFactory.instantiateGltf(asset);
+        int rootEntity = Entity.create(registry);
+        registry.addComponent(rootEntity, new Transform());
+        gltfAssetManager.instantiate(resourcePath, rootEntity);
+        return rootEntity;
     }
 
     /**
      * Loads a glTF file as a prefab and returns the root entity ID.
      *
-     * <p>This is a convenience method that wraps {@link #loadGltf(String)} for simpler use
-     * cases where you only need the root entity and don't need name-based lookup. The root
-     * entity represents the top of the glTF node hierarchy — moving it will move the entire
-     * loaded model.
-     *
-     * <p><strong>When to use:</strong> Use this when you need to load a model and only
-     * interact with it as a single entity (e.g., a static prop, a collectible, a projectile).
-     * If you need to access individual named nodes inside the model, use
-     * {@link #loadGltf(String)} instead.
-     *
-     * <p><strong>Usage example:</strong>
-     * <pre>{@code
-     * int carEntity = sceneManager.instantiateGltf("models/car.glb");
-     * Transform t = registry.getComponent(carEntity, Transform.class);
-     * t.setPosition(spawnPoint);
-     * }</pre>
+     * <p>This is a convenience alias for {@link #loadGltf(String)}.
      *
      * @param resourcePath path relative to the resources root (e.g., "models/car.glb")
      * @return the root entity ID of the instantiated glTF scene
      * @throws org.chapzlock.core.asset.gltf.GltfLoadException if the file cannot be loaded or parsed
      */
     public int instantiateGltf(String resourcePath) {
-        return loadGltf(resourcePath).rootEntity();
+        return loadGltf(resourcePath);
     }
 
     /**
@@ -354,9 +337,9 @@ public class SceneManager {
      * <ol>
      *   <li>For each entity recipe, creates an EntityBuilder, applies the configurator,
      *       then delegates to {@link EntityFactory#instantiate(String, List, List)}
-     *       which resolves components, validates rules, and commits atomically</li>
+     *       which resolves components, validates rules, and commits atomically
+     *       (GltfModel expansion is handled automatically by EntityFactory)</li>
      *   <li>GPU asset IDs are tracked for reference counting</li>
-     *   <li>If the entity has a GltfModel component, it is loaded as child entities</li>
      *   <li>All tracked GPU assets are retained (refcount incremented)</li>
      *   <li>Scene systems are initialized via {@code onInit()}</li>
      *   <li>The scene's input map is activated on the event bus</li>
@@ -380,18 +363,6 @@ public class SceneManager {
 
                 entityIds.add(entityId);
                 trackAssetsForEntity(entityId, assets);
-
-                GltfModel gltfModel = registry.getComponent(entityId, GltfModel.class);
-                if (gltfModel != null) {
-                    GltfAsset modelAsset = gltfAssetManager.getOrLoad(gltfModel.resourcePath());
-                    GltfInstance modelInstance = entityFactory.instantiateGltfAsChild(modelAsset, entityId);
-                    for (int childId : modelInstance.allEntities().values()) {
-                        entityIds.add(childId);
-                    }
-                    if (!entityIds.contains(modelInstance.rootEntity())) {
-                        entityIds.add(modelInstance.rootEntity());
-                    }
-                }
 
                 String name = recipe.name();
                 log.debug("  Entity \"%s\" created (id=%d)", name != null ? name : "<anonymous>", entityId);
