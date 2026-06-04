@@ -49,7 +49,7 @@ class CharacterJumpSystemTest {
             .action("jump", Key.SPACE)
             .build();
         inputMap.activate(eventBus);
-        engine.setActiveInputMap(inputMap);
+        engine.getSceneManager().setActiveInputMap(inputMap);
 
         system = new CharacterJumpSystem();
         system.onInit(engine);
@@ -159,7 +159,7 @@ class CharacterJumpSystemTest {
         physics.setLinearVelocity(player, new Vector3f(0, 0, 0));
 
         // Remove active input map
-        engine.setActiveInputMap(null);
+        engine.getSceneManager().setActiveInputMap(null);
 
         system.onUpdate(0.016f);
 

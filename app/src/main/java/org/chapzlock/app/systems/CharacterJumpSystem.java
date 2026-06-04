@@ -50,7 +50,7 @@ public class CharacterJumpSystem implements GameSystem {
 
     @Override
     public void onUpdate(float deltaTime) {
-        InputMap input = engine.getActiveInputMap();
+        InputMap input = engine.getSceneManager().getActiveInputMap();
         if (input == null) return;
 
         if (!input.wasJustPressed("jump")) return;

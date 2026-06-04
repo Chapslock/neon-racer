@@ -11,7 +11,7 @@ import org.chapzlock.core.window.WindowSpecification;
 public class Main {
     public static void main(String[] args) {
         LogEngine.setGlobalLevel(LogLevel.DEBUG);
-        Application app = Application.create(
+        Application.run(
             ApplicationSpecification.builder()
                 .windowSpec(WindowSpecification.builder()
                     .title("Neon Racer")
@@ -21,6 +21,5 @@ public class Main {
                 .physicsConfig(PhysicsWorldConfig.withDebug())
                 .initialScene(ForestScene.create())
                 .build());
-        app.run();
     }
 }

@@ -56,7 +56,7 @@ public class Physics {
 
     private final PhysicsWorld world;
 
-    Physics(PhysicsWorld world) {
+    public Physics(PhysicsWorld world) {
         this.world = world;
     }
 

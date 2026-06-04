@@ -2,38 +2,45 @@ package org.chapzlock.core.application;
 
 import java.util.List;
 
+import org.chapzlock.core.animation.AnimationSystem;
 import org.chapzlock.core.asset.gltf.GltfAssetRegistry;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.EntitySystem;
 import org.chapzlock.core.ecs.GameSystem;
+import org.chapzlock.core.ecs.TransformSystem;
 import org.chapzlock.core.event.EventBus;
-import org.chapzlock.core.input.InputMap;
+import org.chapzlock.core.logging.Log;
 import org.chapzlock.core.physics.Physics;
+import org.chapzlock.core.physics.PhysicsSystem;
+import org.chapzlock.core.physics.PhysicsWorld;
+import org.chapzlock.core.physics.PhysicsWorldConfig;
 import org.chapzlock.core.render.CameraSystem;
 import org.chapzlock.core.render.MeshRegistry;
+import org.chapzlock.core.render.RenderSystem;
 import org.chapzlock.core.render.ShaderRegistry;
 import org.chapzlock.core.render.TextureRegistry;
 import org.chapzlock.core.scene.SceneManager;
 import org.chapzlock.core.tween.TweenManager;
+import org.chapzlock.core.tween.TweenSystem;
 import org.chapzlock.core.window.Window;
 
 import lombok.Getter;
 
 /**
- * Immutable container for all engine subsystems.
+ * Central container for all engine subsystems.
  *
- * <p>Created by {@link Application} at startup and passed to systems via {@code onInit()}.
+ * <p>Created via {@link #create(ApplicationSpecification)} at startup.
  * Contains: {@code ComponentRegistry}, {@code EventBus}, {@code Window}, GPU registries
  * ({@code MeshRegistry}, {@code TextureRegistry}, {@code ShaderRegistry}),
- * {@code Time}, {@code TweenManager}, {@code SceneManager}, {@code InputMap}.
- *
- * <p>{@code CameraSystem} is set after construction because it is created as an engine system
- * (not a subsystem) and must be available to other systems during their {@code onInit()}.
+ * {@code Time}, {@code TweenManager}, {@code SceneManager}, {@code CameraSystem},
+ * {@code Physics}.
  *
  * <p>For unit tests, use {@link #testEngine()} to create a minimal context with no GPU subsystems.
  */
 @Getter
 public class Engine implements Disposable {
+
+    private static final Log log = Log.create(Engine.class);
     private final ComponentRegistry registry;
     private final EventBus eventBus;
     private final MeshRegistry meshRegistry;
@@ -50,13 +57,8 @@ public class Engine implements Disposable {
      * This is intentional — set once during Application.run() and never changed after.
      */
     private SceneManager sceneManager;
-    private InputMap activeInputMap;
     private Physics physics;
     private EntitySystem entitySystem;
-    /**
-     * Set after construction by Application.createEngineSystems(). Available to all
-     * engine systems during their onInit() call.
-     */
     private CameraSystem cameraSystem;
 
     public Engine(ComponentRegistry registry,
@@ -81,6 +83,106 @@ public class Engine implements Disposable {
         this.engineSystems = engineSystems;
     }
 
+    Engine(ComponentRegistry registry,
+           EventBus eventBus,
+           MeshRegistry meshRegistry,
+           TextureRegistry textureRegistry,
+           ShaderRegistry shaderRegistry,
+           Window window,
+           Time time,
+           TweenManager tweenManager,
+           GltfAssetRegistry gltfAssetRegistry,
+           SceneManager sceneManager,
+           CameraSystem cameraSystem,
+           Physics physics,
+           EntitySystem entitySystem,
+           List<GameSystem> engineSystems) {
+        this.registry = registry;
+        this.eventBus = eventBus;
+        this.meshRegistry = meshRegistry;
+        this.textureRegistry = textureRegistry;
+        this.shaderRegistry = shaderRegistry;
+        this.window = window;
+        this.time = time;
+        this.tweenManager = tweenManager;
+        this.gltfAssetRegistry = gltfAssetRegistry;
+        this.sceneManager = sceneManager;
+        this.cameraSystem = cameraSystem;
+        this.physics = physics;
+        this.entitySystem = entitySystem;
+        this.engineSystems = engineSystems;
+    }
+
+    /**
+     * Creates a fully-initialized engine from an application specification.
+     *
+     * <p>This factory method performs the full initialization ceremony: GLFW init,
+     * window creation, GPU registry setup, physics world construction, engine system
+     * creation and initialization. The returned engine is ready for scene loading and
+     * the main loop.
+     *
+     * @param spec application configuration (window, physics, initial scene)
+     * @return a fully-initialized engine
+     */
+    public static Engine create(ApplicationSpecification spec) {
+        ApplicationUtil.init();
+
+        EventBus eventBus = new EventBus();
+        ComponentRegistry registry = new ComponentRegistry(eventBus);
+
+        Window window = new Window(spec.getWindowSpec(), eventBus);
+        window.create(0);
+
+        ShaderRegistry shaderRegistry = new ShaderRegistry();
+        TextureRegistry textureRegistry = new TextureRegistry();
+        MeshRegistry meshRegistry = new MeshRegistry();
+        Time time = new Time();
+        TweenManager tweenManager = new TweenManager();
+        GltfAssetRegistry gltfAssetRegistry = new GltfAssetRegistry();
+        CameraSystem cameraSystem = new CameraSystem(spec.getWindowSpec());
+
+        // Create physics
+        PhysicsWorldConfig physicsConfig = spec.getPhysicsConfig() != null
+            ? spec.getPhysicsConfig() : PhysicsWorldConfig.defaults();
+        PhysicsWorld physicsWorld = new PhysicsWorld(physicsConfig);
+        physicsWorld.setMeshRegistry(meshRegistry);
+        Physics physics = new Physics(physicsWorld);
+
+        // Create engine systems
+        List<GameSystem> engineSystems = List.of(
+            new TweenSystem(),
+            new AnimationSystem(),
+            new TransformSystem(),
+            new PhysicsSystem(physicsConfig, cameraSystem, physicsWorld),
+            new RenderSystem()
+        );
+
+        // Assemble engine
+        Engine engine = new Engine(
+            registry, eventBus, meshRegistry, textureRegistry, shaderRegistry,
+            window, time, tweenManager, gltfAssetRegistry,
+            null, cameraSystem, physics, null, engineSystems);
+
+        // Wire components that need the full Engine reference
+        EntitySystem entitySystem = new EntitySystem();
+        entitySystem.onInit(engine);
+        engine.setEntitySystem(entitySystem);
+
+        SceneManager sceneManager = new SceneManager(engine);
+        engine.setSceneManager(sceneManager);
+        sceneManager.registerEngineSystems(engineSystems);
+
+        // Initialize engine systems
+        engineSystems.forEach(s -> s.onInit(engine));
+
+        log.info("Engine created: %s (%dx%d)",
+            spec.getWindowSpec().getTitle(),
+            spec.getWindowSpec().getWidth(),
+            spec.getWindowSpec().getHeight());
+
+        return engine;
+    }
+
     /**
      * Creates a minimal engine for unit tests (no GPU systems).
      *
@@ -103,23 +205,28 @@ public class Engine implements Disposable {
         EntitySystem entitySystem = new EntitySystem();
         entitySystem.onInit(engine);
         engine.setEntitySystem(entitySystem);
+        SceneManager sceneManager = new SceneManager(engine);
+        engine.setSceneManager(sceneManager);
         return engine;
     }
 
     @Override
     public void dispose() {
+        if (sceneManager != null) sceneManager.unloadAll();
+        if (engineSystems != null) {
+            for (GameSystem system : engineSystems) {
+                system.onDestroy();
+            }
+        }
         if (shaderRegistry != null) shaderRegistry.dispose();
         if (textureRegistry != null) textureRegistry.dispose();
         if (meshRegistry != null) meshRegistry.dispose();
         if (eventBus != null) eventBus.clearAllListeners();
+        if (window != null) window.destroy();
     }
 
     public void setSceneManager(SceneManager sceneManager) {
         this.sceneManager = sceneManager;
-    }
-
-    public void setActiveInputMap(InputMap activeInputMap) {
-        this.activeInputMap = activeInputMap;
     }
 
     public void setPhysics(Physics physics) {

@@ -67,7 +67,7 @@ import it.unimi.dsi.fastutil.ints.IntList;
  * @see Physics
  * @see PhysicsSystem
  */
-class PhysicsWorld implements Disposable {
+public class PhysicsWorld implements Disposable {
 
     private static final Log log = Log.create(PhysicsWorld.class);
 
@@ -90,7 +90,7 @@ class PhysicsWorld implements Disposable {
     private final PhysicsWorldConfig config;
     private MeshRegistry meshRegistry;
 
-    PhysicsWorld(PhysicsWorldConfig config) {
+    public PhysicsWorld(PhysicsWorldConfig config) {
         this.config = config;
         this.collisionConfig = new DefaultCollisionConfiguration();
         this.dispatcher = new CollisionDispatcher(collisionConfig);
@@ -107,7 +107,7 @@ class PhysicsWorld implements Disposable {
         }
     }
 
-    void setMeshRegistry(MeshRegistry meshRegistry) {
+    public void setMeshRegistry(MeshRegistry meshRegistry) {
         this.meshRegistry = meshRegistry;
     }
 

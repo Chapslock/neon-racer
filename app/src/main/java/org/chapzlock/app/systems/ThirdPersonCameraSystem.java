@@ -90,7 +90,7 @@ public class ThirdPersonCameraSystem implements GameSystem {
         Vector3f playerPos = getPlayerPosition();
         if (playerPos == null) return;
 
-        InputMap input = engine.getActiveInputMap();
+        InputMap input = engine.getSceneManager().getActiveInputMap();
 
         // Handle orbit mode transitions
         boolean rightHeld = input != null && input.isPressed("cameraOrbit");

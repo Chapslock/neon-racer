@@ -75,19 +75,25 @@ public class PhysicsSystem implements GameSystem {
         this.cameraSystem = cameraSystem;
     }
 
+    public PhysicsSystem(PhysicsWorldConfig config, CameraSystem cameraSystem, PhysicsWorld world) {
+        this.config = config;
+        this.cameraSystem = cameraSystem;
+        this.world = world;
+    }
+
     @Override
     public void onInit(Engine engine) {
         this.registry = engine.getRegistry();
         if (this.cameraSystem == null) {
             this.cameraSystem = engine.getCameraSystem();
         }
-
-        this.world = new PhysicsWorld(config);
-        this.world.setMeshRegistry(engine.getMeshRegistry());
-
-        Physics physics = new Physics(world);
-        engine.setPhysics(physics);
-
+        if (this.world == null) {
+            // Fallback for cases where PhysicsSystem is used without Engine.create()
+            this.world = new PhysicsWorld(config);
+            this.world.setMeshRegistry(engine.getMeshRegistry());
+            Physics physics = new Physics(world);
+            engine.setPhysics(physics);
+        }
         subscribeToLifecycleEvents(engine.getEventBus());
     }
 

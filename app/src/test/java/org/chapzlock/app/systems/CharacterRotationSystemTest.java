@@ -39,7 +39,7 @@ class CharacterRotationSystemTest {
             .axis("turnRight", Key.A, Key.D)
             .build();
         inputMap.activate(eventBus);
-        engine.setActiveInputMap(inputMap);
+        engine.getSceneManager().setActiveInputMap(inputMap);
 
         int camera = Entity.create(registry);
         registry.addComponent(camera, new ThirdPersonCamera());

@@ -58,6 +58,8 @@ public class SceneManager {
 
     @Getter
     private Scene primaryScene;
+    @Getter
+    private InputMap activeInputMap;
     private final List<Scene> additiveScenes = new ArrayList<>();
     private final Map<Scene, SceneInstance> loadedScenes = new HashMap<>();
     private final List<GameSystem> engineSystems = new ArrayList<>();
@@ -91,6 +93,15 @@ public class SceneManager {
     public void registerEngineSystems(List<GameSystem> systems) {
         engineSystems.addAll(systems);
         activeSystemsDirty = true;
+    }
+
+    /**
+     * Sets the currently active input map (used by game systems to read input).
+     *
+     * @param inputMap the input map to activate, or null to clear
+     */
+    public void setActiveInputMap(InputMap inputMap) {
+        this.activeInputMap = inputMap;
     }
 
     /**
@@ -351,7 +362,7 @@ public class SceneManager {
         InputMap inputMap = scene.getInputMap();
         if (inputMap != null) {
             inputMap.activate(eventBus);
-            engine.setActiveInputMap(inputMap);
+            this.activeInputMap = inputMap;
         }
     }
 
@@ -366,8 +377,8 @@ public class SceneManager {
         InputMap inputMap = scene.getInputMap();
         if (inputMap != null) {
             inputMap.deactivate();
-            if (engine.getActiveInputMap() == inputMap) {
-                engine.setActiveInputMap(null);
+            if (this.activeInputMap == inputMap) {
+                this.activeInputMap = null;
             }
         }
 
