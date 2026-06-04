@@ -51,7 +51,7 @@ import it.unimi.dsi.fastutil.ints.IntList;
  *
  * <h3>Immediate registration</h3>
  * <p>Entities are registered immediately when ComponentAddedEvent fires. This is safe because
- * EntitySystem guarantees all components are present before events fire (atomic commit).
+ * EntityFactory guarantees all components are present before events fire (atomic commit).
  * Removals remain deferred to avoid mid-iteration issues with the dynamics world.</p>
  *
  * <h3>Broadphase vs Narrowphase</h3>
@@ -114,7 +114,7 @@ public class PhysicsWorld implements Disposable {
     /**
      * Registers an entity's physics body immediately into the dynamics world.
      *
-     * <p>Called from the ComponentAddedEvent handler. Safe because EntitySystem guarantees
+     * <p>Called from the ComponentAddedEvent handler. Safe because EntityFactory guarantees
      * all components are present before events fire (atomic commit).
      *
      * @param entityId the entity to register
