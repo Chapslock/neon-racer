@@ -1,106 +1,105 @@
 package org.chapzlock.core.logging;
 
-import lombok.experimental.UtilityClass;
-
 /**
- * Simple logging utility for the engine.
+ * Per-class logger for the engine.
  *
- * <p>Provides leveled logging (debug, info, warn, error) with optional source tags.
- * Tags help identify which system produced a log message when multiple systems are
- * logging simultaneously.
- *
- * <p><strong>Levels:</strong>
- * <ul>
- *   <li>{@code debug} — Verbose output for development. Only prints when debug is enabled
- *       via {@code -Dengine.debug=true} or {@link #setDebugEnabled(boolean)}.</li>
- *   <li>{@code info} — Normal operational messages (system startup, scene transitions).</li>
- *   <li>{@code warn} — Something unexpected that doesn't prevent operation (missing optional
- *       resource, deprecated usage).</li>
- *   <li>{@code error} — Something that prevents correct operation (failed to load required
- *       asset, shader compilation failure).</li>
- * </ul>
- *
- * <p><strong>Output format:</strong>
- * <pre>
- * [LEVEL] message                    — without tag
- * [LEVEL] [Tag] message              — with tag
- * </pre>
- *
- * <p><strong>Usage:</strong>
+ * <p>Create one instance per class as a static field:
  * <pre>{@code
- * Log.debug("Loading scene...");                    // tagless
- * Log.debug("ShaderRegistry", "Compiled programId=5"); // tagged
- * Log.warn("RenderContext", "No camera found");
+ * private static final Log log = Log.create(MySystem.class);
+ * log.info("Scene loaded in %dms", elapsed);
  * }</pre>
+ *
+ * <p>Five levels, from most to least verbose: TRACE, DEBUG, INFO, WARN, ERROR.
+ * Configure the global level with {@code -Dengine.log=DEBUG} and per-class
+ * overrides with {@code -Dengine.log.PhysicsSystem=TRACE}.
  */
-@UtilityClass
 public class Log {
 
-    private static boolean debugEnabled = Boolean.getBoolean("engine.debug");
+    private final String name;
 
-    /** Enables or disables debug logging at runtime. */
-    public static void setDebugEnabled(boolean enabled) {
-        debugEnabled = enabled;
+    private Log(String name) {
+        this.name = name;
     }
 
-    /** Returns true if debug logging is enabled. */
-    public static boolean isDebugEnabled() {
-        return debugEnabled;
+    public static Log create(Class<?> clazz) {
+        return new Log(clazz.getSimpleName());
     }
 
-    /** Logs a debug message (only if debug is enabled). */
-    public static void debug(String s) {
-        if (debugEnabled) {
-            System.out.println("[DEBUG] " + s);
+    public void trace(String message) {
+        if (isEnabled(LogLevel.TRACE)) {
+            LogEngine.emit(LogLevel.TRACE, name, message);
         }
     }
 
-    /** Logs a tagged debug message (only if debug is enabled). */
-    public static void debug(String tag, String s) {
-        if (debugEnabled) {
-            System.out.println("[DEBUG] [" + tag + "] " + s);
+    public void trace(String format, Object... args) {
+        if (isEnabled(LogLevel.TRACE)) {
+            LogEngine.emit(LogLevel.TRACE, name, String.format(format, args));
         }
     }
 
-    /** Logs an info message. */
-    public static void info(String s) {
-        System.out.println("[INFO] " + s);
+    public void debug(String message) {
+        if (isEnabled(LogLevel.DEBUG)) {
+            LogEngine.emit(LogLevel.DEBUG, name, message);
+        }
     }
 
-    /** Logs a tagged info message. */
-    public static void info(String tag, String s) {
-        System.out.println("[INFO] [" + tag + "] " + s);
+    public void debug(String format, Object... args) {
+        if (isEnabled(LogLevel.DEBUG)) {
+            LogEngine.emit(LogLevel.DEBUG, name, String.format(format, args));
+        }
     }
 
-    /** Logs a warning message. */
-    public static void warn(String s) {
-        System.out.println("[WARN] " + s);
+    public void info(String message) {
+        if (isEnabled(LogLevel.INFO)) {
+            LogEngine.emit(LogLevel.INFO, name, message);
+        }
     }
 
-    /** Logs a tagged warning message. */
-    public static void warn(String tag, String s) {
-        System.out.println("[WARN] [" + tag + "] " + s);
+    public void info(String format, Object... args) {
+        if (isEnabled(LogLevel.INFO)) {
+            LogEngine.emit(LogLevel.INFO, name, String.format(format, args));
+        }
     }
 
-    /** Logs an error message. */
-    public static void error(String s) {
-        System.err.println("[ERROR] " + s);
+    public void warn(String message) {
+        if (isEnabled(LogLevel.WARN)) {
+            LogEngine.emit(LogLevel.WARN, name, message);
+        }
     }
 
-    /** Logs a tagged error message. */
-    public static void error(String tag, String s) {
-        System.err.println("[ERROR] [" + tag + "] " + s);
+    public void warn(String format, Object... args) {
+        if (isEnabled(LogLevel.WARN)) {
+            LogEngine.emit(LogLevel.WARN, name, String.format(format, args));
+        }
     }
 
-    /** Logs an error message with a stack trace. */
-    public static void error(String s, Throwable t) {
-        System.err.println("[ERROR] " + s);
-        t.printStackTrace(System.err);
+    public void error(String message) {
+        if (isEnabled(LogLevel.ERROR)) {
+            LogEngine.emit(LogLevel.ERROR, name, message);
+        }
     }
 
-    /** Logs a tagged error message with a stack trace. */
-    public static void error(String tag, String s, Throwable t) {
-        System.err.println("[ERROR] [" + tag + "] " + s);
-        t.printStackTrace(System.err);
+    public void error(String format, Object... args) {
+        if (isEnabled(LogLevel.ERROR)) {
+            LogEngine.emit(LogLevel.ERROR, name, String.format(format, args));
+        }
+    }
+
+    public void error(String message, Throwable t) {
+        if (isEnabled(LogLevel.ERROR)) {
+            LogEngine.emit(LogLevel.ERROR, name, message, t);
+        }
+    }
+
+    public boolean isTraceEnabled() {
+        return isEnabled(LogLevel.TRACE);
+    }
+
+    public boolean isDebugEnabled() {
+        return isEnabled(LogLevel.DEBUG);
+    }
+
+    private boolean isEnabled(LogLevel level) {
+        return level.isEnabled(LogEngine.getEffectiveLevel(name));
     }
 }

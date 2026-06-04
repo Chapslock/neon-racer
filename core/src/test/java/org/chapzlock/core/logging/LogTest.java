@@ -11,8 +11,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class LogTest {
 
-    private final PrintStream originalOut = System.out;
-    private final PrintStream originalErr = System.err;
     private ByteArrayOutputStream outCapture;
     private ByteArrayOutputStream errCapture;
 
@@ -20,51 +18,110 @@ class LogTest {
     void setUp() {
         outCapture = new ByteArrayOutputStream();
         errCapture = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outCapture));
-        System.setErr(new PrintStream(errCapture));
-        Log.setDebugEnabled(true);
+        LogEngine.setOutput(new PrintStream(outCapture), new PrintStream(errCapture));
+        LogEngine.setGlobalLevel(LogLevel.TRACE);
+        LogEngine.resetClock();
     }
 
     @AfterEach
     void tearDown() {
-        System.setOut(originalOut);
-        System.setErr(originalErr);
+        LogEngine.resetOutput();
+        LogEngine.setGlobalLevel(LogLevel.INFO);
     }
 
     @Test
-    void debug_withoutTag_formatsWithoutBrackets() {
-        Log.debug("hello world");
-        assertEquals("[DEBUG] hello world\n", outCapture.toString());
+    void create_usesSimpleClassName() {
+        Log log = Log.create(LogTest.class);
+        log.info("test message");
+        assertTrue(outCapture.toString().contains("[LogTest]"));
     }
 
     @Test
-    void debug_withTag_includesTagInBrackets() {
-        Log.debug("ShaderRegistry", "compiled program 5");
-        assertEquals("[DEBUG] [ShaderRegistry] compiled program 5\n", outCapture.toString());
-    }
-
-    @Test
-    void info_withTag_includesTagInBrackets() {
-        Log.info("Engine", "startup complete");
-        assertEquals("[INFO] [Engine] startup complete\n", outCapture.toString());
-    }
-
-    @Test
-    void warn_withTag_includesTagInBrackets() {
-        Log.warn("RenderContext", "no camera found");
-        assertEquals("[WARN] [RenderContext] no camera found\n", outCapture.toString());
-    }
-
-    @Test
-    void error_withTag_includesTagInBrackets() {
-        Log.error("SceneManager", "failed to load");
-        assertEquals("[ERROR] [SceneManager] failed to load\n", errCapture.toString());
-    }
-
-    @Test
-    void debug_whenDisabled_doesNotOutput() {
-        Log.setDebugEnabled(false);
-        Log.debug("ShaderRegistry", "should not appear");
+    void debug_whenLevelIsInfo_doesNotOutput() {
+        LogEngine.setGlobalLevel(LogLevel.INFO);
+        Log log = Log.create(LogTest.class);
+        log.debug("should not appear");
         assertEquals("", outCapture.toString());
+    }
+
+    @Test
+    void debug_whenLevelIsDebug_outputs() {
+        LogEngine.setGlobalLevel(LogLevel.DEBUG);
+        Log log = Log.create(LogTest.class);
+        log.debug("should appear");
+        assertTrue(outCapture.toString().contains("should appear"));
+    }
+
+    @Test
+    void trace_whenLevelIsDebug_doesNotOutput() {
+        LogEngine.setGlobalLevel(LogLevel.DEBUG);
+        Log log = Log.create(LogTest.class);
+        log.trace("too verbose");
+        assertEquals("", outCapture.toString());
+    }
+
+    @Test
+    void error_goesToStderr() {
+        Log log = Log.create(LogTest.class);
+        log.error("broken");
+        assertEquals("", outCapture.toString());
+        assertTrue(errCapture.toString().contains("broken"));
+    }
+
+    @Test
+    void error_withThrowable_printsStackTrace() {
+        Log log = Log.create(LogTest.class);
+        log.error("failed", new RuntimeException("cause"));
+        String errOutput = errCapture.toString();
+        assertTrue(errOutput.contains("failed"));
+        assertTrue(errOutput.contains("RuntimeException"));
+        assertTrue(errOutput.contains("cause"));
+    }
+
+    @Test
+    void formatString_interpolatesArguments() {
+        Log log = Log.create(LogTest.class);
+        log.info("entity=%d name=%s", 42, "player");
+        assertTrue(outCapture.toString().contains("entity=42 name=player"));
+    }
+
+    @Test
+    void isDebugEnabled_reflectsLevel() {
+        LogEngine.setGlobalLevel(LogLevel.INFO);
+        Log log = Log.create(LogTest.class);
+        assertFalse(log.isDebugEnabled());
+
+        LogEngine.setGlobalLevel(LogLevel.DEBUG);
+        assertTrue(log.isDebugEnabled());
+    }
+
+    @Test
+    void isTraceEnabled_reflectsLevel() {
+        LogEngine.setGlobalLevel(LogLevel.DEBUG);
+        Log log = Log.create(LogTest.class);
+        assertFalse(log.isTraceEnabled());
+
+        LogEngine.setGlobalLevel(LogLevel.TRACE);
+        assertTrue(log.isTraceEnabled());
+    }
+
+    @Test
+    void classOverride_overridesGlobalLevel() {
+        LogEngine.setGlobalLevel(LogLevel.WARN);
+        LogEngine.setClassLevel("LogTest", LogLevel.DEBUG);
+
+        Log log = Log.create(LogTest.class);
+        log.debug("visible due to override");
+        assertTrue(outCapture.toString().contains("visible due to override"));
+
+        LogEngine.clearClassLevel("LogTest");
+    }
+
+    @Test
+    void outputFormat_containsTimestampLevelAndSource() {
+        Log log = Log.create(LogTest.class);
+        log.warn("test");
+        String output = outCapture.toString();
+        assertTrue(output.matches("\\[\\d+\\.\\d{3}s] \\[WARN ] \\[LogTest] test\\n"), "Got: " + output);
     }
 }
