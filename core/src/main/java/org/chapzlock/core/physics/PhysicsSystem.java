@@ -3,6 +3,7 @@ package org.chapzlock.core.physics;
 import org.chapzlock.core.application.EngineContext;
 import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.PhysicsBody;
+import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.ecs.SystemPhase;
@@ -102,11 +103,19 @@ public class PhysicsSystem implements GameSystem {
         if (!config.debugEnabled()) return;
 
         world.debugDrawWorld();
-        registry.getSingleton(Camera.class).ifPresent(camera -> {
-            var projectionMatrix = cameraSystem.calculateProjectionMatrix(camera);
-            var viewMatrix = cameraSystem.calculateViewMatrix(camera);
-            world.getDebugDrawer().render(projectionMatrix, viewMatrix);
+        final Camera[] cam = {null};
+        final Transform[] camTransform = {null};
+        registry.forEach(Camera.class, Transform.class, (entityId, camera, transform) -> {
+            if (cam[0] == null) {
+                cam[0] = camera;
+                camTransform[0] = transform;
+            }
         });
+        if (cam[0] != null) {
+            var projectionMatrix = cameraSystem.calculateProjectionMatrix(cam[0]);
+            var viewMatrix = cameraSystem.calculateViewMatrix(camTransform[0]);
+            world.getDebugDrawer().render(projectionMatrix, viewMatrix);
+        }
     }
 
     @Override

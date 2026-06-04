@@ -32,6 +32,7 @@ public class RenderContext {
     private final Vector3f[] pointLightPositionPool = new Vector3f[PointLight.MAX_COUNT];
 
     private Camera camera;
+    private Transform cameraTransform;
     private Sky sky;
     private Matrix4f projectionMatrix;
     private Matrix4f viewMatrix;
@@ -55,20 +56,33 @@ public class RenderContext {
     }
 
     public boolean beginFrame() {
-        var cameraOpt = registry.getSingleton(Camera.class);
-        if (cameraOpt.isEmpty()) {
+        final Camera[] foundCamera = {null};
+        final Transform[] foundTransform = {null};
+        registry.forEach(Camera.class, Transform.class, (entityId, camera, transform) -> {
+            if (foundCamera[0] == null) {
+                foundCamera[0] = camera;
+                foundTransform[0] = transform;
+            }
+        });
+
+        if (foundCamera[0] == null) {
             if (!warnedNoCamera) {
-                Log.warn("RenderContext", "No Camera entity found — rendering is skipped. Add a camera to your scene via .camera(x, y, z) on the SceneBuilder.");
+                Log.warn("RenderContext", "No entity with Camera + Transform found — rendering is skipped. Add .transform(...).component(new Camera()) to your scene.");
                 warnedNoCamera = true;
             }
             return false;
         }
         warnedNoCamera = false;
-        this.camera = cameraOpt.get();
-        this.cameraPosition = camera.getPosition();
+        this.camera = foundCamera[0];
+        this.cameraTransform = foundTransform[0];
+
+        Vector3f pos = new Vector3f();
+        cameraTransform.getPosition(pos);
+        this.cameraPosition = pos;
+
         if (cameraSystem != null) {
             this.projectionMatrix = cameraSystem.calculateProjectionMatrix(camera);
-            this.viewMatrix = cameraSystem.calculateViewMatrix(camera);
+            this.viewMatrix = cameraSystem.calculateViewMatrix(cameraTransform);
         }
 
         this.sky = registry.getSingleton(Sky.class).orElse(null);
