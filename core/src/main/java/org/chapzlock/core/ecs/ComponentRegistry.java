@@ -74,7 +74,13 @@ public class ComponentRegistry {
     }
 
     /**
-     * Publishes an event through the associated EventBus.
+     * Publishes an event through the associated {@link EventBus}.
+     *
+     * <p>Used internally to notify systems when entities or components change. Events are
+     * dispatched synchronously — all listeners execute before this method returns.
+     *
+     * @param event the event to publish (e.g., {@link ComponentAddedEvent}, {@link EntityDestroyedEvent})
+     * @see EventBus#publish(Event)
      */
     public void publishEvent(Event event) {
         eventBus.publish(event);
