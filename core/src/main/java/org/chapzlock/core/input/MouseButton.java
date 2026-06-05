@@ -5,10 +5,10 @@ import static org.lwjgl.glfw.GLFW.*;
 import lombok.Getter;
 
 /**
- * Mouse button enum wrapping GLFW mouse button codes.
+ * Mouse button identifiers mapped to GLFW button codes.
  *
- * <p>Used with {@link InputMapBuilder#action(String, MouseButton)} to bind mouse buttons
- * as input actions alongside keyboard keys.
+ * <p>Used in {@link InputMap} to bind mouse buttons to game actions,
+ * and in mouse events to identify which button was pressed/released.
  */
 public enum MouseButton {
     LEFT(GLFW_MOUSE_BUTTON_LEFT),
