@@ -8,10 +8,18 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * GPU resource handle for a texture (OpenGL texture ID).
+ * GPU texture handle representing a 2D image uploaded to the graphics card.
  *
- * <p>Created by {@link org.chapzlock.core.render.TextureRegistry#load(String)}.
- * Reference-counted — retained on scene load, released on scene unload.
+ * <p><strong>What is a texture in OpenGL?</strong> A texture is image data stored in GPU memory,
+ * identified by an integer ID. The GPU samples (reads) texels (texture pixels) during rendering
+ * to color mesh surfaces. Textures are bound to numbered "texture units" (slots) so shaders
+ * can reference multiple textures in a single draw call.
+ *
+ * <p>Instances are created and managed by {@link org.chapzlock.core.render.TextureRegistry},
+ * which handles deduplication (same path → same GPU texture) and reference-counted cleanup.
+ *
+ * @see org.chapzlock.core.render.TextureRegistry
+ * @see PbrMaterial
  */
 @Getter
 @Builder

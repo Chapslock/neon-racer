@@ -8,10 +8,20 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Shader component storing GLSL source paths and compiled program ID.
+ * GPU shader program handle referencing compiled GLSL code.
  *
- * <p>Created by specifying vertex and fragment shader paths.
- * Compiled by {@link org.chapzlock.core.render.ShaderRegistry}.
+ * <p><strong>What is a shader?</strong> A shader is a small program that runs on the GPU.
+ * A shader program consists of at least two stages:
+ * <ul>
+ *   <li><strong>Vertex shader</strong> — runs once per vertex, transforms 3D positions to screen space</li>
+ *   <li><strong>Fragment shader</strong> — runs once per pixel, computes the final color</li>
+ * </ul>
+ *
+ * <p>Shaders are written in GLSL (OpenGL Shading Language) and compiled at runtime.
+ * The {@link org.chapzlock.core.render.ShaderRegistry} handles compilation, caching, and
+ * uniform location lookups.
+ *
+ * @see org.chapzlock.core.render.ShaderRegistry
  */
 @Builder
 @Getter
