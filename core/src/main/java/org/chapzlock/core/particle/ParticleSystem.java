@@ -67,7 +67,9 @@ public class ParticleSystem implements GameSystem {
             p.getVelocity().set(direction).mul(speed);
 
             p.setLifetime(randomRange(rng, effect.getLifetimeMin(), effect.getLifetimeMax()));
-            p.setSize(randomRange(rng, effect.getSizeMin(), effect.getSizeMax()));
+            float size = randomRange(rng, effect.getSizeMin(), effect.getSizeMax());
+            p.setSize(size);
+            p.setInitialSize(size);
 
             if (effect.hasColorOverLifetime()) {
                 Color start = effect.getColorStart();
@@ -131,7 +133,7 @@ public class ParticleSystem implements GameSystem {
             if (hasSizeOverLifetime) {
                 float t = p.normalizedAge();
                 float scale = lerp(effect.getSizeStartScale(), effect.getSizeEndScale(), t);
-                p.setSize(p.getSize() * scale);
+                p.setSize(p.getInitialSize() * scale);
             }
 
             i++;

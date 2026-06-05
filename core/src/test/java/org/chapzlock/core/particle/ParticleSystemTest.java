@@ -222,4 +222,27 @@ class ParticleSystemTest {
         ParticleEmitter emitter = registry.getComponent(entity, ParticleEmitter.class);
         assertEquals(5, emitter.getAliveCount());
     }
+
+    @Test
+    void sizeOverLifetime_linearInterpolation() {
+        ParticleEffect effect = ParticleEffect.builder()
+            .rate(100f)
+            .lifetime(1f)
+            .speed(0f, 0f)
+            .size(1f, 1f)
+            .sizeOverLifetime(1f, 0f)
+            .maxParticles(10)
+            .build();
+
+        int entity = Entity.create(registry);
+        registry.addComponent(entity, Transform.at(0, 0, 0));
+        registry.addComponent(entity, new ParticleEmitter(effect));
+
+        system.onUpdate(0.01f); // Emit
+        system.onUpdate(0.5f);  // Advance to ~50% lifetime
+
+        ParticleEmitter emitter = registry.getComponent(entity, ParticleEmitter.class);
+        Particle p = emitter.getParticles()[0];
+        assertEquals(0.5f, p.getSize(), 0.1f);
+    }
 }

@@ -31,6 +31,7 @@ public class Particle {
     private float age;
     private float lifetime;
     private float size;
+    private float initialSize;
 
     /**
      * Resets all fields to default state, preparing this particle for reuse.
@@ -44,6 +45,7 @@ public class Particle {
         age = 0f;
         lifetime = 0f;
         size = 0f;
+        initialSize = 0f;
     }
 
     /**
