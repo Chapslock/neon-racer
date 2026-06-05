@@ -205,4 +205,65 @@ class ParticleOneShotTest {
         ParticleEmitter emitter = registry.getComponent(entity, ParticleEmitter.class);
         assertFalse(emitter.isEmissionComplete());
     }
+
+    @Test
+    void selfTerminating_destroysEntityWhenAllParticlesDead() {
+        ParticleEffect effect = ParticleEffect.builder()
+            .burst(5)
+            .lifetime(0.1f)
+            .speed(0f, 0f)
+            .maxParticles(10)
+            .build();
+
+        int entity = Entity.create(registry);
+        registry.addComponent(entity, Transform.at(0, 0, 0));
+        registry.addComponent(entity, new ParticleEmitter(effect));
+
+        // Frame 1: burst emits 5 particles
+        system.onUpdate(0.016f);
+        assertTrue(registry.entityExists(entity));
+
+        // Advance past particle lifetime so all die
+        system.onUpdate(0.2f);
+
+        assertFalse(registry.entityExists(entity));
+    }
+
+    @Test
+    void selfTerminating_doesNotDestroyWhileParticlesAlive() {
+        ParticleEffect effect = ParticleEffect.builder()
+            .burst(5)
+            .lifetime(1f)
+            .speed(0f, 0f)
+            .maxParticles(10)
+            .build();
+
+        int entity = Entity.create(registry);
+        registry.addComponent(entity, Transform.at(0, 0, 0));
+        registry.addComponent(entity, new ParticleEmitter(effect));
+
+        system.onUpdate(0.016f);
+        system.onUpdate(0.5f);
+
+        assertTrue(registry.entityExists(entity));
+    }
+
+    @Test
+    void continuousEmitter_neverAutoDestroys() {
+        ParticleEffect effect = ParticleEffect.builder()
+            .rate(100f)
+            .lifetime(0.01f)
+            .speed(0f, 0f)
+            .maxParticles(10)
+            .build();
+
+        int entity = Entity.create(registry);
+        registry.addComponent(entity, Transform.at(0, 0, 0));
+        registry.addComponent(entity, new ParticleEmitter(effect));
+
+        system.onUpdate(0.1f);
+        system.onUpdate(0.1f);
+
+        assertTrue(registry.entityExists(entity));
+    }
 }

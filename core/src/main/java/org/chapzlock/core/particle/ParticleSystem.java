@@ -1,11 +1,14 @@
 package org.chapzlock.core.particle;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.Color;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
+import org.chapzlock.core.ecs.EntityFactory;
 import org.chapzlock.core.ecs.GameSystem;
 import org.joml.Vector3f;
 
@@ -29,20 +32,34 @@ import org.joml.Vector3f;
 public class ParticleSystem implements GameSystem {
 
     private ComponentRegistry registry;
+    private EntityFactory entityFactory;
+    private final List<Integer> entitiesToDestroy = new ArrayList<>();
 
     @Override
     public void onInit(Engine engine) {
         this.registry = engine.getRegistry();
+        this.entityFactory = engine.getEntityFactory();
     }
 
     @Override
     public void onUpdate(float deltaTime) {
+        entitiesToDestroy.clear();
         registry.forEach(ParticleEmitter.class, Transform.class, (entityId, emitter, transform) -> {
-            if (emitter.isActive()) {
+            if (emitter.isActive() && !emitter.isEmissionComplete()) {
                 emit(emitter, transform, deltaTime);
             }
             update(emitter, deltaTime);
+
+            if (emitter.isSelfTerminating()
+                && emitter.isEmissionComplete()
+                && emitter.getAliveCount() == 0) {
+                entitiesToDestroy.add(entityId);
+            }
         });
+
+        for (int entityId : entitiesToDestroy) {
+            entityFactory.destroyEntity(entityId);
+        }
     }
 
     private void emit(ParticleEmitter emitter, Transform transform, float deltaTime) {
