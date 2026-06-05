@@ -170,4 +170,56 @@ class EntityFactoryHierarchyTest {
         assertTrue(child1H.isRoot());
         assertTrue(child2H.isRoot());
     }
+
+    @Test
+    void destroyEntity_cascadesToChildren() {
+        int parent = entityFactory.builder("parent")
+            .transform(Transform.at(0, 0, 0))
+            .instantiate();
+        int child = entityFactory.builder("child")
+            .transform(Transform.at(1, 0, 0))
+            .instantiate();
+        int grandchild = entityFactory.builder("grandchild")
+            .transform(Transform.at(2, 0, 0))
+            .instantiate();
+
+        entityFactory.attachChild(parent, child);
+        entityFactory.attachChild(child, grandchild);
+
+        entityFactory.destroyEntity(parent);
+
+        assertFalse(registry.entityExists(parent));
+        assertFalse(registry.entityExists(child));
+        assertFalse(registry.entityExists(grandchild));
+    }
+
+    @Test
+    void destroyEntity_detachesFromParent() {
+        int parent = entityFactory.builder("parent")
+            .transform(Transform.at(0, 0, 0))
+            .instantiate();
+        int child = entityFactory.builder("child")
+            .transform(Transform.at(1, 0, 0))
+            .instantiate();
+
+        entityFactory.attachChild(parent, child);
+        entityFactory.destroyEntity(child);
+
+        assertTrue(registry.entityExists(parent));
+        assertFalse(registry.entityExists(child));
+
+        Hierarchy parentH = registry.getComponent(parent, Hierarchy.class);
+        assertEquals(0, parentH.getChildCount());
+    }
+
+    @Test
+    void destroyEntity_worksWithoutHierarchy() {
+        int entity = entityFactory.builder("standalone")
+            .transform(Transform.at(0, 0, 0))
+            .instantiate();
+
+        entityFactory.destroyEntity(entity);
+
+        assertFalse(registry.entityExists(entity));
+    }
 }

@@ -297,6 +297,36 @@ public class EntityFactory {
         }
     }
 
+    /**
+     * Destroys an entity and all its children recursively (cascade delete).
+     * If the entity has a parent, it is removed from the parent's children list first.
+     *
+     * @param entityId the entity to destroy
+     */
+    public void destroyEntity(int entityId) {
+        if (!registry.entityExists(entityId)) return;
+
+        Hierarchy hierarchy = registry.getComponent(entityId, Hierarchy.class);
+        if (hierarchy != null) {
+            // Recursively destroy children (depth-first)
+            int[] children = hierarchy.getChildren();
+            for (int childId : children) {
+                destroyEntity(childId);
+            }
+
+            // Detach from parent (without baking transform — entity is being destroyed)
+            int parentId = hierarchy.getParent();
+            if (parentId != Hierarchy.NO_PARENT) {
+                Hierarchy parentH = registry.getComponent(parentId, Hierarchy.class);
+                if (parentH != null) {
+                    parentH.removeChild(entityId);
+                }
+            }
+        }
+
+        registry.destroyEntity(entityId);
+    }
+
     private void bakeWorldToLocal(Transform transform) {
         Matrix4f world = transform.getWorldMatrix();
         Vector3f pos = new Vector3f();
