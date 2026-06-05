@@ -8,6 +8,7 @@ import org.chapzlock.core.ecs.SystemScheduler;
 import org.chapzlock.core.ecs.TransformSystem;
 import org.chapzlock.core.event.EventBus;
 import org.chapzlock.core.logging.Log;
+import org.chapzlock.core.particle.ParticleSystem;
 import org.chapzlock.core.physics.Physics;
 import org.chapzlock.core.physics.PhysicsSystem;
 import org.chapzlock.core.physics.PhysicsWorld;
@@ -143,6 +144,7 @@ public class Engine implements Disposable {
         TransformSystem transformSystem = new TransformSystem();
         PhysicsSystem physicsSystem = new PhysicsSystem(physicsConfig, cameraProjection, physicsWorld);
         RenderSystem renderSystem = new RenderSystem();
+        ParticleSystem particleSystem = new ParticleSystem();
 
         // EntityFactory
         EntityFactory entityFactory = new EntityFactory(registry, meshRegistry, textureRegistry, gltfAssetManager);
@@ -162,6 +164,7 @@ public class Engine implements Disposable {
         scheduler.addPermanent(tweenSystem);
         scheduler.addPermanent(animationSystem);
         scheduler.addPermanent(transformSystem);
+        scheduler.addPermanent(particleSystem);
         scheduler.addPermanent(physicsSystem);
         scheduler.addPermanent(renderSystem);
 
@@ -169,6 +172,7 @@ public class Engine implements Disposable {
         tweenSystem.onInit(engine);
         animationSystem.onInit(engine);
         transformSystem.onInit(engine);
+        particleSystem.onInit(engine);
         physicsSystem.onInit(engine);
         renderSystem.onInit(engine);
 
