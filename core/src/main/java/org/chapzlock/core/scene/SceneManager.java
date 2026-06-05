@@ -355,7 +355,7 @@ public class SceneManager {
                 recipe.configurator().accept(builder);
 
                 int entityId = entityFactory.instantiate(
-                    builder.getName(), builder.getComponents(), builder.getTags());
+                    builder.getName(), builder.getComponents(), builder.getTags(), builder.getChildRecipes());
 
                 if (entityId < 0) {
                     continue;
@@ -439,7 +439,9 @@ public class SceneManager {
             List<Integer> entityIds = instance.entityIds();
             if (entityIds != null) {
                 for (int entityId : entityIds) {
-                    registry.destroyEntity(entityId);
+                    if (registry.entityExists(entityId)) {
+                        entityFactory.destroyEntity(entityId);
+                    }
                 }
             }
 
