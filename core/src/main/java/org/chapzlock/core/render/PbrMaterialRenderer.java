@@ -228,6 +228,12 @@ public class PbrMaterialRenderer {
         }
     }
 
+    /**
+     * Unbinds all texture units and resets GL state after a PBR draw batch completes.
+     *
+     * <p>Prevents texture bleed between batches — without this, the next batch could
+     * accidentally sample textures from the previous material.
+     */
     public void unapply() {
         shaderRegistry.clearProgram();
     }

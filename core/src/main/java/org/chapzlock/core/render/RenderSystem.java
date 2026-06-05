@@ -27,6 +27,7 @@ public class RenderSystem implements GameSystem {
     private List<RenderPass> passes;
     private RenderContext renderContext;
 
+    /** {@inheritDoc} Initializes render passes (OpaquePass, SpritePass) and the shared RenderContext. */
     @Override
     public void onInit(Engine engine) {
         renderContext = new RenderContext(engine);
@@ -37,11 +38,22 @@ public class RenderSystem implements GameSystem {
         glCullFace(GL_BACK);
     }
 
+    /** Returns {@link SystemPhase#RENDER} — this system executes after all logic and physics. */
     @Override
     public SystemPhase phase() {
         return SystemPhase.RENDER;
     }
 
+    /**
+     * Executes the full rendering pipeline for one frame.
+     *
+     * <p>Steps:
+     * <ol>
+     *   <li>Clear the framebuffer (color + depth)</li>
+     *   <li>Populate RenderContext with camera matrices, lights, and fog from the current frame</li>
+     *   <li>Execute each RenderPass in order — each pass collects its visible entities and issues draw calls</li>
+     * </ol>
+     */
     @Override
     public void onRender(float deltaTime) {
         if (!renderContext.beginFrame()) {

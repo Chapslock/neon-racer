@@ -58,6 +58,21 @@ public class RenderContext {
         }
     }
 
+    /**
+     * Populates per-frame rendering state by querying the ECS for the active camera, lights, and fog.
+     *
+     * <p>Called once per frame before any render pass executes. Passes read from this context
+     * rather than querying the ComponentRegistry directly — this ensures all passes see the same
+     * consistent snapshot of the scene state.
+     *
+     * <p>Collects:
+     * <ul>
+     *   <li>View and projection matrices from the Camera + Transform entity</li>
+     *   <li>All PointLight positions and properties (up to max count)</li>
+     *   <li>DirectionalLight direction and color</li>
+     *   <li>Fog parameters and ambient light strength</li>
+     * </ul>
+     */
     public boolean beginFrame() {
         final Camera[] foundCamera = {null};
         final Transform[] foundTransform = {null};
