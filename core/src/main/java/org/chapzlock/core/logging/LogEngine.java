@@ -6,6 +6,24 @@ import java.io.StringWriter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Central logging configuration engine that manages log level filtering.
+ *
+ * <p>Controls which log messages are emitted based on a global minimum level and optional
+ * per-class overrides. Messages below the configured level are discarded silently.
+ *
+ * <p><strong>Configuration via system properties:</strong>
+ * <ul>
+ *   <li>{@code -Dengine.log=DEBUG} — set global minimum level</li>
+ *   <li>{@code -Dengine.log.org.chapzlock.core.render.RenderSystem=TRACE} — override for one class</li>
+ * </ul>
+ *
+ * <p>Levels in increasing severity: TRACE, DEBUG, INFO, WARN, ERROR.
+ * Default global level is INFO.
+ *
+ * @see Log
+ * @see LogLevel
+ */
 public class LogEngine {
 
     private static volatile LogLevel globalLevel = resolveGlobalLevel();
