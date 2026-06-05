@@ -8,10 +8,11 @@ import java.util.function.Consumer;
 import org.chapzlock.core.component.Transform;
 
 /**
- * Fluent builder for constructing entities, used both in scene declarations and at runtime.
+ * Pure data accumulator for declaring entity structure.
  *
- * <p>Components are added directly via {@link #component(Component...)} or convenience
- * methods that delegate to it. Tags are added via {@link #tag(Tag)}.
+ * <p>An EntityBuilder collects components, tags, and child definitions without
+ * performing any side effects. It knows nothing about EntityFactory or the live
+ * ECS world — it is simply a blueprint describing what an entity should look like.
  *
  * <p>Usage in scene declarations:</p>
  * <pre>{@code
@@ -24,12 +25,12 @@ import org.chapzlock.core.component.Transform;
  *     .build();
  * }</pre>
  *
- * <p>Usage for runtime spawning (requires EntityFactory):</p>
+ * <p>Usage for runtime spawning (via EntityFactory):</p>
  * <pre>{@code
- * entityFactory.builder("bullet")
+ * EntityBuilder blueprint = EntityBuilder.create("bullet")
  *     .transform(Transform.at(x, y, z))
- *     .component(new Velocity(dir))
- *     .instantiate();
+ *     .component(new Velocity(dir));
+ * entityFactory.instantiate(blueprint);
  * }</pre>
  */
 public class EntityBuilder {
@@ -37,19 +38,47 @@ public class EntityBuilder {
     private final String name;
     private final List<Tag> tags = new ArrayList<>();
     private final List<Component> components = new ArrayList<>();
-    private final List<ChildRecipe> childRecipes = new ArrayList<>();
+    private final List<EntityBuilder> children = new ArrayList<>();
 
-    /** Package-private: set by EntityFactory to enable the instantiate() terminal. */
+    // ─── Deprecated bridge fields (removed in Task 6) ───────────────────────────
+
+    /** @deprecated Temporary bridge for EntityFactory until Task 2 migrates callers. */
+    @Deprecated
     EntityFactory entityFactory;
+
+    // ─── Constructors ───────────────────────────────────────────────────────────
+
+    /**
+     * @deprecated Use {@link #create(String)} instead. Retained for backward compatibility
+     *             with EntityFactory and SceneManager until Tasks 2-3 migrate them.
+     */
+    @Deprecated
+    public EntityBuilder(String name) {
+        this.name = name;
+    }
+
+    // ─── Static factories (new API) ─────────────────────────────────────────────
 
     /**
      * Creates a new builder for an entity with the given name.
      *
-     * @param name the entity name (nullable for anonymous entities)
+     * @param name the entity name (used for lookups via ComponentRegistry.getEntityByName)
+     * @return a fresh EntityBuilder
      */
-    public EntityBuilder(String name) {
-        this.name = name;
+    public static EntityBuilder create(String name) {
+        return new EntityBuilder(name);
     }
+
+    /**
+     * Creates a new builder for an anonymous entity (null name).
+     *
+     * @return a fresh EntityBuilder with no name
+     */
+    public static EntityBuilder create() {
+        return new EntityBuilder(null);
+    }
+
+    // ─── Read-only accessors ────────────────────────────────────────────────────
 
     /**
      * Returns the entity name.
@@ -79,7 +108,20 @@ public class EntityBuilder {
     }
 
     /**
+     * Returns the accumulated child builders.
+     *
+     * @return unmodifiable view of the children list
+     */
+    public List<EntityBuilder> getChildren() {
+        return Collections.unmodifiableList(children);
+    }
+
+    // ─── Fluent mutators ────────────────────────────────────────────────────────
+
+    /**
      * Sets the initial transform for this entity.
+     *
+     * <p>Convenience method that delegates to {@link #component(Component...)}.
      *
      * @param transform the spatial transform (position, rotation, scale)
      * @return this builder for chaining
@@ -114,71 +156,87 @@ public class EntityBuilder {
     }
 
     /**
-     * Declares a named child entity that will be instantiated after this entity
-     * and attached as a child in the hierarchy.
+     * Declares a named child entity. The configurator receives a fresh EntityBuilder
+     * for the child, which is stored as a nested blueprint.
      *
      * @param name         the child entity name
      * @param configurator function that attaches components to the child builder
      * @return this builder for chaining
      */
     public EntityBuilder child(String name, Consumer<EntityBuilder> configurator) {
-        childRecipes.add(new ChildRecipe(name, configurator));
+        EntityBuilder childBuilder = new EntityBuilder(name);
+        configurator.accept(childBuilder);
+        children.add(childBuilder);
         return this;
     }
 
     /**
-     * Declares an anonymous child entity that will be instantiated after this entity
-     * and attached as a child in the hierarchy.
+     * Declares an anonymous child entity. The configurator receives a fresh EntityBuilder
+     * for the child, which is stored as a nested blueprint.
      *
      * @param configurator function that attaches components to the child builder
      * @return this builder for chaining
      */
     public EntityBuilder child(Consumer<EntityBuilder> configurator) {
-        childRecipes.add(new ChildRecipe(null, configurator));
+        EntityBuilder childBuilder = new EntityBuilder(null);
+        configurator.accept(childBuilder);
+        children.add(childBuilder);
         return this;
     }
 
+    // ─── Deprecated bridge methods (removed in Task 6) ──────────────────────────
+
     /**
-     * Returns the accumulated child recipes.
-     *
-     * @return unmodifiable view of the child recipes list
+     * @deprecated Retained for backward compatibility with EntityFactory.builder().
+     *             Will be removed once EntityFactory is migrated (Task 2).
      */
-    public List<ChildRecipe> getChildRecipes() {
-        return Collections.unmodifiableList(childRecipes);
+    @Deprecated
+    void setEntityFactory(EntityFactory entityFactory) {
+        this.entityFactory = entityFactory;
     }
 
     /**
-     * Spawns a live entity into the world using the linked {@link EntityFactory}.
-     *
-     * <p>This is the terminal operation for runtime entity creation. It passes the
-     * builder's components and tags through the EntityFactory's phased assembly pipeline
-     * (resolve, validate, commit).
-     *
-     * <p>Requires that this builder was created via {@link EntityFactory#builder(String)}.
-     * Builders created directly (e.g., for scene declarations) do not have an EntityFactory
-     * linked.
-     *
-     * @return the new entity ID, or -1 if validation failed
-     * @throws IllegalStateException if no EntityFactory is linked to this builder
+     * @deprecated Retained for backward compatibility. Use EntityFactory.instantiate(EntityBuilder)
+     *             instead (Task 2). Not public — invisible to getMethod("instantiate").
      */
-    public int instantiate() {
+    @Deprecated
+    int instantiate() {
         if (entityFactory == null) {
             throw new IllegalStateException(
                 "Cannot call instantiate() without an EntityFactory. " +
                 "Use EntityFactory.builder() for runtime spawning.");
         }
-        return entityFactory.instantiate(name, components, tags, childRecipes);
+        return entityFactory.instantiate(name, components, tags, getChildRecipes());
     }
 
     /**
-     * Package-private setter for the EntityFactory reference.
-     *
-     * <p>Called by EntityFactory when creating builders, enabling the {@code instantiate()}
-     * terminal operation.
-     *
-     * @param entityFactory the entity factory that will handle instantiation
+     * @deprecated Converts children to ChildRecipe format for backward compatibility
+     *             with EntityFactory.instantiate(name, components, tags, childRecipes).
+     *             Will be removed once SceneManager and EntityFactory are migrated (Tasks 2-3).
      */
-    void setEntityFactory(EntityFactory entityFactory) {
-        this.entityFactory = entityFactory;
+    @Deprecated
+    public List<ChildRecipe> getChildRecipes() {
+        List<ChildRecipe> recipes = new ArrayList<>();
+        for (EntityBuilder child : children) {
+            recipes.add(new ChildRecipe(child.name, childConfigurator(child)));
+        }
+        return Collections.unmodifiableList(recipes);
+    }
+
+    /**
+     * Creates a configurator that replays a child builder's accumulated state onto a fresh builder.
+     */
+    private static Consumer<EntityBuilder> childConfigurator(EntityBuilder source) {
+        return target -> {
+            for (Component c : source.components) {
+                target.component(c);
+            }
+            for (Tag t : source.tags) {
+                target.tag(t);
+            }
+            for (EntityBuilder grandchild : source.children) {
+                target.child(grandchild.name, childConfigurator(grandchild));
+            }
+        };
     }
 }
