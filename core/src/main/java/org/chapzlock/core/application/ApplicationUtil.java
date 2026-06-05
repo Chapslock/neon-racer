@@ -67,6 +67,13 @@ public final class ApplicationUtil {
         return initialized;
     }
 
+    /**
+     * Resets OpenGL viewport state to match the current window dimensions.
+     *
+     * <p>Called at startup and after window resize events to ensure the GPU renders
+     * to the correct framebuffer area. Enables depth testing and clears both the
+     * color and depth buffers to prepare for a new frame.
+     */
     public static void clearAndPrepareWindowState() {
         glEnable(org.lwjgl.opengl.GL11.GL_DEPTH_TEST);
         glClear(org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT | org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT);

@@ -33,7 +33,14 @@ public class Time {
     /** Returns true if time is paused (scale = 0). */
     public boolean isPaused() { return scale == 0f; }
 
-    /** Sets time scale multiplier (clamped to 0+). Use 0.5 for slow-motion, 0 for pause. */
+    /**
+     * Sets the time scale multiplier.
+     *
+     * <p>Affects {@link #getDelta()} (scaled delta) but not {@link #getUnscaledDelta()}.
+     * Use for slow-motion effects (0.5 = half speed), pause (0.0), or fast-forward (2.0).
+     *
+     * @param scale multiplier applied to raw delta time (default 1.0, clamped to 0+)
+     */
     public void setScale(float scale) { this.scale = Math.max(0f, scale); }
     /** Pauses time (sets scale to 0). */
     public void pause() { setScale(0f); }
