@@ -46,6 +46,11 @@ public class ParticleEmitter implements Component {
     private float emitAccumulator;
     @Setter
     private boolean active;
+    @Setter
+    private float elapsed;
+    @Setter
+    private boolean emissionComplete;
+    private final boolean selfTerminating;
 
     /**
      * Creates an emitter with a pre-allocated particle pool sized to the effect's maxParticles.
@@ -61,6 +66,9 @@ public class ParticleEmitter implements Component {
         this.aliveCount = 0;
         this.emitAccumulator = 0f;
         this.active = true;
+        this.elapsed = 0f;
+        this.emissionComplete = false;
+        this.selfTerminating = effect.isSelfTerminating();
     }
 
     /**

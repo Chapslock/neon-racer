@@ -57,4 +57,46 @@ class ParticleOneShotTest {
             .build();
         assertFalse(effect.isSelfTerminating());
     }
+
+    @Test
+    void emitter_selfTerminatingDerivedFromEffect() {
+        ParticleEffect burstEffect = ParticleEffect.builder()
+            .burst(10)
+            .lifetime(1f)
+            .maxParticles(20)
+            .build();
+        ParticleEmitter emitter = new ParticleEmitter(burstEffect);
+        assertTrue(emitter.isSelfTerminating());
+    }
+
+    @Test
+    void emitter_notSelfTerminatingForContinuous() {
+        ParticleEffect continuous = ParticleEffect.builder()
+            .rate(10)
+            .lifetime(1f)
+            .maxParticles(20)
+            .build();
+        ParticleEmitter emitter = new ParticleEmitter(continuous);
+        assertFalse(emitter.isSelfTerminating());
+    }
+
+    @Test
+    void emitter_emissionCompleteDefaultsFalse() {
+        ParticleEffect effect = ParticleEffect.builder()
+            .burst(10)
+            .maxParticles(20)
+            .build();
+        ParticleEmitter emitter = new ParticleEmitter(effect);
+        assertFalse(emitter.isEmissionComplete());
+    }
+
+    @Test
+    void emitter_elapsedDefaultsZero() {
+        ParticleEffect effect = ParticleEffect.builder()
+            .duration(1f)
+            .maxParticles(20)
+            .build();
+        ParticleEmitter emitter = new ParticleEmitter(effect);
+        assertEquals(0f, emitter.getElapsed());
+    }
 }
