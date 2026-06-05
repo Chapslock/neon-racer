@@ -8,6 +8,7 @@ import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.Color;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
+import org.chapzlock.core.ecs.EntityBuilder;
 import org.chapzlock.core.ecs.EntityFactory;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.ecs.SystemPhase;
@@ -69,24 +70,24 @@ public class CharacterJumpSystem implements GameSystem {
 
                 physics.applyImpulse(entityId, new Vector3f(0, JUMP_IMPULSE, 0));
                 state.setGrounded(false);
-                int jumpEffect = entityFactory.builder(null)
-                    .transform(Transform.at(0, 0, 0))
-                    .component(new ParticleEmitter(ParticleEffect.builder()
-                        .burst(20)
-                        .lifetime(0.3f, 0.6f)
-                        .speed(1f, 3f)
-                        .size(0.05f, 0.15f)
-                        .color(new Color(0.2f, 0.8f, 1f, 1f))
-                        .emitShape(EmitShape.cone(60f))
-                        .maxParticles(25)
-                        .colorOverLifetime(
-                            new Color(0.2f, 0.8f, 1f, 1f),
-                            new Color(0.1f, 0.3f, 1f, 0f))
-                        .sizeOverLifetime(1f, 0f)
-                        .gravity(0f, -2f, 0f)
-                        .drag(1f)
-                        .build()))
-                    .instantiate();
+                int jumpEffect = entityFactory.instantiate(
+                    EntityBuilder.create()
+                        .transform(Transform.at(0, 0, 0))
+                        .component(new ParticleEmitter(ParticleEffect.builder()
+                            .burst(20)
+                            .lifetime(0.3f, 0.6f)
+                            .speed(1f, 3f)
+                            .size(0.05f, 0.15f)
+                            .color(new Color(0.2f, 0.8f, 1f, 1f))
+                            .emitShape(EmitShape.cone(60f))
+                            .maxParticles(25)
+                            .colorOverLifetime(
+                                new Color(0.2f, 0.8f, 1f, 1f),
+                                new Color(0.1f, 0.3f, 1f, 0f))
+                            .sizeOverLifetime(1f, 0f)
+                            .gravity(0f, -2f, 0f)
+                            .drag(1f)
+                            .build())));
                 entityFactory.attachChild(entityId, jumpEffect);
             });
     }
