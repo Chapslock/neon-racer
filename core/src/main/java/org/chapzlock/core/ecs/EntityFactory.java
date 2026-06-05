@@ -255,7 +255,10 @@ public class EntityFactory {
             registry.addComponent(childId, childH);
         } else {
             int oldParentId = childH.getParent();
-            if (oldParentId != Hierarchy.NO_PARENT && oldParentId != parentId) {
+            if (oldParentId == parentId) {
+                return;
+            }
+            if (oldParentId != Hierarchy.NO_PARENT) {
                 Hierarchy oldParentH = registry.getComponent(oldParentId, Hierarchy.class);
                 if (oldParentH != null) {
                     oldParentH.removeChild(childId);

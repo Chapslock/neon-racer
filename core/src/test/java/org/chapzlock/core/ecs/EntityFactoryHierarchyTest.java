@@ -101,6 +101,22 @@ class EntityFactoryHierarchyTest {
     }
 
     @Test
+    void attachChild_idempotentWhenAlreadyAttached() {
+        int parent = entityFactory.builder("parent")
+            .transform(Transform.at(0, 0, 0))
+            .instantiate();
+        int child = entityFactory.builder("child")
+            .transform(Transform.at(1, 0, 0))
+            .instantiate();
+
+        entityFactory.attachChild(parent, child);
+        entityFactory.attachChild(parent, child);
+
+        Hierarchy parentH = registry.getComponent(parent, Hierarchy.class);
+        assertEquals(1, parentH.getChildCount());
+    }
+
+    @Test
     void detachChild_removesFromParentAndSetsNoParent() {
         int parent = entityFactory.builder("parent")
             .transform(Transform.at(5, 0, 0))
