@@ -136,6 +136,16 @@ public final class ParticleEffect {
      */
     private final float drag;
 
+    /**
+     * Number of particles to emit in a single burst. Zero means continuous emission.
+     */
+    private final int burstCount;
+
+    /**
+     * Duration in seconds after which the emitter stops. Zero means infinite duration.
+     */
+    private final float duration;
+
     private ParticleEffect(Builder builder) {
         this.rate = builder.rate;
         this.lifetimeMin = builder.lifetimeMin;
@@ -156,6 +166,8 @@ public final class ParticleEffect {
         this.hasSizeOverLifetime = builder.hasSizeOverLifetime;
         this.gravity = builder.gravity;
         this.drag = builder.drag;
+        this.burstCount = builder.burstCount;
+        this.duration = builder.duration;
     }
 
     /**
@@ -174,6 +186,18 @@ public final class ParticleEffect {
      */
     public boolean hasSizeOverLifetime() {
         return hasSizeOverLifetime;
+    }
+
+    /**
+     * Returns whether this effect will terminate on its own (either via burst or duration).
+     * <p>
+     * A self-terminating effect emits particles for a limited time or count, then stops.
+     * Non-self-terminating effects emit continuously until manually stopped.
+     *
+     * @return true if the effect has a burst count or a finite duration
+     */
+    public boolean isSelfTerminating() {
+        return burstCount > 0 || duration > 0;
     }
 
     /**
@@ -208,6 +232,8 @@ public final class ParticleEffect {
         private boolean hasSizeOverLifetime = false;
         private Vector3f gravity = new Vector3f(0, 0, 0);
         private float drag = 0f;
+        private int burstCount = 0;
+        private float duration = 0f;
 
         private Builder() {}
 
@@ -494,6 +520,53 @@ public final class ParticleEffect {
          */
         public Builder drag(float drag) {
             this.drag = drag;
+            return this;
+        }
+
+        /**
+         * Sets the burst count — the number of particles to emit in a single burst.
+         * <p>
+         * When set to a value greater than zero, the emitter will emit all particles at once
+         * rather than continuously over time. This makes the effect self-terminating.
+         * <p>
+         * Examples:
+         * <ul>
+         *   <li>10-20: small pop (bullet impact, footstep dust)</li>
+         *   <li>50-100: medium burst (item pickup, ability activation)</li>
+         *   <li>200+: large explosion (death effect, big impact)</li>
+         * </ul>
+         * Default: 0 (continuous emission, no burst)
+         *
+         * @param count number of particles to emit in the burst
+         * @return this builder
+         */
+        public Builder burst(int count) {
+            this.burstCount = count;
+            return this;
+        }
+
+        /**
+         * Sets the duration in seconds after which the emitter stops emitting.
+         * <p>
+         * When set to a value greater than zero, the emitter will automatically stop after
+         * this many seconds have elapsed. This makes the effect self-terminating.
+         * <p>
+         * Note: existing particles will continue to live out their lifetime after the emitter
+         * stops — this only controls how long new particles are created.
+         * <p>
+         * Examples:
+         * <ul>
+         *   <li>0.1-0.3: very brief flash (muzzle flash, spark)</li>
+         *   <li>0.5-1.0: short effect (ability burst, landing dust)</li>
+         *   <li>2.0-5.0: lingering effect (smoke trail segment)</li>
+         * </ul>
+         * Default: 0.0 (infinite duration)
+         *
+         * @param seconds how long the emitter stays active
+         * @return this builder
+         */
+        public Builder duration(float seconds) {
+            this.duration = seconds;
             return this;
         }
 
