@@ -335,10 +335,10 @@ public class SceneManager {
      *
      * <p><strong>What happens during instantiation:</strong>
      * <ol>
-     *   <li>For each entity recipe, creates an EntityBuilder, applies the configurator,
-     *       then delegates to {@link EntityFactory#instantiate(String, List, List)}
-     *       which resolves components, validates rules, and commits atomically
-     *       (GltfModel expansion is handled automatically by EntityFactory)</li>
+     *   <li>For each entity recipe, creates an EntityBuilder via {@code EntityBuilder.create()},
+     *       applies the configurator, then delegates to
+     *       {@link EntityFactory#instantiate(EntityBuilder)} which resolves components,
+     *       validates rules, commits atomically, and processes children recursively.</li>
      *   <li>GPU asset IDs are tracked for reference counting</li>
      *   <li>All tracked GPU assets are retained (refcount incremented)</li>
      *   <li>Scene systems are initialized via {@code onInit()}</li>
