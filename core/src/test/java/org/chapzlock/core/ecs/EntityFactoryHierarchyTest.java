@@ -99,4 +99,75 @@ class EntityFactoryHierarchyTest {
         assertNotNull(registry.getComponent(parent, Hierarchy.class));
         assertNotNull(registry.getComponent(child, Hierarchy.class));
     }
+
+    @Test
+    void detachChild_removesFromParentAndSetsNoParent() {
+        int parent = entityFactory.builder("parent")
+            .transform(Transform.at(5, 0, 0))
+            .instantiate();
+        int child = entityFactory.builder("child")
+            .transform(Transform.at(1, 0, 0))
+            .instantiate();
+
+        entityFactory.attachChild(parent, child);
+        entityFactory.detachChild(child);
+
+        Hierarchy parentH = registry.getComponent(parent, Hierarchy.class);
+        Hierarchy childH = registry.getComponent(child, Hierarchy.class);
+
+        assertEquals(0, parentH.getChildCount());
+        assertEquals(Hierarchy.NO_PARENT, childH.getParent());
+        assertTrue(childH.isRoot());
+    }
+
+    @Test
+    void detachChild_bakesWorldTransformIntoLocal() {
+        int parent = entityFactory.builder("parent")
+            .transform(Transform.at(10, 0, 0))
+            .instantiate();
+        int child = entityFactory.builder("child")
+            .transform(Transform.at(5, 0, 0))
+            .instantiate();
+
+        entityFactory.attachChild(parent, child);
+
+        // Simulate TransformSystem propagation: worldMatrix = parent.local * child.local
+        Transform parentT = registry.getComponent(parent, Transform.class);
+        Transform childT = registry.getComponent(child, Transform.class);
+        parentT.getWorldMatrix().set(parentT.getLocalMatrix());
+        childT.getWorldMatrix().set(parentT.getWorldMatrix()).mul(childT.getLocalMatrix());
+
+        entityFactory.detachChild(child);
+
+        // After detach, child's local position should be baked to world position (15, 0, 0)
+        assertEquals(15f, childT.getX(), 0.001f);
+        assertEquals(0f, childT.getY(), 0.001f);
+        assertEquals(0f, childT.getZ(), 0.001f);
+    }
+
+    @Test
+    void detachAllChildren_removesAllChildren() {
+        int parent = entityFactory.builder("parent")
+            .transform(Transform.at(0, 0, 0))
+            .instantiate();
+        int child1 = entityFactory.builder("child1")
+            .transform(Transform.at(1, 0, 0))
+            .instantiate();
+        int child2 = entityFactory.builder("child2")
+            .transform(Transform.at(2, 0, 0))
+            .instantiate();
+
+        entityFactory.attachChild(parent, child1);
+        entityFactory.attachChild(parent, child2);
+
+        entityFactory.detachAllChildren(parent);
+
+        Hierarchy parentH = registry.getComponent(parent, Hierarchy.class);
+        Hierarchy child1H = registry.getComponent(child1, Hierarchy.class);
+        Hierarchy child2H = registry.getComponent(child2, Hierarchy.class);
+
+        assertEquals(0, parentH.getChildCount());
+        assertTrue(child1H.isRoot());
+        assertTrue(child2H.isRoot());
+    }
 }

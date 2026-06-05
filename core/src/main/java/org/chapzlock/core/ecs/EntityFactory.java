@@ -22,6 +22,9 @@ import org.chapzlock.core.event.ComponentAddedEvent;
 import org.chapzlock.core.logging.Log;
 import org.chapzlock.core.render.MeshRegistry;
 import org.chapzlock.core.render.TextureRegistry;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 /**
  * Manages runtime entity creation through a phased assembly pipeline.
@@ -241,6 +244,71 @@ public class EntityFactory {
         if (childTransform != null) {
             childTransform.setInHierarchy(true);
         }
+    }
+
+    /**
+     * Detaches a child entity from its current parent. Bakes the child's current world
+     * transform into its local transform so it doesn't visually jump.
+     *
+     * @param childId the child entity ID to detach
+     */
+    public void detachChild(int childId) {
+        Hierarchy childH = registry.getComponent(childId, Hierarchy.class);
+        if (childH == null || childH.isRoot()) return;
+
+        int parentId = childH.getParent();
+
+        Hierarchy parentH = registry.getComponent(parentId, Hierarchy.class);
+        if (parentH != null) {
+            parentH.removeChild(childId);
+        }
+
+        Transform childT = registry.getComponent(childId, Transform.class);
+        if (childT != null) {
+            bakeWorldToLocal(childT);
+        }
+
+        childH.setParent(Hierarchy.NO_PARENT);
+    }
+
+    /**
+     * Detaches all children from a parent entity.
+     *
+     * @param parentId the parent entity ID
+     */
+    public void detachAllChildren(int parentId) {
+        Hierarchy parentH = registry.getComponent(parentId, Hierarchy.class);
+        if (parentH == null) return;
+
+        int[] children = parentH.getChildren();
+        for (int childId : children) {
+            Hierarchy childH = registry.getComponent(childId, Hierarchy.class);
+            if (childH != null) {
+                Transform childT = registry.getComponent(childId, Transform.class);
+                if (childT != null) {
+                    bakeWorldToLocal(childT);
+                }
+                childH.setParent(Hierarchy.NO_PARENT);
+            }
+        }
+
+        for (int childId : children) {
+            parentH.removeChild(childId);
+        }
+    }
+
+    private void bakeWorldToLocal(Transform transform) {
+        Matrix4f world = transform.getWorldMatrix();
+        Vector3f pos = new Vector3f();
+        Quaternionf rot = new Quaternionf();
+        Vector3f scale = new Vector3f();
+        world.getTranslation(pos);
+        world.getUnnormalizedRotation(rot);
+        world.getScale(scale);
+
+        transform.setPosition(pos);
+        transform.setRotationQuaternion(rot);
+        transform.setScale(scale.x, scale.y, scale.z);
     }
 
 }
