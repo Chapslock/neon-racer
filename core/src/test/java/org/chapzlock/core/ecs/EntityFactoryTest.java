@@ -1,6 +1,7 @@
 package org.chapzlock.core.ecs;
 
 import org.chapzlock.core.application.Engine;
+import org.chapzlock.core.component.Hierarchy;
 import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.event.ComponentAddedEvent;
@@ -99,5 +100,33 @@ class EntityFactoryTest {
         assertTrue(entityId >= 0);
         assertNotNull(registry.getComponent(entityId, Transform.class));
         assertNotNull(registry.getComponent(entityId, PhysicsBody.class));
+    }
+
+    @Test
+    void instantiateBuilder_createsEntityWithAllComponents() {
+        EntityBuilder builder = EntityBuilder.create("test")
+            .transform(Transform.at(1, 2, 3));
+
+        int entityId = entityFactory.instantiate(builder);
+
+        assertTrue(entityId >= 0);
+        assertNotNull(registry.getComponent(entityId, Transform.class));
+    }
+
+    @Test
+    void instantiateBuilder_processesChildrenRecursively() {
+        EntityBuilder builder = EntityBuilder.create("parent")
+            .transform(Transform.at(0, 0, 0))
+            .child("child", c -> c.transform(Transform.at(1, 0, 0)));
+
+        int parentId = entityFactory.instantiate(builder);
+
+        assertTrue(parentId >= 0);
+        int childId = registry.getEntityByName("child");
+        assertTrue(childId >= 0);
+
+        Hierarchy parentH = registry.getComponent(parentId, Hierarchy.class);
+        assertNotNull(parentH);
+        assertArrayEquals(new int[]{childId}, parentH.getChildren());
     }
 }

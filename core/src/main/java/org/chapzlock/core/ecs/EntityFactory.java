@@ -182,6 +182,29 @@ public class EntityFactory {
     }
 
 
+    /**
+     * Instantiates an entity from an EntityBuilder through the phased assembly pipeline.
+     *
+     * <p>This is the single canonical method for entity creation. It processes the builder's
+     * components, tags, and children recursively.
+     *
+     * @param builder the entity builder containing components, tags, and children
+     * @return the new entity ID, or -1 if validation failed
+     */
+    public int instantiate(EntityBuilder builder) {
+        int entityId = instantiate(builder.getName(), builder.getComponents(), builder.getTags());
+        if (entityId < 0) return entityId;
+
+        for (EntityBuilder child : builder.getChildren()) {
+            int childId = instantiate(child);
+            if (childId >= 0) {
+                attachChild(entityId, childId);
+            }
+        }
+
+        return entityId;
+    }
+
     // ──────────────────────────────────────────────────────────────────────────────
     // Private helpers — simple entity pipeline
     // ──────────────────────────────────────────────────────────────────────────────

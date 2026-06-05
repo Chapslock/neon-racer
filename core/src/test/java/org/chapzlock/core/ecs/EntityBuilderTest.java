@@ -40,8 +40,8 @@ class EntityBuilderTest {
     }
 
     @Test
-    void noInstantiateMethod_exists() {
-        assertThrows(NoSuchMethodException.class, () ->
-            EntityBuilder.class.getMethod("instantiate"));
+    void instantiateMethod_isDeprecated() throws NoSuchMethodException {
+        assertTrue(EntityBuilder.class.getMethod("instantiate")
+            .isAnnotationPresent(Deprecated.class));
     }
 }

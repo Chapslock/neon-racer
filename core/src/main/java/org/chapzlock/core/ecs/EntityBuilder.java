@@ -197,10 +197,10 @@ public class EntityBuilder {
 
     /**
      * @deprecated Retained for backward compatibility. Use EntityFactory.instantiate(EntityBuilder)
-     *             instead (Task 2). Not public — invisible to getMethod("instantiate").
+     *             instead (Task 2).
      */
     @Deprecated
-    int instantiate() {
+    public int instantiate() {
         if (entityFactory == null) {
             throw new IllegalStateException(
                 "Cannot call instantiate() without an EntityFactory. " +
