@@ -3,6 +3,7 @@ package org.chapzlock.core.ecs;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.chapzlock.core.component.Transform;
 
@@ -36,6 +37,7 @@ public class EntityBuilder {
     private final String name;
     private final List<Tag> tags = new ArrayList<>();
     private final List<Component> components = new ArrayList<>();
+    private final List<ChildRecipe> childRecipes = new ArrayList<>();
 
     /** Package-private: set by EntityFactory to enable the instantiate() terminal. */
     EntityFactory entityFactory;
@@ -112,6 +114,40 @@ public class EntityBuilder {
     }
 
     /**
+     * Declares a named child entity that will be instantiated after this entity
+     * and attached as a child in the hierarchy.
+     *
+     * @param name         the child entity name
+     * @param configurator function that attaches components to the child builder
+     * @return this builder for chaining
+     */
+    public EntityBuilder child(String name, Consumer<EntityBuilder> configurator) {
+        childRecipes.add(new ChildRecipe(name, configurator));
+        return this;
+    }
+
+    /**
+     * Declares an anonymous child entity that will be instantiated after this entity
+     * and attached as a child in the hierarchy.
+     *
+     * @param configurator function that attaches components to the child builder
+     * @return this builder for chaining
+     */
+    public EntityBuilder child(Consumer<EntityBuilder> configurator) {
+        childRecipes.add(new ChildRecipe(null, configurator));
+        return this;
+    }
+
+    /**
+     * Returns the accumulated child recipes.
+     *
+     * @return unmodifiable view of the child recipes list
+     */
+    public List<ChildRecipe> getChildRecipes() {
+        return Collections.unmodifiableList(childRecipes);
+    }
+
+    /**
      * Spawns a live entity into the world using the linked {@link EntityFactory}.
      *
      * <p>This is the terminal operation for runtime entity creation. It passes the
@@ -131,7 +167,7 @@ public class EntityBuilder {
                 "Cannot call instantiate() without an EntityFactory. " +
                 "Use EntityFactory.builder() for runtime spawning.");
         }
-        return entityFactory.instantiate(name, components, tags);
+        return entityFactory.instantiate(name, components, tags, childRecipes);
     }
 
     /**

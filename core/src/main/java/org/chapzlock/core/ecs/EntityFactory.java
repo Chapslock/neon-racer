@@ -152,6 +152,36 @@ public class EntityFactory {
     }
 
 
+    /**
+     * Instantiates an entity with child recipes through the phased assembly pipeline.
+     *
+     * <p>The parent entity is created first, then each child recipe is instantiated
+     * recursively and attached via {@link #attachChild(int, int)}.
+     *
+     * @param name         the entity name (nullable)
+     * @param components   the components to attach
+     * @param tags         the tags to attach
+     * @param childRecipes child entity definitions to instantiate after parent
+     * @return the new entity ID, or -1 if validation failed
+     */
+    public int instantiate(String name, List<Component> components, List<Tag> tags, List<ChildRecipe> childRecipes) {
+        int entityId = instantiate(name, components, tags);
+        if (entityId < 0) return entityId;
+
+        for (ChildRecipe childRecipe : childRecipes) {
+            EntityBuilder childBuilder = new EntityBuilder(childRecipe.name());
+            childBuilder.setEntityFactory(this);
+            childRecipe.configurator().accept(childBuilder);
+            int childId = childBuilder.instantiate();
+            if (childId >= 0) {
+                attachChild(entityId, childId);
+            }
+        }
+
+        return entityId;
+    }
+
+
     // ──────────────────────────────────────────────────────────────────────────────
     // Private helpers — simple entity pipeline
     // ──────────────────────────────────────────────────────────────────────────────
