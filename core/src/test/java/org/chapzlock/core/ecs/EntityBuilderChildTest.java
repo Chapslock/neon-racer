@@ -23,10 +23,10 @@ class EntityBuilderChildTest {
 
     @Test
     void child_createsChildEntityAttachedToParent() {
-        int parentId = entityFactory.builder("player")
-            .transform(Transform.at(0, 0, 0))
-            .child("exhaust", c -> c.transform(Transform.at(0, 0, -1)))
-            .instantiate();
+        int parentId = entityFactory.instantiate(
+            EntityBuilder.create("player")
+                .transform(Transform.at(0, 0, 0))
+                .child("exhaust", c -> c.transform(Transform.at(0, 0, -1))));
 
         int childId = registry.getEntityByName("exhaust");
         assertTrue(childId >= 0);
@@ -42,10 +42,10 @@ class EntityBuilderChildTest {
 
     @Test
     void child_anonymousChildWorks() {
-        int parentId = entityFactory.builder("player")
-            .transform(Transform.at(0, 0, 0))
-            .child(c -> c.transform(Transform.at(0, 1, 0)))
-            .instantiate();
+        int parentId = entityFactory.instantiate(
+            EntityBuilder.create("player")
+                .transform(Transform.at(0, 0, 0))
+                .child(c -> c.transform(Transform.at(0, 1, 0))));
 
         Hierarchy parentH = registry.getComponent(parentId, Hierarchy.class);
         assertNotNull(parentH);
@@ -54,11 +54,11 @@ class EntityBuilderChildTest {
 
     @Test
     void child_multipleChildrenAllAttached() {
-        int parentId = entityFactory.builder("player")
-            .transform(Transform.at(0, 0, 0))
-            .child("left", c -> c.transform(Transform.at(-1, 0, 0)))
-            .child("right", c -> c.transform(Transform.at(1, 0, 0)))
-            .instantiate();
+        int parentId = entityFactory.instantiate(
+            EntityBuilder.create("player")
+                .transform(Transform.at(0, 0, 0))
+                .child("left", c -> c.transform(Transform.at(-1, 0, 0)))
+                .child("right", c -> c.transform(Transform.at(1, 0, 0))));
 
         Hierarchy parentH = registry.getComponent(parentId, Hierarchy.class);
         assertEquals(2, parentH.getChildCount());
@@ -71,13 +71,13 @@ class EntityBuilderChildTest {
 
     @Test
     void child_nestedChildrenSupportArbitraryDepth() {
-        int parentId = entityFactory.builder("root")
-            .transform(Transform.at(0, 0, 0))
-            .child("level1", c -> c
-                .transform(Transform.at(1, 0, 0))
-                .child("level2", gc -> gc
-                    .transform(Transform.at(2, 0, 0))))
-            .instantiate();
+        int parentId = entityFactory.instantiate(
+            EntityBuilder.create("root")
+                .transform(Transform.at(0, 0, 0))
+                .child("level1", c -> c
+                    .transform(Transform.at(1, 0, 0))
+                    .child("level2", gc -> gc
+                        .transform(Transform.at(2, 0, 0)))));
 
         int level1Id = registry.getEntityByName("level1");
         int level2Id = registry.getEntityByName("level2");
@@ -94,14 +94,14 @@ class EntityBuilderChildTest {
     }
 
     @Test
-    void child_builderStoresRecipesBeforeInstantiation() {
-        EntityBuilder builder = new EntityBuilder("test")
+    void child_builderStoresChildrenBeforeInstantiation() {
+        EntityBuilder builder = EntityBuilder.create("test")
             .transform(Transform.at(0, 0, 0))
             .child("a", c -> c.transform(Transform.at(1, 0, 0)))
             .child("b", c -> c.transform(Transform.at(2, 0, 0)));
 
-        assertEquals(2, builder.getChildRecipes().size());
-        assertEquals("a", builder.getChildRecipes().get(0).name());
-        assertEquals("b", builder.getChildRecipes().get(1).name());
+        assertEquals(2, builder.getChildren().size());
+        assertEquals("a", builder.getChildren().get(0).getName());
+        assertEquals("b", builder.getChildren().get(1).getName());
     }
 }

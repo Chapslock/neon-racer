@@ -4,6 +4,7 @@ import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
+import org.chapzlock.core.ecs.EntityBuilder;
 import org.chapzlock.core.ecs.EntityFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,10 +39,10 @@ class TriangleMeshPhysicsIntegrationTest {
 
     @Test
     void entitySystem_instantiate_withPhysicsAndTransform_registersAfterOnUpdate() {
-        int entity = entityFactory.builder("ball")
-            .transform(Transform.at(0, 5, 0))
-            .component(PhysicsBody.dynamic(1f).shape(CollisionGeometry.sphere(1f)))
-            .instantiate();
+        int entity = entityFactory.instantiate(
+            EntityBuilder.create("ball")
+                .transform(Transform.at(0, 5, 0))
+                .component(PhysicsBody.dynamic(1f).shape(CollisionGeometry.sphere(1f))));
 
         assertTrue(entity >= 0, "Entity should be created successfully");
 
@@ -56,20 +57,20 @@ class TriangleMeshPhysicsIntegrationTest {
 
     @Test
     void entitySystem_instantiate_simpleShapes_allRegisterAfterOnUpdate() {
-        int box = entityFactory.builder("box")
-            .transform(Transform.at(0, 0, 0))
-            .component(PhysicsBody.asStatic().shape(CollisionGeometry.box(1, 1, 1)))
-            .instantiate();
+        int box = entityFactory.instantiate(
+            EntityBuilder.create("box")
+                .transform(Transform.at(0, 0, 0))
+                .component(PhysicsBody.asStatic().shape(CollisionGeometry.box(1, 1, 1))));
 
-        int capsule = entityFactory.builder("capsule")
-            .transform(Transform.at(5, 0, 0))
-            .component(PhysicsBody.dynamic(1f).shape(CollisionGeometry.capsule(0.5f, 2f)))
-            .instantiate();
+        int capsule = entityFactory.instantiate(
+            EntityBuilder.create("capsule")
+                .transform(Transform.at(5, 0, 0))
+                .component(PhysicsBody.dynamic(1f).shape(CollisionGeometry.capsule(0.5f, 2f))));
 
-        int sphere = entityFactory.builder("sphere")
-            .transform(Transform.at(10, 0, 0))
-            .component(PhysicsBody.asStatic().shape(CollisionGeometry.sphere(2f)))
-            .instantiate();
+        int sphere = entityFactory.instantiate(
+            EntityBuilder.create("sphere")
+                .transform(Transform.at(10, 0, 0))
+                .component(PhysicsBody.asStatic().shape(CollisionGeometry.sphere(2f))));
 
         physicsSystem.onUpdate(1f / 60f);
 
@@ -81,22 +82,22 @@ class TriangleMeshPhysicsIntegrationTest {
 
     @Test
     void entitySystem_instantiate_physicsWithoutTransform_failsValidation() {
-        int entity = entityFactory.builder("invalid")
-            .component(PhysicsBody.asStatic().shape(CollisionGeometry.sphere(1f)))
-            .instantiate();
+        int entity = entityFactory.instantiate(
+            EntityBuilder.create("invalid")
+                .component(PhysicsBody.asStatic().shape(CollisionGeometry.sphere(1f))));
 
         assertEquals(-1, entity, "Should return -1 when validation fails (PhysicsBody requires Transform)");
     }
 
     @Test
     void entitySystem_instantiate_physicsBodyDirectlyAttached() {
-        int entity = entityFactory.builder("resolved")
-            .transform(Transform.at(2, 3, 4))
-            .component(PhysicsBody.dynamic(5f)
-                .shape(CollisionGeometry.box(1, 2, 3))
-                .friction(0.8f)
-                .restitution(0.3f))
-            .instantiate();
+        int entity = entityFactory.instantiate(
+            EntityBuilder.create("resolved")
+                .transform(Transform.at(2, 3, 4))
+                .component(PhysicsBody.dynamic(5f)
+                    .shape(CollisionGeometry.box(1, 2, 3))
+                    .friction(0.8f)
+                    .restitution(0.3f)));
 
         assertTrue(entity >= 0, "Entity should be created");
 
@@ -113,20 +114,20 @@ class TriangleMeshPhysicsIntegrationTest {
 
     @Test
     void entitySystem_instantiate_multipleEntitiesAllRegistered() {
-        int floor = entityFactory.builder("floor")
-            .transform(Transform.at(0, -1, 0))
-            .component(PhysicsBody.asStatic().shape(CollisionGeometry.box(50, 0.5f, 50)))
-            .instantiate();
+        int floor = entityFactory.instantiate(
+            EntityBuilder.create("floor")
+                .transform(Transform.at(0, -1, 0))
+                .component(PhysicsBody.asStatic().shape(CollisionGeometry.box(50, 0.5f, 50))));
 
-        int player = entityFactory.builder("player")
-            .transform(Transform.at(0, 5, 0))
-            .component(PhysicsBody.dynamic(80f).shape(CollisionGeometry.capsule(0.4f, 1.8f)))
-            .instantiate();
+        int player = entityFactory.instantiate(
+            EntityBuilder.create("player")
+                .transform(Transform.at(0, 5, 0))
+                .component(PhysicsBody.dynamic(80f).shape(CollisionGeometry.capsule(0.4f, 1.8f))));
 
-        int crate = entityFactory.builder("crate")
-            .transform(Transform.at(3, 2, 0))
-            .component(PhysicsBody.dynamic(10f).shape(CollisionGeometry.box(0.5f, 0.5f, 0.5f)))
-            .instantiate();
+        int crate = entityFactory.instantiate(
+            EntityBuilder.create("crate")
+                .transform(Transform.at(3, 2, 0))
+                .component(PhysicsBody.dynamic(10f).shape(CollisionGeometry.box(0.5f, 0.5f, 0.5f))));
 
         physicsSystem.onUpdate(1f / 60f);
 

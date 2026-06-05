@@ -33,9 +33,9 @@ class EntityFactoryTest {
 
     @Test
     void instantiate_createsEntityWithAllComponents() {
-        int entityId = entityFactory.builder("test")
-            .transform(Transform.at(1, 2, 3))
-            .instantiate();
+        int entityId = entityFactory.instantiate(
+            EntityBuilder.create("test")
+                .transform(Transform.at(1, 2, 3)));
 
         assertTrue(entityId >= 0);
         assertNotNull(registry.getComponent(entityId, Transform.class));
@@ -53,10 +53,10 @@ class EntityFactoryTest {
             return false;
         });
 
-        entityFactory.builder("test")
-            .transform(Transform.at(0, 0, 0))
-            .component(PhysicsBody.dynamic(1f).shape(CollisionGeometry.sphere(1f)))
-            .instantiate();
+        entityFactory.instantiate(
+            EntityBuilder.create("test")
+                .transform(Transform.at(0, 0, 0))
+                .component(PhysicsBody.dynamic(1f).shape(CollisionGeometry.sphere(1f))));
 
         assertEquals(1, transformPresentAtPhysicsEvent.size());
         assertTrue(transformPresentAtPhysicsEvent.get(0));
@@ -65,9 +65,9 @@ class EntityFactoryTest {
     @Test
     void instantiate_validatesRules_rejectsInvalid() {
         // PhysicsBody requires Transform — omitting Transform should fail
-        int entityId = entityFactory.builder("invalid")
-            .component(PhysicsBody.dynamic(1f).shape(CollisionGeometry.sphere(1f)))
-            .instantiate();
+        int entityId = entityFactory.instantiate(
+            EntityBuilder.create("invalid")
+                .component(PhysicsBody.dynamic(1f).shape(CollisionGeometry.sphere(1f))));
 
         assertEquals(-1, entityId);
     }
@@ -80,22 +80,19 @@ class EntityFactoryTest {
             return false;
         });
 
-        entityFactory.builder("invalid")
-            .component(PhysicsBody.dynamic(1f).shape(CollisionGeometry.sphere(1f)))
-            .instantiate();
+        entityFactory.instantiate(
+            EntityBuilder.create("invalid")
+                .component(PhysicsBody.dynamic(1f).shape(CollisionGeometry.sphere(1f))));
 
         assertEquals(0, eventCount.get());
     }
 
     @Test
     void instantiateDirectCall_worksWithComponentsAndTags() {
-        List<Component> components = List.of(
-            Transform.at(5, 5, 5),
-            PhysicsBody.asStatic().shape(CollisionGeometry.box(1, 1, 1))
-        );
-        List<Tag> tags = List.of();
-
-        int entityId = entityFactory.instantiate("from-direct", components, tags);
+        int entityId = entityFactory.instantiate(
+            EntityBuilder.create("from-builder")
+                .transform(Transform.at(5, 5, 5))
+                .component(PhysicsBody.asStatic().shape(CollisionGeometry.box(1, 1, 1))));
 
         assertTrue(entityId >= 0);
         assertNotNull(registry.getComponent(entityId, Transform.class));

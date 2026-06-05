@@ -23,12 +23,12 @@ class EntityFactoryHierarchyTest {
 
     @Test
     void attachChild_wiresHierarchyOnBothSides() {
-        int parent = entityFactory.builder("parent")
-            .transform(Transform.at(0, 0, 0))
-            .instantiate();
-        int child = entityFactory.builder("child")
-            .transform(Transform.at(1, 0, 0))
-            .instantiate();
+        int parent = entityFactory.instantiate(
+            EntityBuilder.create("parent")
+                .transform(Transform.at(0, 0, 0)));
+        int child = entityFactory.instantiate(
+            EntityBuilder.create("child")
+                .transform(Transform.at(1, 0, 0)));
 
         entityFactory.attachChild(parent, child);
 
@@ -45,12 +45,12 @@ class EntityFactoryHierarchyTest {
 
     @Test
     void attachChild_setsInHierarchyFlag() {
-        int parent = entityFactory.builder("parent")
-            .transform(Transform.at(0, 0, 0))
-            .instantiate();
-        int child = entityFactory.builder("child")
-            .transform(Transform.at(1, 0, 0))
-            .instantiate();
+        int parent = entityFactory.instantiate(
+            EntityBuilder.create("parent")
+                .transform(Transform.at(0, 0, 0)));
+        int child = entityFactory.instantiate(
+            EntityBuilder.create("child")
+                .transform(Transform.at(1, 0, 0)));
 
         entityFactory.attachChild(parent, child);
 
@@ -60,15 +60,15 @@ class EntityFactoryHierarchyTest {
 
     @Test
     void attachChild_reparentsFromOldParent() {
-        int oldParent = entityFactory.builder("old-parent")
-            .transform(Transform.at(0, 0, 0))
-            .instantiate();
-        int newParent = entityFactory.builder("new-parent")
-            .transform(Transform.at(0, 0, 0))
-            .instantiate();
-        int child = entityFactory.builder("child")
-            .transform(Transform.at(1, 0, 0))
-            .instantiate();
+        int oldParent = entityFactory.instantiate(
+            EntityBuilder.create("old-parent")
+                .transform(Transform.at(0, 0, 0)));
+        int newParent = entityFactory.instantiate(
+            EntityBuilder.create("new-parent")
+                .transform(Transform.at(0, 0, 0)));
+        int child = entityFactory.instantiate(
+            EntityBuilder.create("child")
+                .transform(Transform.at(1, 0, 0)));
 
         entityFactory.attachChild(oldParent, child);
         entityFactory.attachChild(newParent, child);
@@ -84,12 +84,12 @@ class EntityFactoryHierarchyTest {
 
     @Test
     void attachChild_addsHierarchyIfMissing() {
-        int parent = entityFactory.builder("parent")
-            .transform(Transform.at(0, 0, 0))
-            .instantiate();
-        int child = entityFactory.builder("child")
-            .transform(Transform.at(0, 0, 0))
-            .instantiate();
+        int parent = entityFactory.instantiate(
+            EntityBuilder.create("parent")
+                .transform(Transform.at(0, 0, 0)));
+        int child = entityFactory.instantiate(
+            EntityBuilder.create("child")
+                .transform(Transform.at(0, 0, 0)));
 
         assertNull(registry.getComponent(parent, Hierarchy.class));
         assertNull(registry.getComponent(child, Hierarchy.class));
@@ -102,12 +102,12 @@ class EntityFactoryHierarchyTest {
 
     @Test
     void attachChild_idempotentWhenAlreadyAttached() {
-        int parent = entityFactory.builder("parent")
-            .transform(Transform.at(0, 0, 0))
-            .instantiate();
-        int child = entityFactory.builder("child")
-            .transform(Transform.at(1, 0, 0))
-            .instantiate();
+        int parent = entityFactory.instantiate(
+            EntityBuilder.create("parent")
+                .transform(Transform.at(0, 0, 0)));
+        int child = entityFactory.instantiate(
+            EntityBuilder.create("child")
+                .transform(Transform.at(1, 0, 0)));
 
         entityFactory.attachChild(parent, child);
         entityFactory.attachChild(parent, child);
@@ -118,12 +118,12 @@ class EntityFactoryHierarchyTest {
 
     @Test
     void detachChild_removesFromParentAndSetsNoParent() {
-        int parent = entityFactory.builder("parent")
-            .transform(Transform.at(5, 0, 0))
-            .instantiate();
-        int child = entityFactory.builder("child")
-            .transform(Transform.at(1, 0, 0))
-            .instantiate();
+        int parent = entityFactory.instantiate(
+            EntityBuilder.create("parent")
+                .transform(Transform.at(5, 0, 0)));
+        int child = entityFactory.instantiate(
+            EntityBuilder.create("child")
+                .transform(Transform.at(1, 0, 0)));
 
         entityFactory.attachChild(parent, child);
         entityFactory.detachChild(child);
@@ -138,12 +138,12 @@ class EntityFactoryHierarchyTest {
 
     @Test
     void detachChild_bakesWorldTransformIntoLocal() {
-        int parent = entityFactory.builder("parent")
-            .transform(Transform.at(10, 0, 0))
-            .instantiate();
-        int child = entityFactory.builder("child")
-            .transform(Transform.at(5, 0, 0))
-            .instantiate();
+        int parent = entityFactory.instantiate(
+            EntityBuilder.create("parent")
+                .transform(Transform.at(10, 0, 0)));
+        int child = entityFactory.instantiate(
+            EntityBuilder.create("child")
+                .transform(Transform.at(5, 0, 0)));
 
         entityFactory.attachChild(parent, child);
 
@@ -163,15 +163,15 @@ class EntityFactoryHierarchyTest {
 
     @Test
     void detachAllChildren_removesAllChildren() {
-        int parent = entityFactory.builder("parent")
-            .transform(Transform.at(0, 0, 0))
-            .instantiate();
-        int child1 = entityFactory.builder("child1")
-            .transform(Transform.at(1, 0, 0))
-            .instantiate();
-        int child2 = entityFactory.builder("child2")
-            .transform(Transform.at(2, 0, 0))
-            .instantiate();
+        int parent = entityFactory.instantiate(
+            EntityBuilder.create("parent")
+                .transform(Transform.at(0, 0, 0)));
+        int child1 = entityFactory.instantiate(
+            EntityBuilder.create("child1")
+                .transform(Transform.at(1, 0, 0)));
+        int child2 = entityFactory.instantiate(
+            EntityBuilder.create("child2")
+                .transform(Transform.at(2, 0, 0)));
 
         entityFactory.attachChild(parent, child1);
         entityFactory.attachChild(parent, child2);
@@ -189,15 +189,15 @@ class EntityFactoryHierarchyTest {
 
     @Test
     void destroyEntity_cascadesToChildren() {
-        int parent = entityFactory.builder("parent")
-            .transform(Transform.at(0, 0, 0))
-            .instantiate();
-        int child = entityFactory.builder("child")
-            .transform(Transform.at(1, 0, 0))
-            .instantiate();
-        int grandchild = entityFactory.builder("grandchild")
-            .transform(Transform.at(2, 0, 0))
-            .instantiate();
+        int parent = entityFactory.instantiate(
+            EntityBuilder.create("parent")
+                .transform(Transform.at(0, 0, 0)));
+        int child = entityFactory.instantiate(
+            EntityBuilder.create("child")
+                .transform(Transform.at(1, 0, 0)));
+        int grandchild = entityFactory.instantiate(
+            EntityBuilder.create("grandchild")
+                .transform(Transform.at(2, 0, 0)));
 
         entityFactory.attachChild(parent, child);
         entityFactory.attachChild(child, grandchild);
@@ -211,12 +211,12 @@ class EntityFactoryHierarchyTest {
 
     @Test
     void destroyEntity_detachesFromParent() {
-        int parent = entityFactory.builder("parent")
-            .transform(Transform.at(0, 0, 0))
-            .instantiate();
-        int child = entityFactory.builder("child")
-            .transform(Transform.at(1, 0, 0))
-            .instantiate();
+        int parent = entityFactory.instantiate(
+            EntityBuilder.create("parent")
+                .transform(Transform.at(0, 0, 0)));
+        int child = entityFactory.instantiate(
+            EntityBuilder.create("child")
+                .transform(Transform.at(1, 0, 0)));
 
         entityFactory.attachChild(parent, child);
         entityFactory.destroyEntity(child);
@@ -230,9 +230,9 @@ class EntityFactoryHierarchyTest {
 
     @Test
     void destroyEntity_worksWithoutHierarchy() {
-        int entity = entityFactory.builder("standalone")
-            .transform(Transform.at(0, 0, 0))
-            .instantiate();
+        int entity = entityFactory.instantiate(
+            EntityBuilder.create("standalone")
+                .transform(Transform.at(0, 0, 0)));
 
         entityFactory.destroyEntity(entity);
 

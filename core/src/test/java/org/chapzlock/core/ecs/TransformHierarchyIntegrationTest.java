@@ -26,10 +26,10 @@ class TransformHierarchyIntegrationTest {
 
     @Test
     void childWorldTransformFollowsParent() {
-        int parent = entityFactory.builder("parent")
-            .transform(Transform.at(10, 0, 0))
-            .child("child", c -> c.transform(Transform.at(5, 0, 0)))
-            .instantiate();
+        int parent = entityFactory.instantiate(
+            EntityBuilder.create("parent")
+                .transform(Transform.at(10, 0, 0))
+                .child("child", c -> c.transform(Transform.at(5, 0, 0))));
 
         int child = registry.getEntityByName("child");
 
@@ -45,10 +45,10 @@ class TransformHierarchyIntegrationTest {
 
     @Test
     void movingParentMovesChild() {
-        int parent = entityFactory.builder("parent")
-            .transform(Transform.at(0, 0, 0))
-            .child("child", c -> c.transform(Transform.at(5, 0, 0)))
-            .instantiate();
+        int parent = entityFactory.instantiate(
+            EntityBuilder.create("parent")
+                .transform(Transform.at(0, 0, 0))
+                .child("child", c -> c.transform(Transform.at(5, 0, 0))));
 
         int child = registry.getEntityByName("child");
 
@@ -67,12 +67,12 @@ class TransformHierarchyIntegrationTest {
 
     @Test
     void deepHierarchyPropagatesCorrectly() {
-        int root = entityFactory.builder("root")
-            .transform(Transform.at(1, 0, 0))
-            .child("mid", c -> c
-                .transform(Transform.at(2, 0, 0))
-                .child("leaf", gc -> gc.transform(Transform.at(3, 0, 0))))
-            .instantiate();
+        int root = entityFactory.instantiate(
+            EntityBuilder.create("root")
+                .transform(Transform.at(1, 0, 0))
+                .child("mid", c -> c
+                    .transform(Transform.at(2, 0, 0))
+                    .child("leaf", gc -> gc.transform(Transform.at(3, 0, 0)))));
 
         transformSystem.onUpdate(0.016f);
 
@@ -84,12 +84,12 @@ class TransformHierarchyIntegrationTest {
 
     @Test
     void runtimeAttachChildFollowsParent() {
-        int parent = entityFactory.builder("parent")
-            .transform(Transform.at(10, 0, 0))
-            .instantiate();
-        int child = entityFactory.builder("child")
-            .transform(Transform.at(3, 0, 0))
-            .instantiate();
+        int parent = entityFactory.instantiate(
+            EntityBuilder.create("parent")
+                .transform(Transform.at(10, 0, 0)));
+        int child = entityFactory.instantiate(
+            EntityBuilder.create("child")
+                .transform(Transform.at(3, 0, 0)));
 
         entityFactory.attachChild(parent, child);
         transformSystem.onUpdate(0.016f);

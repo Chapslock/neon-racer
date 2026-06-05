@@ -4,6 +4,7 @@ import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.component.PhysicsBody;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
+import org.chapzlock.core.ecs.EntityBuilder;
 import org.chapzlock.core.ecs.EntityFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,13 +35,13 @@ class PhysicsRegistrationTest {
 
     @Test
     void entityNotRegisteredBeforeOnUpdate() {
-        int entity = entityFactory.builder("ball")
-            .transform(Transform.at(0, 10, 0))
-            .component(PhysicsBody.builder()
-                .mass(1f)
-                .geometry(CollisionGeometry.sphere(1f))
-                .build())
-            .instantiate();
+        int entity = entityFactory.instantiate(
+            EntityBuilder.create("ball")
+                .transform(Transform.at(0, 10, 0))
+                .component(PhysicsBody.builder()
+                    .mass(1f)
+                    .geometry(CollisionGeometry.sphere(1f))
+                    .build()));
 
         assertFalse(engine.getPhysics().isRegistered(entity),
             "Body should NOT be registered before onUpdate() drains the queue");
@@ -48,13 +49,13 @@ class PhysicsRegistrationTest {
 
     @Test
     void entityRegisteredAfterOnUpdate() {
-        int entity = entityFactory.builder("ball")
-            .transform(Transform.at(0, 10, 0))
-            .component(PhysicsBody.builder()
-                .mass(1f)
-                .geometry(CollisionGeometry.sphere(1f))
-                .build())
-            .instantiate();
+        int entity = entityFactory.instantiate(
+            EntityBuilder.create("ball")
+                .transform(Transform.at(0, 10, 0))
+                .component(PhysicsBody.builder()
+                    .mass(1f)
+                    .geometry(CollisionGeometry.sphere(1f))
+                    .build()));
 
         physicsSystem.onUpdate(1f / 60f);
 
@@ -64,21 +65,21 @@ class PhysicsRegistrationTest {
 
     @Test
     void multipleEntitiesRegisteredAfterOnUpdate() {
-        int e1 = entityFactory.builder("sphere")
-            .transform(Transform.at(0, 5, 0))
-            .component(PhysicsBody.builder()
-                .mass(1f)
-                .geometry(CollisionGeometry.sphere(0.5f))
-                .build())
-            .instantiate();
+        int e1 = entityFactory.instantiate(
+            EntityBuilder.create("sphere")
+                .transform(Transform.at(0, 5, 0))
+                .component(PhysicsBody.builder()
+                    .mass(1f)
+                    .geometry(CollisionGeometry.sphere(0.5f))
+                    .build()));
 
-        int e2 = entityFactory.builder("floor")
-            .transform(Transform.at(3, 0, 0))
-            .component(PhysicsBody.builder()
-                .mass(0f)
-                .geometry(CollisionGeometry.box(5, 0.1f, 5))
-                .build())
-            .instantiate();
+        int e2 = entityFactory.instantiate(
+            EntityBuilder.create("floor")
+                .transform(Transform.at(3, 0, 0))
+                .component(PhysicsBody.builder()
+                    .mass(0f)
+                    .geometry(CollisionGeometry.box(5, 0.1f, 5))
+                    .build()));
 
         physicsSystem.onUpdate(1f / 60f);
 
@@ -89,13 +90,13 @@ class PhysicsRegistrationTest {
 
     @Test
     void entityDestroyedBeforeOnUpdate_skipsRegistration() {
-        int entity = entityFactory.builder("ball")
-            .transform(Transform.at(0, 5, 0))
-            .component(PhysicsBody.builder()
-                .mass(1f)
-                .geometry(CollisionGeometry.sphere(1f))
-                .build())
-            .instantiate();
+        int entity = entityFactory.instantiate(
+            EntityBuilder.create("ball")
+                .transform(Transform.at(0, 5, 0))
+                .component(PhysicsBody.builder()
+                    .mass(1f)
+                    .geometry(CollisionGeometry.sphere(1f))
+                    .build()));
 
         registry.destroyEntity(entity);
         physicsSystem.onUpdate(1f / 60f);
@@ -106,13 +107,13 @@ class PhysicsRegistrationTest {
 
     @Test
     void physicsBodyRemovedBeforeOnUpdate_skipsRegistration() {
-        int entity = entityFactory.builder("ball")
-            .transform(Transform.at(0, 5, 0))
-            .component(PhysicsBody.builder()
-                .mass(1f)
-                .geometry(CollisionGeometry.sphere(1f))
-                .build())
-            .instantiate();
+        int entity = entityFactory.instantiate(
+            EntityBuilder.create("ball")
+                .transform(Transform.at(0, 5, 0))
+                .component(PhysicsBody.builder()
+                    .mass(1f)
+                    .geometry(CollisionGeometry.sphere(1f))
+                    .build()));
 
         registry.removeComponent(entity, PhysicsBody.class);
         physicsSystem.onUpdate(1f / 60f);
@@ -123,13 +124,13 @@ class PhysicsRegistrationTest {
 
     @Test
     void entityRemovedAfterRegistration_getsDeregistered() {
-        int entity = entityFactory.builder("ball")
-            .transform(Transform.at(0, 5, 0))
-            .component(PhysicsBody.builder()
-                .mass(1f)
-                .geometry(CollisionGeometry.sphere(1f))
-                .build())
-            .instantiate();
+        int entity = entityFactory.instantiate(
+            EntityBuilder.create("ball")
+                .transform(Transform.at(0, 5, 0))
+                .component(PhysicsBody.builder()
+                    .mass(1f)
+                    .geometry(CollisionGeometry.sphere(1f))
+                    .build()));
 
         physicsSystem.onUpdate(1f / 60f);
         assertTrue(engine.getPhysics().isRegistered(entity));
@@ -142,13 +143,13 @@ class PhysicsRegistrationTest {
 
     @Test
     void capsuleGeometry_registersCorrectly() {
-        int entity = entityFactory.builder("player")
-            .transform(Transform.at(0, 10, 0))
-            .component(PhysicsBody.builder()
-                .mass(1f)
-                .geometry(CollisionGeometry.capsule(0.4f, 1.8f))
-                .build())
-            .instantiate();
+        int entity = entityFactory.instantiate(
+            EntityBuilder.create("player")
+                .transform(Transform.at(0, 10, 0))
+                .component(PhysicsBody.builder()
+                    .mass(1f)
+                    .geometry(CollisionGeometry.capsule(0.4f, 1.8f))
+                    .build()));
 
         physicsSystem.onUpdate(1f / 60f);
 
