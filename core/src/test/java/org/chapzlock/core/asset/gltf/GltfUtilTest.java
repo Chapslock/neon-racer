@@ -14,6 +14,7 @@ import org.chapzlock.core.component.Skeleton;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.Entity;
+import org.chapzlock.core.ecs.EntityFactory;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -34,11 +35,13 @@ class GltfUtilTest {
 
     private Engine engine;
     private ComponentRegistry registry;
+    private EntityFactory entityFactory;
 
     @BeforeEach
     void setUp() {
         engine = Engine.testEngine();
         registry = engine.getRegistry();
+        entityFactory = engine.getEntityFactory();
     }
 
     // ──────────────────────────────────────────────────────────────────────────────
@@ -152,7 +155,7 @@ class GltfUtilTest {
             registry.addComponent(parent, Hierarchy.root());
 
             int[] ids = GltfUtil.createNodes(asset, parent, registry);
-            GltfUtil.wireHierarchy(asset, ids, parent, registry);
+            GltfUtil.wireHierarchy(asset, ids, parent, entityFactory);
 
             Hierarchy rootH = registry.getComponent(ids[0], Hierarchy.class);
             assertNotNull(rootH);
@@ -168,7 +171,7 @@ class GltfUtilTest {
             registry.addComponent(parent, parentH);
 
             int[] ids = GltfUtil.createNodes(asset, parent, registry);
-            GltfUtil.wireHierarchy(asset, ids, parent, registry);
+            GltfUtil.wireHierarchy(asset, ids, parent, entityFactory);
 
             int[] children = parentH.getChildren();
             assertEquals(1, children.length);
@@ -182,7 +185,7 @@ class GltfUtilTest {
             registry.addComponent(parent, new Transform());
 
             int[] ids = GltfUtil.createNodes(asset, parent, registry);
-            GltfUtil.wireHierarchy(asset, ids, parent, registry);
+            GltfUtil.wireHierarchy(asset, ids, parent, entityFactory);
 
             Hierarchy parentH = registry.getComponent(parent, Hierarchy.class);
             assertNotNull(parentH, "Should create Hierarchy for parent if missing");
@@ -206,7 +209,7 @@ class GltfUtilTest {
             registry.addComponent(anchor, new Transform());
 
             int[] ids = GltfUtil.createNodes(asset, anchor, registry);
-            GltfUtil.wireHierarchy(asset, ids, anchor, registry);
+            GltfUtil.wireHierarchy(asset, ids, anchor, entityFactory);
 
             // Child should point to the glTF parent node entity
             Hierarchy childH = registry.getComponent(ids[1], Hierarchy.class);
@@ -240,7 +243,7 @@ class GltfUtilTest {
             registry.addComponent(anchor, new Transform());
 
             int[] ids = GltfUtil.createNodes(asset, anchor, registry);
-            GltfUtil.wireHierarchy(asset, ids, anchor, registry);
+            GltfUtil.wireHierarchy(asset, ids, anchor, entityFactory);
 
             // GP is child of anchor
             Hierarchy gpH = registry.getComponent(ids[0], Hierarchy.class);
@@ -278,7 +281,7 @@ class GltfUtilTest {
             registry.addComponent(anchor, anchorH);
 
             int[] ids = GltfUtil.createNodes(asset, anchor, registry);
-            GltfUtil.wireHierarchy(asset, ids, anchor, registry);
+            GltfUtil.wireHierarchy(asset, ids, anchor, entityFactory);
 
             // Both should be children of anchor
             assertEquals(anchor, registry.getComponent(ids[0], Hierarchy.class).getParent());

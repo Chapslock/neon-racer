@@ -13,7 +13,6 @@ import org.chapzlock.core.animation.TargetPath;
 import org.chapzlock.core.component.AlphaMode;
 import org.chapzlock.core.component.AnimationClipSet;
 import org.chapzlock.core.component.AnimationState;
-import org.chapzlock.core.component.Hierarchy;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.Name;
 import org.chapzlock.core.component.OpaqueLayer;
@@ -24,6 +23,7 @@ import org.chapzlock.core.component.Texture;
 import org.chapzlock.core.component.Transform;
 import org.chapzlock.core.ecs.ComponentRegistry;
 import org.chapzlock.core.ecs.Entity;
+import org.chapzlock.core.ecs.EntityFactory;
 import org.chapzlock.core.render.MeshRegistry;
 import org.chapzlock.core.render.PbrShaderProps;
 import org.chapzlock.core.render.ShaderRegistry;
@@ -96,50 +96,31 @@ class GltfUtil {
     }
 
     /**
-     * Phase 2: Wires Hierarchy components linking nodes into a parent-child tree.
+     * Phase 2: Wires parent-child hierarchy using EntityFactory.attachChild.
      *
-     * <p>Root nodes (those listed in {@link GltfAsset#rootNodeIndices()}) become children
-     * of the provided parent entity via {@link Hierarchy#childOf(int)}. Non-root nodes
-     * get their parent from the glTF tree structure.
+     * <p>Root nodes become children of the provided parent entity. Non-root nodes
+     * are attached to their parent nodes as defined by the glTF tree structure.
+     * Uses the canonical {@link org.chapzlock.core.ecs.EntityFactory#attachChild(int, int)} path for all wiring.
      *
-     * <p>Additionally, root entities are registered as children in the parent entity's
-     * Hierarchy component. If the parent has no Hierarchy, one is created as a root.
-     *
-     * @param asset        the parsed glTF data with hierarchy information
-     * @param entityIds    the entity ID array from Phase 1
-     * @param parentEntity the entity to parent root nodes under
-     * @param registry     the component registry
+     * @param asset         the parsed glTF data with hierarchy information
+     * @param entityIds     the entity ID array from Phase 1
+     * @param parentEntity  the entity to parent root nodes under
+     * @param entityFactory the factory for hierarchy wiring
      */
-    static void wireHierarchy(GltfAsset asset, int[] entityIds, int parentEntity, ComponentRegistry registry) {
+    static void wireHierarchy(GltfAsset asset, int[] entityIds, int parentEntity, EntityFactory entityFactory) {
         List<GltfNodeData> nodes = asset.nodes();
 
+        // Wire internal parent-child relationships
         for (int i = 0; i < nodes.size(); i++) {
             GltfNodeData node = nodes.get(i);
-            List<Integer> childIndices = node.childIndices();
-
-            boolean isRoot = asset.rootNodeIndices().contains(i);
-            Hierarchy hierarchy;
-            if (isRoot) {
-                hierarchy = Hierarchy.childOf(parentEntity);
-            } else {
-                hierarchy = findParentHierarchy(i, nodes, entityIds);
+            for (int childIdx : node.childIndices()) {
+                entityFactory.attachChild(entityIds[i], entityIds[childIdx]);
             }
-
-            for (int childIdx : childIndices) {
-                hierarchy.addChild(entityIds[childIdx]);
-            }
-
-            registry.addComponent(entityIds[i], hierarchy);
         }
 
-        // Register root entities as children in the parent's Hierarchy component.
-        Hierarchy parentHierarchy = registry.getComponent(parentEntity, Hierarchy.class);
-        if (parentHierarchy == null) {
-            parentHierarchy = Hierarchy.root();
-            registry.addComponent(parentEntity, parentHierarchy);
-        }
+        // Attach root nodes to the parent entity
         for (int rootIdx : asset.rootNodeIndices()) {
-            parentHierarchy.addChild(entityIds[rootIdx]);
+            entityFactory.attachChild(parentEntity, entityIds[rootIdx]);
         }
     }
 
@@ -157,10 +138,12 @@ class GltfUtil {
      * @param textureRegistry  the GPU texture loading registry
      * @param shaderRegistry   the shader compilation registry
      * @param registry         the component registry
+     * @param entityFactory    the factory for hierarchy wiring of sub-entities
      */
     static void uploadMeshesAndMaterials(GltfAsset asset, int[] entityIds,
                                          MeshRegistry meshRegistry, TextureRegistry textureRegistry,
-                                         ShaderRegistry shaderRegistry, ComponentRegistry registry) {
+                                         ShaderRegistry shaderRegistry, ComponentRegistry registry,
+                                         EntityFactory entityFactory) {
         List<GltfNodeData> nodes = asset.nodes();
         Shader pbrShader = getOrCreatePbrShader(shaderRegistry);
 
@@ -187,13 +170,8 @@ class GltfUtil {
                 } else {
                     int subEntity = Entity.create(registry);
                     Transform subTransform = new Transform();
-                    Hierarchy subHierarchy = Hierarchy.childOf(entityIds[i]);
-                    registry.addComponents(subEntity, subTransform, subHierarchy, mesh, pbrMaterial, new OpaqueLayer());
-
-                    Hierarchy parentHierarchy = registry.getComponent(entityIds[i], Hierarchy.class);
-                    if (parentHierarchy != null) {
-                        parentHierarchy.addChild(subEntity);
-                    }
+                    registry.addComponents(subEntity, subTransform, mesh, pbrMaterial, new OpaqueLayer());
+                    entityFactory.attachChild(entityIds[i], subEntity);
                 }
             }
         }
@@ -288,29 +266,6 @@ class GltfUtil {
     // ──────────────────────────────────────────────────────────────────────────────
     // Private helpers
     // ──────────────────────────────────────────────────────────────────────────────
-
-    /**
-     * Finds the parent of a node by scanning all nodes' child indices.
-     *
-     * <p>Performs a linear scan through all nodes looking for one whose {@code childIndices}
-     * contains the target index. Returns a {@link Hierarchy#childOf(int)} with the parent's
-     * entity ID, or {@link Hierarchy#root()} if no parent is found (defensive handling for
-     * malformed data).
-     *
-     * @param nodeIndex the index of the node to find the parent for
-     * @param nodes     the complete list of nodes in the asset
-     * @param entityIds mapping from node index to entity ID
-     * @return a Hierarchy configured with the correct parent
-     */
-    private static Hierarchy findParentHierarchy(int nodeIndex, List<GltfNodeData> nodes, int[] entityIds) {
-        for (int i = 0; i < nodes.size(); i++) {
-            if (nodes.get(i).childIndices().contains(nodeIndex)) {
-                return Hierarchy.childOf(entityIds[i]);
-            }
-        }
-        // No parent found — defensive fallback for malformed glTF data
-        return Hierarchy.root();
-    }
 
     /**
      * Converts glTF material data into a PbrMaterial component.

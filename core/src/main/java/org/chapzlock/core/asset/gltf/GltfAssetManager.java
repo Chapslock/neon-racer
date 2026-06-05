@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.chapzlock.core.ecs.ComponentRegistry;
+import org.chapzlock.core.ecs.EntityFactory;
 import org.chapzlock.core.render.MeshRegistry;
 import org.chapzlock.core.render.ShaderRegistry;
 import org.chapzlock.core.render.TextureRegistry;
@@ -36,6 +37,7 @@ public class GltfAssetManager {
     private final MeshRegistry meshRegistry;
     private final TextureRegistry textureRegistry;
     private final ShaderRegistry shaderRegistry;
+    private EntityFactory entityFactory;
 
     /**
      * Creates a new glTF asset manager with access to GPU registries for instantiation.
@@ -56,6 +58,17 @@ public class GltfAssetManager {
         this.meshRegistry = meshRegistry;
         this.textureRegistry = textureRegistry;
         this.shaderRegistry = shaderRegistry;
+    }
+
+    /**
+     * Sets the entity factory for hierarchy wiring operations.
+     * Called after construction to break the circular dependency between
+     * EntityFactory and GltfAssetManager.
+     *
+     * @param entityFactory the entity factory
+     */
+    public void setEntityFactory(EntityFactory entityFactory) {
+        this.entityFactory = entityFactory;
     }
 
     /**
@@ -100,9 +113,9 @@ public class GltfAssetManager {
      */
     void instantiate(GltfAsset asset, int parentEntity) {
         int[] entityIds = GltfUtil.createNodes(asset, parentEntity, registry);
-        GltfUtil.wireHierarchy(asset, entityIds, parentEntity, registry);
+        GltfUtil.wireHierarchy(asset, entityIds, parentEntity, entityFactory);
         if (meshRegistry != null && shaderRegistry != null) {
-            GltfUtil.uploadMeshesAndMaterials(asset, entityIds, meshRegistry, textureRegistry, shaderRegistry, registry);
+            GltfUtil.uploadMeshesAndMaterials(asset, entityIds, meshRegistry, textureRegistry, shaderRegistry, registry, entityFactory);
         }
         GltfUtil.createSkeletons(asset, entityIds, registry);
         GltfUtil.createAnimations(asset, entityIds, parentEntity, registry);
