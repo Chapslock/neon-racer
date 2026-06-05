@@ -24,10 +24,12 @@ import org.chapzlock.core.component.Sky;
 import org.chapzlock.core.component.SpriteLayer;
 import org.chapzlock.core.component.SpriteMaterial;
 import org.chapzlock.core.component.Transform;
-import org.chapzlock.core.ecs.EntityBuilder;
 import org.chapzlock.core.input.InputMap;
 import org.chapzlock.core.input.Key;
 import org.chapzlock.core.input.MouseButton;
+import org.chapzlock.core.particle.EmitShape;
+import org.chapzlock.core.particle.ParticleEffect;
+import org.chapzlock.core.particle.ParticleEmitter;
 import org.chapzlock.core.physics.CollisionGeometry;
 import org.chapzlock.core.scene.Scene;
 import org.joml.Vector3f;
@@ -64,6 +66,23 @@ public class ForestScene {
                 .tag(new PlayerTag())
                 .component(new PlayerInputComponent())
                 .component(new CharacterState()))
+            .entity("player-exhaust", e -> e
+                .transform(Transform.at(0, 3, 0.5f))
+                .component(new ParticleEmitter(ParticleEffect.builder()
+                    .rate(40)
+                    .lifetime(0.6f, 1.0f)
+                    .speed(1f, 3f)
+                    .size(0.1f, 0.25f)
+                    .color(new Color(0.2f, 0.8f, 1f, 1f))
+                    .emitShape(EmitShape.cone(20f))
+                    .maxParticles(200)
+                    .colorOverLifetime(
+                        new Color(0.2f, 0.8f, 1f, 1f),
+                        new Color(0.1f, 0.3f, 1f, 0f))
+                    .sizeOverLifetime(1f, 0.2f)
+                    .gravity(0f, 1f, 0f)
+                    .drag(0.5f)
+                    .build())))
             .entity("healthbar", e -> e
                 .transform(Transform.at(0, 0, 0, 0, 0, 0, 250))
                 .component(new SpriteMaterial("textures/health-bar.png"))
