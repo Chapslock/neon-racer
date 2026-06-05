@@ -3,8 +3,13 @@ package org.chapzlock.core.scene;
 import org.chapzlock.core.event.Event;
 
 /**
- * Published by {@link SceneManager} when a scene finishes loading.
+ * Published on the {@link org.chapzlock.core.event.EventBus} after a scene finishes loading.
  *
- * @param sceneName the name of the loaded scene
+ * <p>At the time this event fires, all entities have been instantiated, GPU assets uploaded,
+ * and scene systems initialized. Listeners can safely query the ComponentRegistry for
+ * entities from the newly loaded scene.
+ *
+ * @param sceneName the name of the scene that was loaded
+ * @see SceneManager
  */
 public record SceneLoadedEvent(String sceneName) implements Event {}
