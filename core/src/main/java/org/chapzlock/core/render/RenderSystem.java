@@ -14,6 +14,7 @@ import java.util.List;
 import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.ecs.SystemPhase;
+import org.chapzlock.core.particle.ParticlePass;
 
 /**
  * Orchestrates the rendering pipeline by executing registered RenderPasses in order.
@@ -27,11 +28,11 @@ public class RenderSystem implements GameSystem {
     private List<RenderPass> passes;
     private RenderContext renderContext;
 
-    /** {@inheritDoc} Initializes render passes (OpaquePass, SpritePass) and the shared RenderContext. */
+    /** {@inheritDoc} Initializes render passes (OpaquePass, ParticlePass, SpritePass) and the shared RenderContext. */
     @Override
     public void onInit(Engine engine) {
         renderContext = new RenderContext(engine);
-        passes = List.of(new OpaquePass(), new SpritePass());
+        passes = List.of(new OpaquePass(), new ParticlePass(), new SpritePass());
         passes.forEach(p -> p.init(engine));
 
         glEnable(GL_CULL_FACE);
