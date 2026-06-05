@@ -1,3 +1,20 @@
+# Neon Racer
+
+A 3D racing game built on a custom Java game engine. The engine provides an Entity-Component-System (ECS) architecture, PBR rendering, physics simulation, skeletal animation, scene management, and a 2D sprite overlay — all powered by LWJGL 3 and OpenGL.
+
+## Build & Run
+
+```bash
+./gradlew build              # Build both modules
+./gradlew :app:run           # Run the game (requires display/GPU)
+./gradlew :app:shadowJar     # Create fat JAR at app/build/libs/neon-racer-<version>.jar
+./gradlew :core:test         # Run core unit tests (JUnit 5)
+./gradlew :app:test          # Run app unit tests
+./gradlew test               # Run all tests
+```
+
+JVM flag `--enable-native-access=ALL-UNNAMED` is required at runtime (configured in build.gradle.kts).
+
 ## Engine TODO
 
 * particle effects
@@ -11,24 +28,23 @@
 
 ```mermaid
 graph TD
-    App[Application] --> EC[EngineContext]
-    EC --> CR[ComponentRegistry]
-    EC --> EB[EventBus]
-    EC --> MR[MeshRegistry]
-    EC --> TR[TextureRegistry]
-    EC --> SR[ShaderRegistry]
-    EC --> CS[CameraSystem]
-    EC --> SM[SceneManager]
-    EC --> Win[Window]
-    EC --> GAM[GltfAssetManager]
+    App[Application] --> Engine[Engine]
+    Engine --> CR[ComponentRegistry]
+    Engine --> EB[EventBus]
+    Engine --> MR[MeshRegistry]
+    Engine --> TR[TextureRegistry]
+    Engine --> SR[ShaderRegistry]
+    Engine --> CP[CameraProjection]
+    Engine --> SM[SceneManager]
+    Engine --> Win[Window]
+    Engine --> GAM[GltfAssetManager]
 
     MR --> RC[RefCounted]
     TR --> RC
     SR --> RC
 
-    SM --> SI[SceneInstantiator]
-    SI --> GMF[GltfModelFactory]
-    SI --> CV[ComponentRule]
+    SM --> EF[EntityFactory]
+    EF --> CV[ComponentRule]
 ```
 
 ### Rendering Pipeline
@@ -70,13 +86,13 @@ sequenceDiagram
 
 ```mermaid
 graph TD
-    SB[SceneBuilder] --> BP[EntityBlueprint]
+    SB[SceneBuilder] --> ER[EntityRecipe]
     SB --> SC[Scene]
     SC --> SM[SceneManager]
-    SM --> SI[SceneInstantiator]
-    SI --> GMF[GltfModelFactory]
-    SI --> VAL[ComponentRule Validation]
-    SI --> INST[SceneInstance]
+    SM --> EF[EntityFactory]
+    EF --> VAL[ComponentRule Validation]
+    SM --> GAM[GltfAssetManager]
+    SM --> INST[SceneInstance]
 ```
 
 ### Engine Lifecycle
@@ -84,33 +100,30 @@ graph TD
 ```mermaid
 sequenceDiagram
     participant App as Application
-    participant EC as EngineContext
+    participant Eng as Engine
     participant SM as SceneManager
-    participant SI as SceneInstantiator
-    participant ES as EngineSystems
+    participant SS as SystemScheduler
 
     Note over App: STARTUP
-    App->>EC: createSubsystems
-    App->>App: createEngineSystems
-    Note over App: EntitySystem, TweenSystem, AnimationSystem,<br/>TransformSystem, PhysicsSystem, RenderSystem
-    App->>SM: new SceneManager
-    App->>ES: onInit
+    App->>Eng: Engine.create(spec)
+    Note over Eng: Build all subsystems:<br/>ComponentRegistry, EventBus, Window,<br/>MeshRegistry, TextureRegistry, ShaderRegistry,<br/>GltfAssetManager, CameraProjection, EntityFactory
+    Eng->>SS: Register permanent systems
+    Note over SS: TweenSystem, AnimationSystem,<br/>TransformSystem, PhysicsSystem, RenderSystem
     App->>SM: loadImmediate(initialScene)
-    SM->>SI: instantiate
-    SI-->>SM: SceneInstance
+    SM-->>App: SceneInstance
 
     Note over App: MAIN LOOP
     loop Every Frame
-        App->>ES: onUpdate (all systems sorted by phase)
-        App->>ES: onRender
-        App->>ES: onDebugRender
+        App->>SS: onUpdate (all systems sorted by phase)
+        App->>SS: onRender
+        App->>SS: onDebugRender
         App->>SM: processPendingTransitions
     end
 
     Note over App: SHUTDOWN
     App->>SM: unloadAll
-    App->>ES: onDestroy
-    App->>EC: dispose
+    App->>SS: onDestroy (all systems)
+    App->>Eng: dispose
 ```
 
 ### System Execution Order
@@ -124,19 +137,18 @@ graph LR
 
 | Phase | Systems | Managed By |
 |-------|---------|-----------|
-| INPUT | EntitySystem | Engine |
+| INPUT | *(reserved for future input system)* | Engine |
 | LOGIC | TweenSystem, AnimationSystem, TransformSystem, *scene systems* | Engine + Scene |
 | PHYSICS | PhysicsSystem | Engine |
 | RENDER | RenderSystem | Engine |
 
-Engine systems are created internally by `Application.createEngineSystems()`. Scene-provided systems (user-defined) run in LOGIC phase alongside engine systems, sorted by `SystemOrdering`.
+Engine systems are registered as permanent systems by `Engine.create()`. Scene-provided systems (user-defined) run in LOGIC phase alongside engine systems, sorted by `SystemOrdering`.
 
 ### System Ownership
 
 ```mermaid
 graph TD
     subgraph Engine-Managed
-        ES[EntitySystem<br/>INPUT]
         TS[TweenSystem<br/>LOGIC]
         AS[AnimationSystem<br/>LOGIC]
         TrS[TransformSystem<br/>LOGIC]
@@ -150,12 +162,11 @@ graph TD
         GSN[...<br/>LOGIC]
     end
 
-    App[Application] -->|createEngineSystems| ES
-    App -->|createEngineSystems| TS
-    App -->|createEngineSystems| AS
-    App -->|createEngineSystems| TrS
-    App -->|createEngineSystems| PS
-    App -->|createEngineSystems| RS
+    Eng[Engine.create] -->|permanent systems| TS
+    Eng -->|permanent systems| AS
+    Eng -->|permanent systems| TrS
+    Eng -->|permanent systems| PS
+    Eng -->|permanent systems| RS
 
     SM[SceneManager] -->|scene.systems| GS1
     SM -->|scene.systems| GS2
@@ -171,7 +182,7 @@ graph TD
     AS --> IS[initialScene]
 
     WS --> Win[Window]
-    WS --> CS[CameraSystem]
+    WS --> CP[CameraProjection]
     PC --> PS[PhysicsSystem]
     IS --> SM[SceneManager.loadImmediate]
 
@@ -181,12 +192,12 @@ graph TD
 Usage:
 
 ```java
-Application.create(ApplicationSpecification.builder()
+Application.run(ApplicationSpecification.builder()
     .windowSpec(new WindowSpecification("Neon Racer", 1920, 1080))
-    .physicsConfig(PhysicsConfig.defaults())  // optional
+    .physicsConfig(PhysicsWorldConfig.defaults())  // optional
     .initialScene(myScene)
     .build()
-).run();
+);
 ```
 
 ### Package Organization
@@ -201,13 +212,15 @@ graph TD
         GameSystem
         SystemPhase
         SystemOrdering
-        EntitySystem
+        SystemScheduler
         TransformSystem
+        EntityFactory
+        EntityBuilder
     end
 
     subgraph render
         RenderSystem
-        CameraSystem
+        CameraProjection
         MeshRegistry
         TextureRegistry
         ShaderRegistry
@@ -228,8 +241,8 @@ graph TD
     subgraph scene
         Scene
         SceneManager
-        SceneInstantiator
-        GltfModelFactory
+        SceneBuilder
+        EntityRecipe
         SceneInstance
     end
 
@@ -242,17 +255,21 @@ graph TD
     subgraph application
         Application
         ApplicationSpecification
-        EngineContext
+        Engine
         Time
     end
 ```
 
-### ECS
+### ECS (Entity-Component-System)
 
-- **Entities** are plain integer IDs (`Entity.create(registry)`)
-- **Components** implement `Component` — data holders (Transform, Mesh, PbrMaterial, PointLight, etc.)
-- **Tags** implement `Tag` — empty markers for query filtering (OpaqueLayer, SpriteLayer, PlayerTag)
-- **Systems** implement `GameSystem` — logic that operates on entities via queries
+ECS is a data-oriented architecture pattern where game objects are decomposed into:
+
+- **Entities** — plain integer IDs (`Entity.create(registry)`). Not objects — just unique numbers that index into component storage.
+- **Components** — data-only classes implementing `Component` (Transform, Mesh, PbrMaterial, PointLight, etc.). Hold state but no logic.
+- **Tags** — empty components implementing `Tag` (OpaqueLayer, SpriteLayer, PlayerTag). Used purely for filtering in queries.
+- **Systems** — logic classes implementing `GameSystem` that operate on entities via queries each frame.
+
+This separation means data is stored contiguously by type (cache-friendly), systems are decoupled from each other, and new behaviors can be added by composing existing components rather than inheriting from base classes.
 
 Query API:
 ```java
@@ -285,7 +302,7 @@ Entities violating these rules are skipped with a clear error message.
 
 ## Tech Stack
 
-- Java 21+, Lombok
+- Java 21+, Lombok for boilerplate reduction
 - LWJGL 3 (OpenGL, GLFW, STB)
 - JOML (vectors, matrices, quaternions)
 - JBullet (physics)
