@@ -48,17 +48,13 @@ import org.joml.Vector3f;
  *
  * <p>Usage:
  * <pre>{@code
- * // Via builder (preferred for runtime spawning)
- * int id = entityFactory.builder("bullet")
- *     .transform(Transform.at(x, y, z))
- *     .component(new Velocity(dir))
- *     .instantiate();
- *
- * // Via direct call (used internally by scene loading)
- * int id = entityFactory.instantiate(name, components, tags);
+ * int id = entityFactory.instantiate(
+ *     EntityBuilder.create("bullet")
+ *         .transform(Transform.at(x, y, z))
+ *         .component(new Velocity(dir)));
  * }</pre>
  *
- * @see EntityBuilder#instantiate()
+ * @see EntityBuilder
  * @see ComponentRule
  * @see GltfAssetManager
  */
@@ -93,19 +89,6 @@ public class EntityFactory {
     }
 
     /**
-     * Creates a new {@link EntityBuilder} linked to this factory, enabling the
-     * {@link EntityBuilder#instantiate()} terminal operation.
-     *
-     * @param name the entity name (nullable for anonymous entities)
-     * @return a new builder ready for method chaining
-     */
-    public EntityBuilder builder(String name) {
-        EntityBuilder b = new EntityBuilder(name);
-        b.setEntityFactory(this);
-        return b;
-    }
-
-    /**
      * Instantiates an entity from component and tag lists through the phased assembly pipeline.
      *
      * <p>Phases: resolve components, validate rules, commit atomically with deferred events.
@@ -115,7 +98,7 @@ public class EntityFactory {
      * @param tags       the tags to attach
      * @return the new entity ID, or -1 if validation failed
      */
-    public int instantiate(String name, List<Component> components, List<Tag> tags) {
+    int instantiate(String name, List<Component> components, List<Tag> tags) {
         // Phase 1: Resolve deferred components
         List<Component> resolved = resolveComponents(components, tags);
 
@@ -146,36 +129,6 @@ public class EntityFactory {
         // Fire ComponentAddedEvent for each component (entity is now fully assembled)
         for (Component component : resolved) {
             registry.publishEvent(new ComponentAddedEvent(entityId, component.getClass()));
-        }
-
-        return entityId;
-    }
-
-
-    /**
-     * Instantiates an entity with child recipes through the phased assembly pipeline.
-     *
-     * <p>The parent entity is created first, then each child recipe is instantiated
-     * recursively and attached via {@link #attachChild(int, int)}.
-     *
-     * @param name         the entity name (nullable)
-     * @param components   the components to attach
-     * @param tags         the tags to attach
-     * @param childRecipes child entity definitions to instantiate after parent
-     * @return the new entity ID, or -1 if validation failed
-     */
-    public int instantiate(String name, List<Component> components, List<Tag> tags, List<ChildRecipe> childRecipes) {
-        int entityId = instantiate(name, components, tags);
-        if (entityId < 0) return entityId;
-
-        for (ChildRecipe childRecipe : childRecipes) {
-            EntityBuilder childBuilder = new EntityBuilder(childRecipe.name());
-            childBuilder.setEntityFactory(this);
-            childRecipe.configurator().accept(childBuilder);
-            int childId = childBuilder.instantiate();
-            if (childId >= 0) {
-                attachChild(entityId, childId);
-            }
         }
 
         return entityId;

@@ -66,8 +66,8 @@ public class ForestScene {
                 .tag(new PlayerTag())
                 .component(new PlayerInputComponent())
                 .component(new CharacterState())
-                .child("shoulder-embers", c -> c
-                    .transform(Transform.at(0, 1.8f, -0.2f))
+                .child("cape-particles", c -> c
+                    .transform(Transform.at(0, .7f, 0))
                     .component(new ParticleEmitter(ParticleEffect.builder()
                         .rate(15)
                         .lifetime(0.8f, 1.5f)
@@ -83,23 +83,6 @@ public class ForestScene {
                         .gravity(0f, 0.5f, 0f)
                         .drag(0.3f)
                         .build()))))
-            .entity("player-exhaust", e -> e
-                .transform(Transform.at(0, 3, 0.5f))
-                .component(new ParticleEmitter(ParticleEffect.builder()
-                    .rate(40)
-                    .lifetime(0.6f, 1.0f)
-                    .speed(1f, 3f)
-                    .size(0.1f, 0.25f)
-                    .color(new Color(0.2f, 0.8f, 1f, 1f))
-                    .emitShape(EmitShape.cone(20f))
-                    .maxParticles(200)
-                    .colorOverLifetime(
-                        new Color(0.2f, 0.8f, 1f, 1f),
-                        new Color(0.1f, 0.3f, 1f, 0f))
-                    .sizeOverLifetime(1f, 0.2f)
-                    .gravity(0f, 1f, 0f)
-                    .drag(0.5f)
-                    .build())))
             .entity("healthbar", e -> e
                 .transform(Transform.at(0, 0, 0, 0, 0, 0, 250))
                 .component(new SpriteMaterial("textures/health-bar.png"))

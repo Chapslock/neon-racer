@@ -16,7 +16,7 @@ class SceneBuilderTest {
      * Helper: applies a recipe's configurator to a fresh EntityBuilder and returns it.
      */
     private EntityBuilder applyRecipe(EntityRecipe recipe) {
-        EntityBuilder builder = new EntityBuilder(recipe.name());
+        EntityBuilder builder = EntityBuilder.create(recipe.name());
         recipe.configurator().accept(builder);
         return builder;
     }
