@@ -65,7 +65,24 @@ public class ForestScene {
                     .lockRotation())
                 .tag(new PlayerTag())
                 .component(new PlayerInputComponent())
-                .component(new CharacterState()))
+                .component(new CharacterState())
+                .child("shoulder-embers", c -> c
+                    .transform(Transform.at(0, 1.8f, -0.2f))
+                    .component(new ParticleEmitter(ParticleEffect.builder()
+                        .rate(15)
+                        .lifetime(0.8f, 1.5f)
+                        .speed(0.3f, 0.8f)
+                        .size(0.05f, 0.12f)
+                        .color(new Color(0.8f, 0.1f, 0.4f, 0.8f))
+                        .emitShape(EmitShape.cone(35f))
+                        .maxParticles(50)
+                        .colorOverLifetime(
+                            new Color(0.8f, 0.1f, 0.4f, 0.8f),
+                            new Color(0.3f, 0.0f, 0.2f, 0.0f))
+                        .sizeOverLifetime(1f, 0.3f)
+                        .gravity(0f, 0.5f, 0f)
+                        .drag(0.3f)
+                        .build()))))
             .entity("player-exhaust", e -> e
                 .transform(Transform.at(0, 3, 0.5f))
                 .component(new ParticleEmitter(ParticleEffect.builder()
