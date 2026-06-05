@@ -351,11 +351,10 @@ public class SceneManager {
 
         for (EntityRecipe recipe : scene.getEntityRecipes()) {
             try {
-                EntityBuilder builder = new EntityBuilder(recipe.name());
+                EntityBuilder builder = EntityBuilder.create(recipe.name());
                 recipe.configurator().accept(builder);
 
-                int entityId = entityFactory.instantiate(
-                    builder.getName(), builder.getComponents(), builder.getTags(), builder.getChildRecipes());
+                int entityId = entityFactory.instantiate(builder);
 
                 if (entityId < 0) {
                     continue;
