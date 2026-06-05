@@ -50,7 +50,7 @@ public class ParticleSystem implements GameSystem {
         emitter.setEmitAccumulator(emitter.getEmitAccumulator() + effect.getRate() * deltaTime);
 
         Vector3f emitterPos = new Vector3f();
-        transform.getPosition(emitterPos);
+        transform.getWorldMatrix().getTranslation(emitterPos);
         ThreadLocalRandom rng = ThreadLocalRandom.current();
         Vector3f direction = new Vector3f();
 
