@@ -7,6 +7,7 @@ import org.chapzlock.core.asset.RawMeshDataFactory;
 import org.chapzlock.core.asset.gltf.GltfAssetManager;
 import org.chapzlock.core.component.Camera;
 import org.chapzlock.core.component.GltfModel;
+import org.chapzlock.core.component.Hierarchy;
 import org.chapzlock.core.component.Mesh;
 import org.chapzlock.core.component.Name;
 import org.chapzlock.core.component.PbrMaterial;
@@ -199,6 +200,47 @@ public class EntityFactory {
             }
         }
         return null;
+    }
+
+    /**
+     * Attaches a child entity to a parent, wiring Hierarchy components on both sides.
+     * If the child was previously parented elsewhere, it is detached from the old parent first.
+     *
+     * @param parentId the parent entity ID
+     * @param childId  the child entity ID
+     */
+    public void attachChild(int parentId, int childId) {
+        Hierarchy parentH = registry.getComponent(parentId, Hierarchy.class);
+        if (parentH == null) {
+            parentH = Hierarchy.root();
+            registry.addComponent(parentId, parentH);
+        }
+
+        Hierarchy childH = registry.getComponent(childId, Hierarchy.class);
+        if (childH == null) {
+            childH = Hierarchy.childOf(parentId);
+            registry.addComponent(childId, childH);
+        } else {
+            int oldParentId = childH.getParent();
+            if (oldParentId != Hierarchy.NO_PARENT && oldParentId != parentId) {
+                Hierarchy oldParentH = registry.getComponent(oldParentId, Hierarchy.class);
+                if (oldParentH != null) {
+                    oldParentH.removeChild(childId);
+                }
+            }
+            childH.setParent(parentId);
+        }
+
+        parentH.addChild(childId);
+
+        Transform parentTransform = registry.getComponent(parentId, Transform.class);
+        if (parentTransform != null) {
+            parentTransform.setInHierarchy(true);
+        }
+        Transform childTransform = registry.getComponent(childId, Transform.class);
+        if (childTransform != null) {
+            childTransform.setInHierarchy(true);
+        }
     }
 
 }
