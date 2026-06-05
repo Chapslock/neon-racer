@@ -46,38 +46,72 @@ public class ParticleSystem implements GameSystem {
     }
 
     private void emit(ParticleEmitter emitter, Transform transform, float deltaTime) {
-        ParticleEffect effect = emitter.getEffect();
-        emitter.setEmitAccumulator(emitter.getEmitAccumulator() + effect.getRate() * deltaTime);
+        if (emitter.isEmissionComplete()) return;
 
+        ParticleEffect effect = emitter.getEffect();
         Vector3f emitterPos = new Vector3f();
         transform.getWorldMatrix().getTranslation(emitterPos);
         ThreadLocalRandom rng = ThreadLocalRandom.current();
         Vector3f direction = new Vector3f();
 
-        while (emitter.getEmitAccumulator() >= 1f) {
-            emitter.setEmitAccumulator(emitter.getEmitAccumulator() - 1f);
-
-            Particle p = emitter.emit();
-            if (p == null) break;
-
-            p.getPosition().set(emitterPos);
-
-            effect.getEmitShape().computeDirection(direction);
-            float speed = randomRange(rng, effect.getSpeedMin(), effect.getSpeedMax());
-            p.getVelocity().set(direction).mul(speed);
-
-            p.setLifetime(randomRange(rng, effect.getLifetimeMin(), effect.getLifetimeMax()));
-            float size = randomRange(rng, effect.getSizeMin(), effect.getSizeMax());
-            p.setSize(size);
-            p.setInitialSize(size);
-
-            if (effect.hasColorOverLifetime()) {
-                Color start = effect.getColorStart();
-                p.getColor().set(start.getRed(), start.getGreen(), start.getBlue(), start.getAlpha());
-            } else {
-                Color c = effect.getInitialColor();
-                p.getColor().set(c.getRed(), c.getGreen(), c.getBlue(), c.getAlpha());
+        // Burst emission: emit all at once on first opportunity
+        int burstCount = effect.getBurstCount();
+        if (burstCount > 0 && emitter.getElapsed() == 0f) {
+            for (int i = 0; i < burstCount; i++) {
+                Particle p = emitter.emit();
+                if (p == null) break;
+                initParticle(p, emitterPos, effect, rng, direction);
             }
+            if (effect.getDuration() <= 0f) {
+                emitter.setEmissionComplete(true);
+            }
+        }
+
+        // Rate-based emission within duration
+        float duration = effect.getDuration();
+        if (duration > 0f) {
+            emitter.setElapsed(emitter.getElapsed() + deltaTime);
+            if (emitter.getElapsed() >= duration) {
+                emitter.setEmissionComplete(true);
+                return;
+            }
+
+            emitter.setEmitAccumulator(emitter.getEmitAccumulator() + effect.getRate() * deltaTime);
+            while (emitter.getEmitAccumulator() >= 1f) {
+                emitter.setEmitAccumulator(emitter.getEmitAccumulator() - 1f);
+                Particle p = emitter.emit();
+                if (p == null) break;
+                initParticle(p, emitterPos, effect, rng, direction);
+            }
+        } else if (burstCount <= 0) {
+            // Continuous emission (no burst, no duration) — original behavior
+            emitter.setEmitAccumulator(emitter.getEmitAccumulator() + effect.getRate() * deltaTime);
+            while (emitter.getEmitAccumulator() >= 1f) {
+                emitter.setEmitAccumulator(emitter.getEmitAccumulator() - 1f);
+                Particle p = emitter.emit();
+                if (p == null) break;
+                initParticle(p, emitterPos, effect, rng, direction);
+            }
+        }
+    }
+
+    private void initParticle(Particle p, Vector3f pos, ParticleEffect effect,
+                              ThreadLocalRandom rng, Vector3f direction) {
+        p.getPosition().set(pos);
+        effect.getEmitShape().computeDirection(direction);
+        float speed = randomRange(rng, effect.getSpeedMin(), effect.getSpeedMax());
+        p.getVelocity().set(direction).mul(speed);
+        p.setLifetime(randomRange(rng, effect.getLifetimeMin(), effect.getLifetimeMax()));
+        float size = randomRange(rng, effect.getSizeMin(), effect.getSizeMax());
+        p.setSize(size);
+        p.setInitialSize(size);
+
+        if (effect.hasColorOverLifetime()) {
+            Color start = effect.getColorStart();
+            p.getColor().set(start.getRed(), start.getGreen(), start.getBlue(), start.getAlpha());
+        } else {
+            Color c = effect.getInitialColor();
+            p.getColor().set(c.getRed(), c.getGreen(), c.getBlue(), c.getAlpha());
         }
     }
 

@@ -1,10 +1,27 @@
 package org.chapzlock.core.particle;
 
+import org.chapzlock.core.application.Engine;
+import org.chapzlock.core.component.Transform;
+import org.chapzlock.core.ecs.ComponentRegistry;
+import org.chapzlock.core.ecs.Entity;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class ParticleOneShotTest {
+
+    private Engine engine;
+    private ComponentRegistry registry;
+    private ParticleSystem system;
+
+    @BeforeEach
+    void setUp() {
+        engine = Engine.testEngine();
+        registry = engine.getRegistry();
+        system = new ParticleSystem();
+        system.onInit(engine);
+    }
 
     @Test
     void burstCount_defaultsToZero() {
@@ -98,5 +115,94 @@ class ParticleOneShotTest {
             .build();
         ParticleEmitter emitter = new ParticleEmitter(effect);
         assertEquals(0f, emitter.getElapsed());
+    }
+
+    @Test
+    void burst_emitsAllParticlesOnFirstFrame() {
+        ParticleEffect effect = ParticleEffect.builder()
+            .burst(15)
+            .lifetime(1f)
+            .speed(1f, 1f)
+            .maxParticles(20)
+            .build();
+
+        int entity = Entity.create(registry);
+        registry.addComponent(entity, Transform.at(0, 0, 0));
+        registry.addComponent(entity, new ParticleEmitter(effect));
+
+        system.onUpdate(0.016f);
+
+        ParticleEmitter emitter = registry.getComponent(entity, ParticleEmitter.class);
+        assertEquals(15, emitter.getAliveCount());
+        assertTrue(emitter.isEmissionComplete());
+    }
+
+    @Test
+    void burst_doesNotEmitOnSubsequentFrames() {
+        ParticleEffect effect = ParticleEffect.builder()
+            .burst(5)
+            .lifetime(2f)
+            .speed(1f, 1f)
+            .maxParticles(20)
+            .build();
+
+        int entity = Entity.create(registry);
+        registry.addComponent(entity, Transform.at(0, 0, 0));
+        registry.addComponent(entity, new ParticleEmitter(effect));
+
+        system.onUpdate(0.016f);
+        system.onUpdate(0.016f);
+        system.onUpdate(0.016f);
+
+        ParticleEmitter emitter = registry.getComponent(entity, ParticleEmitter.class);
+        assertEquals(5, emitter.getAliveCount());
+    }
+
+    @Test
+    void duration_stopsEmittingAfterElapsed() {
+        ParticleEffect effect = ParticleEffect.builder()
+            .rate(100f)
+            .duration(0.1f)
+            .lifetime(2f)
+            .speed(0f, 0f)
+            .maxParticles(200)
+            .build();
+
+        int entity = Entity.create(registry);
+        registry.addComponent(entity, Transform.at(0, 0, 0));
+        registry.addComponent(entity, new ParticleEmitter(effect));
+
+        system.onUpdate(0.05f);
+        ParticleEmitter emitter = registry.getComponent(entity, ParticleEmitter.class);
+        int countMidway = emitter.getAliveCount();
+        assertTrue(countMidway > 0);
+        assertFalse(emitter.isEmissionComplete());
+
+        system.onUpdate(0.1f);
+        assertTrue(emitter.isEmissionComplete());
+
+        int countAfterStop = emitter.getAliveCount();
+        system.onUpdate(0.5f);
+        assertTrue(emitter.getAliveCount() <= countAfterStop);
+    }
+
+    @Test
+    void continuousEmitter_neverMarksEmissionComplete() {
+        ParticleEffect effect = ParticleEffect.builder()
+            .rate(10f)
+            .lifetime(1f)
+            .speed(0f, 0f)
+            .maxParticles(100)
+            .build();
+
+        int entity = Entity.create(registry);
+        registry.addComponent(entity, Transform.at(0, 0, 0));
+        registry.addComponent(entity, new ParticleEmitter(effect));
+
+        system.onUpdate(1.0f);
+        system.onUpdate(1.0f);
+
+        ParticleEmitter emitter = registry.getComponent(entity, ParticleEmitter.class);
+        assertFalse(emitter.isEmissionComplete());
     }
 }
