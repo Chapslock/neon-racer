@@ -52,6 +52,16 @@ class PhysicsDebugDrawer extends IDebugDraw implements Disposable {
     private int shaderProgram;
     private boolean gpuInitialized;
 
+    /**
+     * Callback invoked by JBullet to draw a single debug line segment.
+     *
+     * <p>Lines are buffered and rendered in a single batch during {@link #render(Matrix4f, Matrix4f)}.
+     * JBullet calls this many times per frame to draw wireframes, AABBs, and constraint axes.</p>
+     *
+     * @param from  the start point of the line in world space (vecmath format)
+     * @param to    the end point of the line in world space (vecmath format)
+     * @param color the RGB color for the line (typically green=active, red=sleeping, cyan=static)
+     */
     @Override
     public void drawLine(Vector3f from, Vector3f to, Vector3f color) {
         lines.add(new Line(
@@ -61,6 +71,18 @@ class PhysicsDebugDrawer extends IDebugDraw implements Disposable {
         ));
     }
 
+    /**
+     * Callback invoked by JBullet to visualize a contact point between two colliding bodies.
+     *
+     * <p>Draws a line from the contact point along the contact normal, with length proportional
+     * to the penetration depth. This helps identify where bodies are overlapping and by how much.</p>
+     *
+     * @param pointOnB  the contact point on body B's surface in world space
+     * @param normalOnB the contact normal pointing from B toward A
+     * @param distance  the penetration depth (negative means overlapping)
+     * @param lifeTime  how many frames this contact has persisted (unused in this implementation)
+     * @param color     the RGB color for the contact visualization
+     */
     @Override
     public void drawContactPoint(Vector3f pointOnB, Vector3f normalOnB, float distance, int lifeTime, Vector3f color) {
         Vector3f to = new Vector3f(
@@ -89,6 +111,19 @@ class PhysicsDebugDrawer extends IDebugDraw implements Disposable {
         return debugMode;
     }
 
+    /**
+     * Flushes all buffered debug lines to the GPU and renders them as a single draw call.
+     *
+     * <p>This method uploads vertex data (position + color per vertex) to a dynamic VBO each
+     * frame. Depth testing is disabled so wireframes render on top of scene geometry. After
+     * drawing, the line buffer is cleared for the next frame.</p>
+     *
+     * <p>Called by the physics system during the debug render phase, after JBullet's
+     * {@code debugDrawWorld()} has populated the line buffer via callbacks.</p>
+     *
+     * @param projection the camera's projection matrix
+     * @param view       the camera's view matrix
+     */
     void render(Matrix4f projection, Matrix4f view) {
         if (lines.isEmpty()) return;
 
@@ -134,6 +169,10 @@ class PhysicsDebugDrawer extends IDebugDraw implements Disposable {
         lines.clear();
     }
 
+    /**
+     * Lazily initializes GPU resources (shader, VAO, VBO) on first render call.
+     * Deferred initialization avoids allocating GPU resources if debug drawing is never used.
+     */
     private void initGpu() {
         String vertexSrc = FileUtils.loadAsString("shaders/SimpleVertex.glsl");
         String fragmentSrc = FileUtils.loadAsString("shaders/SimpleFragment.glsl");
@@ -158,6 +197,10 @@ class PhysicsDebugDrawer extends IDebugDraw implements Disposable {
         gpuInitialized = true;
     }
 
+    /**
+     * Releases all GPU resources (shader program, VBO, VAO) allocated by this debug drawer.
+     * Safe to call even if GPU resources were never initialized (no-op in that case).
+     */
     @Override
     public void dispose() {
         if (gpuInitialized) {

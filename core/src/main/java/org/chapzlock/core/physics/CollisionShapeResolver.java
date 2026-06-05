@@ -29,6 +29,30 @@ import com.bulletphysics.linearmath.Transform;
  */
 class CollisionShapeResolver {
 
+    /**
+     * Resolves a {@link CollisionGeometry} descriptor into a concrete JBullet {@link CollisionShape}.
+     *
+     * <p>The mapping from geometry types to JBullet shapes is:</p>
+     * <ul>
+     *   <li>{@link CollisionGeometry.Box} to {@link BoxShape} — axis-aligned box defined by half-extents</li>
+     *   <li>{@link CollisionGeometry.Sphere} to {@link SphereShape} — sphere defined by radius</li>
+     *   <li>{@link CollisionGeometry.Capsule} to {@link CapsuleShape} — cylinder capped with hemispheres</li>
+     *   <li>{@link CollisionGeometry.ConvexHull} to {@link com.bulletphysics.collision.shapes.ConvexHullShape}
+     *       — smallest convex polyhedron enclosing the mesh vertices (requires mesh data)</li>
+     *   <li>{@link CollisionGeometry.TriangleMesh} to {@link com.bulletphysics.collision.shapes.BvhTriangleMeshShape}
+     *       — exact triangle geometry with BVH acceleration (requires mesh data, static only)</li>
+     *   <li>{@link CollisionGeometry.Compound} to {@link CompoundShape} — multiple child shapes each
+     *       with their own local offset, forming a complex composite collider</li>
+     *   <li>{@link CollisionGeometry.Offset} to {@link CompoundShape} — wraps a single inner shape
+     *       with a translation offset (used to shift the collision center away from the visual origin)</li>
+     * </ul>
+     *
+     * @param geometry the collision geometry descriptor specifying the desired shape type and parameters
+     * @param meshData the raw mesh data needed for mesh-derived shapes (ConvexHull, TriangleMesh);
+     *                 may be {@code null} for primitive shapes (Box, Sphere, Capsule)
+     * @return the resolved JBullet collision shape ready for use in a rigid body
+     * @throws IllegalStateException if a mesh-derived shape is requested but meshData is null
+     */
     CollisionShape resolve(CollisionGeometry geometry, RawMeshData meshData) {
         return switch (geometry) {
             case CollisionGeometry.Box b ->
@@ -48,6 +72,14 @@ class CollisionShapeResolver {
         };
     }
 
+    /**
+     * Resolves a convex hull shape from the entity's mesh vertex data.
+     *
+     * @param hull     the convex hull geometry descriptor
+     * @param meshData the raw mesh data providing vertex positions for hull computation
+     * @return a convex hull collision shape
+     * @throws IllegalStateException if meshData is null
+     */
     private CollisionShape resolveConvexHull(CollisionGeometry.ConvexHull hull, RawMeshData meshData) {
         if (meshData == null) {
             throw new IllegalStateException(
@@ -57,6 +89,13 @@ class CollisionShapeResolver {
         return CollisionShapeFactory.createConvexHullShape(meshData);
     }
 
+    /**
+     * Resolves an exact triangle mesh shape with BVH acceleration for static geometry.
+     *
+     * @param meshData the raw mesh data providing vertex positions and indices
+     * @return a BVH triangle mesh collision shape
+     * @throws IllegalStateException if meshData is null
+     */
     private CollisionShape resolveTriangleMesh(RawMeshData meshData) {
         if (meshData == null) {
             throw new IllegalStateException(
@@ -66,6 +105,18 @@ class CollisionShapeResolver {
         return CollisionShapeFactory.createBvhTriangleMeshShapeFromRaw(meshData, true);
     }
 
+    /**
+     * Resolves a compound shape by recursively resolving each child geometry and positioning
+     * it at the specified local offset within the compound.
+     *
+     * <p>Compound shapes are used when an entity's collision volume cannot be represented by
+     * a single primitive — for example, a car body (box) with wheel arches (additional boxes)
+     * or a character with separate torso and head colliders.</p>
+     *
+     * @param compound the compound geometry descriptor listing positioned child shapes
+     * @param meshData the raw mesh data passed to children that need it (e.g., convex hull children)
+     * @return a compound collision shape containing all resolved children
+     */
     private CollisionShape resolveCompound(CollisionGeometry.Compound compound, RawMeshData meshData) {
         CompoundShape compoundShape = new CompoundShape();
         for (CollisionGeometry.Positioned child : compound.children()) {
@@ -78,6 +129,19 @@ class CollisionShapeResolver {
         return compoundShape;
     }
 
+    /**
+     * Resolves an offset shape by wrapping the inner geometry in a compound with a single
+     * translated child. This shifts the collision shape's effective center relative to the
+     * rigid body origin without modifying the underlying shape.
+     *
+     * <p>Common use case: a model whose visual origin is at the bottom (feet), but the physics
+     * center-of-mass should be at the geometric center. The offset shifts the shape down by
+     * half the model height.</p>
+     *
+     * @param offset   the offset geometry descriptor containing the inner shape and translation
+     * @param meshData the raw mesh data passed to the inner shape if it requires it
+     * @return a compound shape with the inner shape positioned at the specified offset
+     */
     private CollisionShape resolveOffset(CollisionGeometry.Offset offset, RawMeshData meshData) {
         CollisionShape innerShape = resolve(offset.inner(), meshData);
         CompoundShape compound = new CompoundShape();
