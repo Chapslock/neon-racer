@@ -40,6 +40,8 @@ dependencies {
     api("org.lwjgl", "lwjgl-opengl")
     api("org.lwjgl", "lwjgl-par")
     api("org.lwjgl", "lwjgl-stb")
+    api("org.lwjgl", "lwjgl-msdfgen")
+    api("org.lwjgl", "lwjgl-freetype")
     api("org.lwjgl", "lwjgl", classifier = lwjglNatives)
     api("org.lwjgl", "lwjgl-glfw", classifier = lwjglNatives)
     api("org.lwjgl", "lwjgl-nanovg", classifier = lwjglNatives)
@@ -48,6 +50,8 @@ dependencies {
     api("org.lwjgl", "lwjgl-opengl", classifier = lwjglNatives)
     api("org.lwjgl", "lwjgl-par", classifier = lwjglNatives)
     api("org.lwjgl", "lwjgl-stb", classifier = lwjglNatives)
+    api("org.lwjgl", "lwjgl-msdfgen", classifier = lwjglNatives)
+    api("org.lwjgl", "lwjgl-freetype", classifier = lwjglNatives)
 
     testImplementation(platform("org.junit:junit-bom:6.0.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
