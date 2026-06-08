@@ -1,5 +1,6 @@
 package org.chapzlock.core.text;
 
+import org.joml.Vector2f;
 import org.joml.Vector4f;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -116,5 +117,59 @@ class TextLayoutUtilTest {
                 new Vector4f(1, 1, 1, 1), null, null);
 
         assertEquals(1, layout.bounds().lineCount());
+    }
+
+    @Test
+    void centerAlignment_shiftsQuadsToCenter() {
+        TextLayout layout = TextLayoutUtil.layout(
+                "A", font, 12f, 100f, TextAlignment.CENTER,
+                new Vector4f(1, 1, 1, 1), null, null);
+
+        // Single 'A': advance = 10px, container = 100px
+        // Line width = 10 (advance of A)
+        // Offset = (100 - 10) / 2 = 45
+        // Quad x = offset + xBearing = 45 + 1 = 46
+        TextLayout.TextQuad quad = layout.quads().get(0);
+        assertEquals(46f, quad.x(), 0.5f);
+    }
+
+    @Test
+    void rightAlignment_shiftsQuadsToRight() {
+        TextLayout layout = TextLayoutUtil.layout(
+                "A", font, 12f, 100f, TextAlignment.RIGHT,
+                new Vector4f(1, 1, 1, 1), null, null);
+
+        // Offset = 100 - 10 = 90
+        // Quad x = offset + xBearing = 90 + 1 = 91
+        TextLayout.TextQuad quad = layout.quads().get(0);
+        assertEquals(91f, quad.x(), 0.5f);
+    }
+
+    @Test
+    void shadow_prependsShadowQuadsBeforeMainQuads() {
+        TextLayout layout = TextLayoutUtil.layout(
+                "A", font, 12f, 0f, TextAlignment.LEFT,
+                new Vector4f(1, 1, 1, 1),
+                new Vector4f(0, 0, 0, 0.5f), new Vector2f(3, 3));
+
+        // Should have 2 quads: shadow first, then main
+        assertEquals(2, layout.quads().size());
+
+        TextLayout.TextQuad shadow = layout.quads().get(0);
+        TextLayout.TextQuad main = layout.quads().get(1);
+
+        // Shadow is offset by (3, 3) from main
+        assertEquals(main.x() + 3f, shadow.x(), 0.001f);
+        assertEquals(main.y() + 3f, shadow.y(), 0.001f);
+
+        // Shadow has shadow color
+        assertEquals(0f, shadow.r(), 0.001f);
+        assertEquals(0f, shadow.g(), 0.001f);
+        assertEquals(0f, shadow.b(), 0.001f);
+        assertEquals(0.5f, shadow.a(), 0.001f);
+
+        // Main has original color
+        assertEquals(1f, main.r(), 0.001f);
+        assertEquals(1f, main.a(), 0.001f);
     }
 }
