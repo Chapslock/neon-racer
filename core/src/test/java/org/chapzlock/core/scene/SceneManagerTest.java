@@ -220,7 +220,7 @@ class SceneManagerTest {
         org.chapzlock.core.ecs.EntityFactory entityFactory = new org.chapzlock.core.ecs.EntityFactory(
             reg, meshRegistry, textureRegistry, gltfAssetManager);
         Engine assetEngine = new Engine(
-            reg, eb, meshRegistry, textureRegistry, null, null,
+            reg, eb, meshRegistry, textureRegistry, null, null, null,
             new org.chapzlock.core.application.Time(),
             new org.chapzlock.core.tween.TweenRegistry(),
             gltfAssetManager,

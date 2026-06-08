@@ -15,6 +15,7 @@ import org.chapzlock.core.application.Engine;
 import org.chapzlock.core.ecs.GameSystem;
 import org.chapzlock.core.ecs.SystemPhase;
 import org.chapzlock.core.particle.ParticlePass;
+import org.chapzlock.core.window.WindowResizeEvent;
 
 /**
  * Orchestrates the rendering pipeline by executing registered RenderPasses in order.
@@ -28,12 +29,19 @@ public class RenderSystem implements GameSystem {
     private List<RenderPass> passes;
     private RenderContext renderContext;
 
-    /** {@inheritDoc} Initializes render passes (OpaquePass, ParticlePass, SpritePass) and the shared RenderContext. */
+    /** {@inheritDoc} Initializes render passes (OpaquePass, ParticlePass, SpritePass, TextPass) and the shared RenderContext. */
     @Override
     public void onInit(Engine engine) {
         renderContext = new RenderContext(engine);
-        passes = List.of(new OpaquePass(), new ParticlePass(), new SpritePass());
+        passes = List.of(new OpaquePass(), new ParticlePass(), new SpritePass(), new TextPass());
         passes.forEach(p -> p.init(engine));
+
+        engine.getEventBus().subscribe(WindowResizeEvent.class, event -> {
+            for (RenderPass pass : passes) {
+                pass.resize((int) event.width(), (int) event.height());
+            }
+            return false;
+        });
 
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
