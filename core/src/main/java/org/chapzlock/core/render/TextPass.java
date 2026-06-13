@@ -60,7 +60,7 @@ public class TextPass implements RenderPass {
             String fontPath = entry.getKey();
             List<Integer> entityIds = entry.getValue();
 
-            Font font = fontRegistry.get(fontPath);
+            Font font = fontRegistry.load(fontPath);
             textRenderer.beginBatch(font);
 
             for (int entityId : entityIds) {

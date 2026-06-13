@@ -11,6 +11,8 @@ import org.lwjgl.util.msdfgen.MSDFGenBitmap;
 import org.lwjgl.util.msdfgen.MSDFGenBounds;
 import org.lwjgl.util.msdfgen.MSDFGenTransform;
 
+import org.lwjgl.PointerBuffer;
+
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
@@ -118,11 +120,10 @@ public class MsdfAtlasGenerator {
      * Initialize MSDF-gen's FreeType handle.
      */
     private long initMsdfFreeType(MemoryStack stack) {
-        IntBuffer handleBuf = stack.mallocInt(1);
-        handleBuf.put(0, 0);
+        PointerBuffer handleBuf = stack.mallocPointer(1);
+        handleBuf.put(0, 0L);
 
-        long handlePtr = memAddress(handleBuf);
-        int result = msdf_ft_init(memPointerBuffer(handlePtr, 1));
+        int result = msdf_ft_init(handleBuf);
 
         if (result != 0) {
             throw new RuntimeException("Failed to initialize MSDF FreeType: " + result);
@@ -135,11 +136,10 @@ public class MsdfAtlasGenerator {
      * Load font into MSDF-gen's FreeType.
      */
     private long loadMsdfFont(long ftHandle, ByteBuffer ttfData, MemoryStack stack) {
-        IntBuffer fontBuf = stack.mallocInt(1);
-        fontBuf.put(0, 0);
+        PointerBuffer fontBuf = stack.mallocPointer(1);
+        fontBuf.put(0, 0L);
 
-        long fontPtr = memAddress(fontBuf);
-        int result = msdf_ft_load_font_data(ftHandle, ttfData, memPointerBuffer(fontPtr, 1));
+        int result = msdf_ft_load_font_data(ftHandle, ttfData, fontBuf);
 
         if (result != 0) {
             msdf_ft_deinit(ftHandle);
@@ -173,15 +173,14 @@ public class MsdfAtlasGenerator {
      */
     private GlyphBitmap generateGlyphBitmap(long ftFont, int codepoint, MemoryStack stack) {
         // Load glyph shape (em-normalized coordinates)
-        IntBuffer shapeBuf = stack.mallocInt(1);
-        shapeBuf.put(0, 0);
+        PointerBuffer shapeBuf = stack.mallocPointer(1);
+        shapeBuf.put(0, 0L);
 
-        long shapePtr = memAddress(shapeBuf);
         int result = msdf_ft_font_load_glyph(
             ftFont,
             codepoint,
             MSDF_FONT_SCALING_EM_NORMALIZED,
-            memPointerBuffer(shapePtr, 1)
+            shapeBuf
         );
 
         if (result != 0) {
@@ -254,11 +253,10 @@ public class MsdfAtlasGenerator {
             }
 
             // Extract pixel data (3-channel float)
-            IntBuffer pixelsPtrBuf = stack.mallocInt(1);
-            pixelsPtrBuf.put(0, 0);
+            PointerBuffer pixelsPtrBuf = stack.mallocPointer(1);
+            pixelsPtrBuf.put(0, 0L);
 
-            long pixelsPtrAddr = memAddress(pixelsPtrBuf);
-            if (msdf_bitmap_get_pixels(bitmap, memPointerBuffer(pixelsPtrAddr, 1)) != 0) {
+            if (msdf_bitmap_get_pixels(bitmap, pixelsPtrBuf) != 0) {
                 msdf_bitmap_free(bitmap);
                 log.warn("Failed to get pixels for codepoint %d", codepoint);
                 return null;
@@ -357,20 +355,18 @@ public class MsdfAtlasGenerator {
                 int x = rect.x();
                 int y = rect.y();
 
-                // Copy glyph pixels into atlas
+                // Copy glyph pixels into atlas (flip vertically — msdfgen stores bottom-to-top)
                 ByteBuffer glyphPixels = gb.pixelData;
-                glyphPixels.rewind();
 
                 for (int row = 0; row < gb.height; row++) {
+                    int srcRow = gb.height - 1 - row;
                     for (int col = 0; col < gb.width; col++) {
+                        int srcIndex = (srcRow * gb.width + col) * 3;
                         int atlasIndex = ((y + row) * atlasSize + (x + col)) * 3;
-                        byte r = glyphPixels.get();
-                        byte g = glyphPixels.get();
-                        byte b = glyphPixels.get();
 
-                        atlasData.put(atlasIndex, r);
-                        atlasData.put(atlasIndex + 1, g);
-                        atlasData.put(atlasIndex + 2, b);
+                        atlasData.put(atlasIndex, glyphPixels.get(srcIndex));
+                        atlasData.put(atlasIndex + 1, glyphPixels.get(srcIndex + 1));
+                        atlasData.put(atlasIndex + 2, glyphPixels.get(srcIndex + 2));
                     }
                 }
 
@@ -446,14 +442,14 @@ public class MsdfAtlasGenerator {
                 float u1 = (float) (packed.x + packed.width) / packResult.atlasSize;
                 float v1 = (float) (packed.y + packed.height) / packResult.atlasSize;
 
-                // Normalize metrics to em units
-                float emScale = 1.0f / fontMetrics.ascent;
+                // Store metrics in pixel units at reference size (pixelHeight=32)
+                // TextLayoutUtil applies fontSize/ascent scaling at layout time
                 glyphs.put(gb.codepoint, new Glyph(
-                    advance * emScale,
-                    xBearing * emScale,
-                    yBearing * emScale,
-                    width * emScale,
-                    height * emScale,
+                    advance,
+                    xBearing,
+                    yBearing,
+                    width,
+                    height,
                     u0,
                     v0,
                     u1,
@@ -469,10 +465,9 @@ public class MsdfAtlasGenerator {
             stbtt_GetCodepointHMetrics(fontInfo, ' ', advanceBuf, lsbBuf);
 
             float advance = advanceBuf.get(0) * scale;
-            float emScale = 1.0f / fontMetrics.ascent;
 
             glyphs.put(' ', new Glyph(
-                advance * emScale,
+                advance,
                 0, 0, 0, 0, // no bearing/size for space
                 0, 0, 0, 0  // no UVs
             ));

@@ -49,6 +49,7 @@ public class TextRenderer {
         shaderRegistry.use(shader);
 
         glDisable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -93,6 +94,7 @@ public class TextRenderer {
 
     public void endBatch() {
         glDisable(GL_BLEND);
+        glEnable(GL_CULL_FACE);
         glEnable(GL_DEPTH_TEST);
     }
 
