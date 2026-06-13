@@ -17,9 +17,9 @@ JVM flag `--enable-native-access=ALL-UNNAMED` is required at runtime (configured
 
 ## Engine TODO
 
-* font rendering
 * save/load feature
 * UI/HUD enhancements
+* audio
 
 ## Engine Architecture
 
