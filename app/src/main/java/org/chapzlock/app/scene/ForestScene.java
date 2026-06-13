@@ -32,7 +32,11 @@ import org.chapzlock.core.particle.ParticleEffect;
 import org.chapzlock.core.particle.ParticleEmitter;
 import org.chapzlock.core.physics.CollisionGeometry;
 import org.chapzlock.core.scene.Scene;
+import org.chapzlock.core.text.TextAlignment;
+import org.chapzlock.core.text.TextComponent;
+import org.joml.Vector2f;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 public class ForestScene {
 
@@ -83,6 +87,45 @@ public class ForestScene {
                         .gravity(0f, 0.5f, 0f)
                         .drag(0.3f)
                         .build()))))
+            .entity("title-text", e -> e
+                .transform(Transform.at(50, 40, 0))
+                .component(TextComponent.builder()
+                    .text("NEON RACER")
+                    .font("fonts/Inconsolata.ttf")
+                    .fontSize(64f)
+                    .color(new Vector4f(0f, 1f, 1f, 1f))
+                    .outlineColor(new Vector4f(1f, 1f, 1f, 1f))
+                    .outlineWidth(0.12f)
+                    .build()))
+            .entity("subtitle-text", e -> e
+                .transform(Transform.at(50, 120, 0))
+                .component(TextComponent.builder()
+                    .text("MSDF Font Rendering Demo")
+                    .font("fonts/Inconsolata.ttf")
+                    .fontSize(28f)
+                    .color(new Vector4f(1f, 1f, 1f, 0.9f))
+                    .build()))
+            .entity("shadow-text", e -> e
+                .transform(Transform.at(50, 170, 0))
+                .component(TextComponent.builder()
+                    .text("Shadow + Outline")
+                    .font("fonts/Inconsolata.ttf")
+                    .fontSize(36f)
+                    .color(new Vector4f(1f, 0.8f, 0f, 1f))
+                    .outlineColor(new Vector4f(0.5f, 0f, 0f, 1f))
+                    .outlineWidth(0.1f)
+                    .shadowColor(new Vector4f(0f, 0f, 0f, 0.7f))
+                    .shadowOffset(new Vector2f(3f, 3f))
+                    .build()))
+            .entity("wrap-text", e -> e
+                .transform(Transform.at(50, 230, 0))
+                .component(TextComponent.builder()
+                    .text("This text wraps within a bounding width of 400 pixels, demonstrating word-wrap support.")
+                    .font("fonts/Inconsolata.ttf")
+                    .fontSize(20f)
+                    .color(new Vector4f(0.8f, 0.8f, 0.8f, 1f))
+                    .maxWidth(400f)
+                    .build()))
             .entity("healthbar", e -> e
                 .transform(Transform.at(0, 0, 0, 0, 0, 0, 250))
                 .component(new SpriteMaterial("textures/health-bar.png"))

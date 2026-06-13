@@ -19,6 +19,7 @@ import org.chapzlock.core.render.RenderSystem;
 import org.chapzlock.core.render.ShaderRegistry;
 import org.chapzlock.core.render.TextureRegistry;
 import org.chapzlock.core.scene.SceneManager;
+import org.chapzlock.core.text.FontRegistry;
 import org.chapzlock.core.tween.TweenRegistry;
 import org.chapzlock.core.tween.TweenSystem;
 import org.chapzlock.core.window.Window;
@@ -45,6 +46,7 @@ public class Engine implements Disposable {
     private final MeshRegistry meshRegistry;
     private final TextureRegistry textureRegistry;
     private final ShaderRegistry shaderRegistry;
+    private final FontRegistry fontRegistry;
     private final Window window;
     private final Time time;
     private final TweenRegistry tweenRegistry;
@@ -69,6 +71,7 @@ public class Engine implements Disposable {
            MeshRegistry meshRegistry,
            TextureRegistry textureRegistry,
            ShaderRegistry shaderRegistry,
+           FontRegistry fontRegistry,
            Window window,
            Time time,
            TweenRegistry tweenRegistry,
@@ -87,6 +90,7 @@ public class Engine implements Disposable {
         this.meshRegistry = meshRegistry;
         this.textureRegistry = textureRegistry;
         this.shaderRegistry = shaderRegistry;
+        this.fontRegistry = fontRegistry;
         this.window = window;
         this.time = time;
         this.tweenRegistry = tweenRegistry;
@@ -125,6 +129,7 @@ public class Engine implements Disposable {
         ShaderRegistry shaderRegistry = new ShaderRegistry();
         TextureRegistry textureRegistry = new TextureRegistry();
         MeshRegistry meshRegistry = new MeshRegistry();
+        FontRegistry fontRegistry = new FontRegistry();
         Time time = new Time();
         TweenRegistry tweenRegistry = new TweenRegistry();
         GltfAssetManager gltfAssetManager = new GltfAssetManager(registry, meshRegistry, textureRegistry, shaderRegistry);
@@ -152,7 +157,7 @@ public class Engine implements Disposable {
 
         // Assemble engine (immutable after this — except sceneManager)
         Engine engine = new Engine(
-            registry, eventBus, meshRegistry, textureRegistry, shaderRegistry,
+            registry, eventBus, meshRegistry, textureRegistry, shaderRegistry, fontRegistry,
             window, time, tweenRegistry, gltfAssetManager,
             scheduler, entityFactory, cameraProjection, physics,
             tweenSystem, animationSystem, transformSystem, physicsSystem, renderSystem);
@@ -199,7 +204,7 @@ public class Engine implements Disposable {
         gltfAssetManager.setEntityFactory(entityFactory);
 
         Engine engine = new Engine(
-            registry, eventBus, null, null, null, null,
+            registry, eventBus, null, null, null, null, null,
             new Time(), new TweenRegistry(), gltfAssetManager,
             scheduler, entityFactory, null, null,
             null, null, null, null, null);
@@ -232,7 +237,7 @@ public class Engine implements Disposable {
         PhysicsSystem physicsSystem = new PhysicsSystem(physicsConfig, null, physicsWorld);
 
         Engine engine = new Engine(
-            registry, eventBus, null, null, null, null,
+            registry, eventBus, null, null, null, null, null,
             new Time(), new TweenRegistry(), gltfAssetManager,
             scheduler, entityFactory, null, physics,
             null, null, null, physicsSystem, null);
@@ -253,6 +258,7 @@ public class Engine implements Disposable {
         if (transformSystem != null) transformSystem.onDestroy();
         if (animationSystem != null) animationSystem.onDestroy();
         if (tweenSystem != null) tweenSystem.onDestroy();
+        if (fontRegistry != null) fontRegistry.dispose();
         if (shaderRegistry != null) shaderRegistry.dispose();
         if (textureRegistry != null) textureRegistry.dispose();
         if (meshRegistry != null) meshRegistry.dispose();
