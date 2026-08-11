@@ -53,7 +53,7 @@ dependencies {
     api("org.lwjgl", "lwjgl-msdfgen", classifier = lwjglNatives)
     api("org.lwjgl", "lwjgl-freetype", classifier = lwjglNatives)
 
-    testImplementation(platform("org.junit:junit-bom:6.0.0"))
+    testImplementation(platform("org.junit:junit-bom:6.0.3"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("org.mockito:mockito-core:5.14.2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
